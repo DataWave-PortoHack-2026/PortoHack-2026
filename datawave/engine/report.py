@@ -144,7 +144,7 @@ def gerar_parecer_executivo(
             f"e do tempo de permanência P90 projetado em {p90_str}, o despacho no Cais ultrapassa a janela de "
             f"free time ({ft_str}). A transferência da carga sob regime de trânsito aduaneiro estanca a cobrança "
             f"de sobreestadia em dólar ({dem_usd_str}/dia), permitindo a devolução imediata do equipamento vazio "
-            f"e proporcionando uma economia líquida estimada de {economia_str} por contêiner."
+            f"e proporcionando uma economia líquida estimada de {economia_str} (custo total do lote)."
         )
     else:
         acao_recomendada = "MANUTENÇÃO NO CAIS E DESPACHO DIRETO SOBRE ÁGUAS (CANAL VERDE)"
@@ -359,8 +359,12 @@ def gerar_parecer_via_agente_logcomex(
             "nenhum conteúdo foi encontrado",
             "ainda processando",
             "tente novamente em",
+            "tente novamente",
             "não foi possível gerar",
-            "para abortar, use cancel_task"
+            "para abortar, use cancel_task",
+            "limite síncrono",
+            "get_task_status",
+            "resposta está demorando"
         ]
         eh_recusa = any(r in texto_agente.lower() for r in termos_recusa) if texto_agente else True
 

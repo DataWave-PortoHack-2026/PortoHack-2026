@@ -62,17 +62,17 @@
 
   /* ---- shell ---- */
   .rail{
-    width:220px; flex-shrink:0; background:var(--bg-sunken);
+    width:260px; flex-shrink:0; background:var(--bg-sunken);
     border-right:1px solid var(--line);
     padding:20px 14px; padding-top:calc(20px + env(safe-area-inset-top,0px));
     display:flex; flex-direction:column; gap:22px;
-    transition:padding .2s ease;
+    transition:width .2s ease, padding .2s ease;
     overflow:hidden;
   }
   .rail.collapsed{width:66px; padding-left:10px; padding-right:10px;}
-  .rail-top{display:flex; align-items:center; justify-content:space-between; gap:6px;}
+  .rail-top{display:flex; align-items:center; justify-content:space-between; gap:10px; min-width:0; width:100%;}
   .rail.collapsed .rail-top{flex-direction:column; gap:14px;}
-  .brand{display:flex; align-items:center; gap:10px; padding:0 6px; min-width:0;}
+  .brand{display:flex; align-items:center; gap:10px; padding:0; min-width:0; flex:1; overflow:hidden;}
   .rail.collapsed .brand{padding:0;}
   .brand .mark{
     width:34px; height:34px; border-radius:8px; background:var(--navy);
@@ -80,7 +80,7 @@
     overflow:hidden;
   }
   .brand .mark img{width:100%; height:100%; object-fit:cover;}
-  .brand-text{font-family:'Fraunces',serif; font-weight:600; font-size:15px; line-height:1.1; white-space:nowrap;}
+  .brand-text{font-family:'Fraunces',serif; font-weight:600; font-size:15px; line-height:1.15; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   ::selection{background:var(--accent); color:#04121c;}
   ::-webkit-scrollbar{width:8px; height:8px;}
   ::-webkit-scrollbar-track{background:var(--bg);}
@@ -89,12 +89,13 @@
   .num, .tracker-timer, .timestamp-badge, .kv .v, .total .r, table td {
     font-variant-numeric: tabular-nums;
   }
-  .brand-text span{display:block; font-family:'Inter',sans-serif; font-weight:500; font-size:12px; color:var(--ink-soft); letter-spacing:.01em; margin-top:2px;}
+  .brand-text span{display:block; font-family:'Inter',sans-serif; font-weight:500; font-size:11px; color:var(--ink-soft); letter-spacing:.01em; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .rail.collapsed .brand-text{display:none;}
 
   .rail-collapse{
     all:unset; cursor:pointer; display:flex; align-items:center; justify-content:center;
-    width:26px; height:26px; border-radius:8px; color:var(--ink-soft); flex-shrink:0;
+    width:28px; height:28px; border-radius:8px; color:var(--ink-soft); flex-shrink:0;
+    margin-left:auto; transition:background .15s ease, color .15s ease;
   }
   .rail-collapse:hover{background:var(--bg-panel); color:var(--ink);}
 
@@ -339,17 +340,26 @@
   @keyframes appin{from{opacity:0;} to{opacity:1;}}
   @media (prefers-reduced-motion: reduce){ body.in-app .app{animation:none;} }
   .app .rail{background:rgba(8,11,32,.55); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);}
-  .app .topbar{background:rgba(8,11,32,.4);}
-  .app .panel,.app .scenario,.app .decision-inner,.app .decision-card,.app .alert,.app .status-pill,.app .screen-tag,.app .nav-btn.active{
-    backdrop-filter:blur(14px) saturate(1.2); -webkit-backdrop-filter:blur(14px) saturate(1.2);}
+  .app .topbar{background:rgba(8,11,32,.50); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border-bottom:1px solid var(--line);}
+  .app .panel,.app .scenario,.app .decision-inner,.app .decision-card,.app .alert,.app .screen-tag,.app .nav-btn.active,
+  .app .agent-banner,.app .correcoes-card,.app .modal-container{
+    backdrop-filter:blur(16px) saturate(1.25); -webkit-backdrop-filter:blur(16px) saturate(1.25);
+    background:var(--bg-panel); border:1px solid var(--line);
+  }
+  .app .dropzone, .app .arquivo-selecionado, .app .correcao-item, .app .parecer-pre,
+  .app .chat-msg .bubble, .app .modal-head, .app .modal-foot{
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    background:var(--bg-sunken); border:1px solid var(--line);
+  }
   .app .cta{color:#04121c;}
   .topbar-right{display:flex; align-items:center; gap:10px;}
 
   /* seletor de cenários de demonstração */
   .scenario-switch-row{display:flex; gap:10px; flex-wrap:wrap;}
   .scenario-chip{all:unset; cursor:pointer; font-size:12.5px; font-weight:600; padding:8px 14px;
-    border-radius:999px; border:1px solid var(--line); color:var(--ink-soft); background:var(--bg-sunken);}
-  .scenario-chip:hover{color:var(--ink);}
+    border-radius:999px; border:1px solid var(--line); color:var(--ink-soft); background:var(--bg-sunken);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); transition:all 0.15s ease;}
+  .scenario-chip:hover{color:var(--ink); background:rgba(56,198,239,0.1);}
   .scenario-chip.active{background:var(--bg-panel); color:var(--ink); box-shadow:0 0 0 1px var(--line);}
   .scenario-chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
 
@@ -359,33 +369,38 @@
   .chat-msg{display:flex;}
   .chat-msg.user{justify-content:flex-end;}
   .chat-msg .bubble{max-width:82%; padding:10px 14px; border-radius:14px; font-size:13.5px; line-height:1.5;
-    background:var(--bg-sunken); border:1px solid var(--line);}
-  .chat-msg.user .bubble{background:var(--bg-panel);}
+    background:var(--bg-sunken); border:1px solid var(--line);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);}
+  .chat-msg.user .bubble{background:var(--bg-panel); border-color:rgba(56,198,239,0.35);}
   .chat-form{display:flex; gap:10px;}
   .chat-form input{flex:1; border:1px solid var(--line); background:var(--bg-sunken); color:var(--ink);
-    border-radius:10px; padding:11px 14px; font:14px 'Inter',sans-serif;}
+    border-radius:10px; padding:11px 14px; font:14px 'Inter',sans-serif;
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);}
   .chat-form input::placeholder{color:var(--ink-soft);}
   .chat-form input:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
   .back-sea{cursor:pointer; font:500 12px 'Inter',sans-serif; color:var(--ink); background:transparent;
-    border:1px solid var(--line); border-radius:999px; padding:6px 12px;}
+    border:1px solid var(--line); border-radius:999px; padding:6px 12px;
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); transition:background .15s ease;}
   .back-sea:hover{background:var(--bg-panel);}
   @media (max-width:720px){ .screen-tag{display:none;} }
 
   /* ---- modal do parecer tecnico aduaneiro ---- */
   .modal-overlay{
-    position:fixed; inset:0; z-index:100; background:rgba(6,9,30,0.85);
-    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    position:fixed; inset:0; z-index:100; background:rgba(6,9,30,0.72);
+    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
     display:none; align-items:center; justify-content:center; padding:20px;
   }
   .modal-overlay.active{display:flex;}
   .modal-container{
     background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius);
     width:100%; max-width:860px; max-height:88vh; display:flex; flex-direction:column;
-    overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,0.55);
+    overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,0.45);
+    backdrop-filter:blur(20px) saturate(1.25); -webkit-backdrop-filter:blur(20px) saturate(1.25);
   }
   .modal-head{
     display:flex; justify-content:space-between; align-items:flex-start;
     padding:20px 24px; border-bottom:1px solid var(--line); background:var(--bg-sunken);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
   }
   .modal-body{
     padding:22px 24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:14px;
@@ -394,10 +409,12 @@
     white-space:pre-wrap; font-family:'Inter',system-ui,sans-serif; font-size:13.5px;
     line-height:1.65; color:var(--ink); background:var(--bg-sunken); border:1px solid var(--line);
     border-radius:12px; padding:18px 20px; max-height:480px; overflow-y:auto;
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
   }
   .modal-foot{
     padding:16px 24px; border-top:1px solid var(--line); display:flex;
     justify-content:space-between; align-items:center; gap:12px; background:var(--bg-sunken);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
     flex-wrap:wrap;
   }
   .tag-dot{width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:5px;}
@@ -407,7 +424,8 @@
     background:var(--bg-panel);
     border:1px solid var(--line); border-radius:var(--radius); padding:20px 24px;
     display:flex; flex-direction:column; gap:14px; margin-bottom:20px;
-    box-shadow:0 4px 16px rgba(0,0,0,0.12);
+    box-shadow:0 8px 32px rgba(0,0,0,0.22);
+    backdrop-filter:blur(16px) saturate(1.25); -webkit-backdrop-filter:blur(16px) saturate(1.25);
   }
   .agent-banner-top{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;}
   .agent-title-group{display:flex; align-items:center; gap:12px;}
@@ -421,6 +439,7 @@
     display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px;
     font-size:11.5px; font-weight:600; background:rgba(43,217,174,0.15); color:var(--accent-2);
     border:1px solid rgba(43,217,174,0.35);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
   }
   .live-pulse{
     width:8px; height:8px; border-radius:50%; background:var(--accent-2);
@@ -429,54 +448,69 @@
   .skill-pill{
     font-size:12px; padding:4px 10px; border-radius:6px; background:var(--bg-sunken);
     border:1px solid var(--line); color:var(--ink-soft); font-weight:500;
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    transition:all 0.15s ease;
   }
-  .skill-pill.highlight{border-color:rgba(56,198,239,0.4); color:var(--accent);}
+  .skill-pill.highlight{border-color:rgba(56,198,239,0.4); color:var(--accent); background:rgba(56,198,239,0.08);}
 
   /* ---- ingestão de planilhas do despachante ---- */
   .dropzone{
     border:2px dashed var(--line); border-radius:12px; padding:24px 20px; text-align:center;
     background:var(--bg-sunken); cursor:pointer; transition:all 0.2s ease;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
   }
   .dropzone:hover, .dropzone.dragover{
-    border-color:var(--accent); background:rgba(56,198,239,0.08);
+    border-color:var(--accent); background:rgba(56,198,239,0.1);
   }
   .dropzone-title{font-size:14px; font-weight:600; color:var(--ink);}
   .dropzone-sub{font-size:12px; color:var(--ink-soft);}
   .arquivo-selecionado{
     display:flex; align-items:center; justify-content:space-between; padding:10px 14px;
-    background:var(--bg-panel); border:1px solid var(--accent); border-radius:8px;
+    background:var(--bg-sunken); border:1px solid var(--accent); border-radius:10px;
     font-size:13px; font-weight:600; color:var(--ink); width:100%; margin-top:10px;
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
   }
   .preset-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
   .preset-btn{
     all:unset; cursor:pointer; font-size:12px; font-weight:600; padding:6px 12px;
     border-radius:8px; border:1px solid var(--line); color:var(--ink-soft); background:var(--bg-sunken);
     transition:all 0.15s ease;
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
   }
-  .preset-btn:hover{color:var(--ink); border-color:var(--accent); background:var(--bg-panel);}
-  .preset-btn.active{background:var(--bg-panel); color:var(--accent); border-color:var(--accent);}
+  .preset-btn:hover{color:var(--ink); border-color:var(--accent); background:rgba(56,198,239,0.12);}
+  .preset-btn.active{background:var(--bg-panel); color:var(--accent); border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);}
 
   /* ---- plano prescritivo de correcoes ---- */
   .correcoes-card{
     background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius);
     padding:20px 24px; display:flex; flex-direction:column; gap:16px; margin-top:18px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.22);
+    backdrop-filter:blur(16px) saturate(1.25); -webkit-backdrop-filter:blur(16px) saturate(1.25);
   }
   .correcoes-list{display:flex; flex-direction:column; gap:12px;}
   .correcao-item{
     background:var(--bg-sunken); border:1px solid var(--line); border-radius:12px;
     padding:16px 18px; display:flex; flex-direction:column; gap:8px;
     border-left:4px solid var(--accent);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    transition:transform 0.15s ease, border-color 0.15s ease;
+  }
+  .correcao-item:hover{
+    transform:translateY(-1px);
+    border-color:rgba(255,255,255,0.22);
   }
   .correcao-item.critica{border-left-color:var(--crit-ink);}
   .correcao-item.alerta{border-left-color:var(--warn-ink);}
   .correcao-head{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;}
   .correcao-categoria{
     font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
-    padding:3px 8px; border-radius:4px; background:rgba(56,198,239,0.15); color:var(--accent);
+    padding:3px 8px; border-radius:6px; background:rgba(56,198,239,0.15); color:var(--accent);
+    border:1px solid rgba(56,198,239,0.3);
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
   }
-  .correcao-item.critica .correcao-categoria{background:var(--crit-bg); color:var(--crit-ink);}
-  .correcao-item.alerta .correcao-categoria{background:var(--warn-bg); color:var(--warn-ink);}
+  .correcao-item.critica .correcao-categoria{background:var(--crit-bg); color:var(--crit-ink); border-color:var(--crit-line);}
+  .correcao-item.alerta .correcao-categoria{background:var(--warn-bg); color:var(--warn-ink); border-color:var(--warn-line);}
   .correcao-titulo{font-size:13.5px; font-weight:600; color:var(--ink);}
   .correcao-acao{font-size:13px; line-height:1.5; color:var(--ink);}
   .correcao-meta{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--ink-soft); margin-top:4px;}
@@ -487,10 +521,12 @@
   .telemetria-tab-btn{
     all:unset; cursor:pointer; font-size:12.5px; font-weight:600; padding:8px 14px;
     border-radius:8px; border:1px solid transparent; color:var(--ink-soft);
+    transition:all 0.15s ease;
   }
-  .telemetria-tab-btn:hover{color:var(--ink);}
+  .telemetria-tab-btn:hover{color:var(--ink); background:rgba(255,255,255,0.06);}
   .telemetria-tab-btn.active{
     background:var(--bg-sunken); color:var(--accent); border-color:var(--line);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
   }
   .telemetria-pane{display:none;}
   .telemetria-pane.active{display:flex; flex-direction:column; gap:14px;}
@@ -498,9 +534,9 @@
   /* ---- tracker superior fixo de execucao do pipeline ---- */
   .global-tracker{
     position:sticky; top:0; z-index:90;
-    background:rgba(8,11,32,0.88); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
-    border-bottom:1px solid rgba(56,198,239,0.3); padding:10px 24px;
-    box-shadow:0 4px 20px rgba(0,0,0,0.35); transition:all 0.3s ease;
+    background:rgba(8,11,32,0.68); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    border-bottom:1px solid rgba(56,198,239,0.25); padding:10px 24px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.25); transition:all 0.3s ease;
   }
   .tracker-head{
     display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
@@ -510,6 +546,7 @@
   .tracker-badge{
     background:rgba(56,198,239,0.15); color:var(--accent); border:1px solid rgba(56,198,239,0.35);
     padding:2px 8px; border-radius:6px; font-weight:600; font-size:12px;
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
   }
   .tracker-stage-text{font-weight:500; color:var(--ink); font-size:12.5px;}
   .tracker-metrics{display:flex; align-items:center; gap:10px;}
@@ -517,6 +554,7 @@
   .tracker-status-tag{
     font-size:12px; padding:2px 10px; border-radius:999px;
     background:var(--bg-sunken); color:var(--ink-soft); border:1px solid var(--line); font-weight:600;
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
   }
   .tracker-progress-rail{
     width:100%; height:6px; background:rgba(255,255,255,0.08); border-radius:999px;
@@ -535,6 +573,7 @@
     background:var(--bg-sunken); border:1px solid var(--line);
     padding:2px 8px; border-radius:6px; transition:all 0.3s ease;
     display:inline-flex; align-items:center; gap:4px;
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
   }
   .timestamp-pulse{
     color:var(--ok-ink) !important; background:var(--ok-bg) !important;
@@ -582,10 +621,6 @@
     </button>
   </div>
 
-  <div class="status-pill">
-    <span class="dot"></span><span class="status-text">Módulo de Inteligência Ativo</span>
-  </div>
-
   <nav>
     <div class="nav-label">Fluxo da operação</div>
     <button class="nav-btn active" data-screen="1" onclick="showScreen(1)" title="Input & Validação">
@@ -607,8 +642,6 @@
       <span class="nav-copy"><strong>Chat com o Agente</strong><small>Tire dúvidas em tempo real</small></span>
     </button>
   </nav>
-
-  <div class="rail-foot"><span class="rail-foot-text" id="railFootText">NCM 38089329 · Carga Anápolis/GO</span></div>
 </aside>
 
 <div class="rail-backdrop" id="railBackdrop" onclick="closeRail()"></div>
@@ -819,7 +852,7 @@
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; flex-wrap:wrap; gap:10px;">
-        <div class="savings-strip" id="savingsStrip" style="margin:0;">Economia estimada do Cenário C sobre o A: <span class="amt">R$ 6.425,00</span> por contêiner</div>
+        <div class="savings-strip" id="savingsStrip" style="margin:0;">Economia estimada do Cenário C sobre o A: <span class="amt">R$ 6.425,00</span> (custo total)</div>
         <span class="timestamp-badge" id="tsMatrizComparativa">Aguardando auditoria</span>
       </div>
     </section>
@@ -836,7 +869,7 @@
           <p id="decisionText">A análise da <span class="ncm-tag">NCM 38089329</span> indica alta probabilidade de retenção fitossanitária pelo MAPA e ANVISA. Direcionar a operação para o retroporto estanca a cobrança de sobreestadia em dólar, gerando economia estimada e garantindo previsibilidade logística para a fábrica de Anápolis/GO.</p>
 
           <div class="impact-row" id="impactRow">
-            <div class="impact"><div class="num">R$ 6.425</div><div class="lbl">economia estimada / contêiner</div></div>
+            <div class="impact"><div class="num">R$ 6.425</div><div class="lbl">economia estimada (total)</div></div>
             <div class="impact"><div class="num">82%</div><div class="lbl">probabilidade de retenção evitada</div></div>
             <div class="impact"><div class="num">0</div><div class="lbl">dias de demurrage no Cenário C</div></div>
           </div>
@@ -1155,10 +1188,10 @@
         l1:['Transferência + armazenagem (15d)','R$ 2.200,00',''],
         l2:['Devolução do contêiner vazio','2º dia',''],
         l3:['Demurrage','R$ 0,00',''], total:'R$ 2.200,00' },
-      savingsHtml: 'Economia estimada do Cenário C sobre o A: <span class="amt">R$ 6.425,00</span> por contêiner',
+      savingsHtml: 'Economia estimada do Cenário C sobre o A: <span class="amt">R$ 6.425,00</span> (custo total)',
       decisionTitle: 'Direcionar para a Zona Secundária — Cenário C',
       decisionHtml: 'A análise da <span class="ncm-tag">NCM 38089329</span> indica alta probabilidade de retenção fitossanitária pelo MAPA e ANVISA. Direcionar a operação para o retroporto estanca a cobrança de sobreestadia em dólar, gerando economia estimada e garantindo previsibilidade logística para a fábrica de Anápolis/GO.',
-      impact: [['R$ 6.425','economia estimada / contêiner'],['82%','probabilidade de retenção evitada'],['0','dias de demurrage no Cenário C']],
+      impact: [['R$ 6.425','economia estimada (total)'],['82%','probabilidade de retenção evitada'],['0','dias de demurrage no Cenário C']],
       ctaLabel: 'Selecionar Cenário C & emitir instrução de trânsito DTE/DTC',
       ctaAlert: 'Instrução de trânsito DTE/DTC emitida (protótipo).',
       railFoot: 'NCM 38089329 · Carga Anápolis/GO'
@@ -1181,10 +1214,10 @@
         l1:['Transferência + armazenagem (15d)','R$ 3.800,00',''],
         l2:['Devolução do contêiner vazio','3º dia',''],
         l3:['Demurrage','R$ 0,00',''], total:'R$ 3.800,00' },
-      savingsHtml: 'Economia estimada do Cenário A sobre o C: <span class="amt">R$ 800,00</span> por contêiner',
+      savingsHtml: 'Economia estimada do Cenário A sobre o C: <span class="amt">R$ 800,00</span> (custo total)',
       decisionTitle: 'Manter no Cais — Cenário A',
       decisionHtml: 'A análise da <span class="ncm-tag">NCM 85258090</span> indica risco moderado e controlável dentro da janela de free time. Como o importador é OEA e o cadastro está completo, manter a operação no cais evita o custo adicional de transferência ao retroporto.',
-      impact: [['R$ 800','economia estimada / contêiner'],['45%','probabilidade de conferência (monitorada)'],['0','dias de sobreestadia no Cenário A']],
+      impact: [['R$ 800','economia estimada (total)'],['45%','probabilidade de conferência (monitorada)'],['0','dias de sobreestadia no Cenário A']],
       ctaLabel: 'Manter Cenário A & liberar carga no cais',
       ctaAlert: 'Liberação da carga no cais confirmada (protótipo).',
       railFoot: 'NCM 85258090 · Carga São Paulo/SP'
@@ -1207,10 +1240,10 @@
         l1:['Transferência + armazenagem (18d)','R$ 2.900,00',''],
         l2:['Devolução do contêiner vazio','2º dia',''],
         l3:['Demurrage','R$ 0,00',''], total:'R$ 2.900,00' },
-      savingsHtml: 'Economia estimada do Cenário C sobre o A: <span class="amt">R$ 8.460,00</span> por contêiner',
+      savingsHtml: 'Economia estimada do Cenário C sobre o A: <span class="amt">R$ 8.460,00</span> (custo total)',
       decisionTitle: 'Direcionar para a Zona Secundária — Cenário C',
       decisionHtml: 'A análise da <span class="ncm-tag">NCM 21069090</span> indica altíssima probabilidade de retenção fitossanitária pelo MAPA, com documentação de estabelecimento ausente. Direcionar a operação para o retroporto evita a sobreestadia em dólar e dá tempo hábil para regularizar o cadastro.',
-      impact: [['R$ 8.460','economia estimada / contêiner'],['95%','probabilidade de retenção evitada'],['0','dias de demurrage no Cenário C']],
+      impact: [['R$ 8.460','economia estimada (total)'],['95%','probabilidade de retenção evitada'],['0','dias de demurrage no Cenário C']],
       ctaLabel: 'Selecionar Cenário C & emitir instrução de trânsito DTE/DTC',
       ctaAlert: 'Instrução de trânsito DTE/DTC emitida (protótipo).',
       railFoot: 'NCM 21069090 · Carga Anápolis/GO'
@@ -1275,7 +1308,8 @@
     ctaBtn.textContent = s.ctaLabel;
     ctaBtn.onclick = function(){ alert(s.ctaAlert); };
 
-    document.getElementById('railFootText').textContent = s.railFoot;
+    const rf = document.getElementById('railFootText');
+    if(rf) rf.textContent = s.railFoot;
   }
 
   function setScenario(idx){
@@ -1804,16 +1838,16 @@
       if(recomendacao === 'CENARIO_C'){
         if(decTitle) decTitle.textContent = 'Direcionar para a Zona Secundária — Cenário C';
         if(decText) decText.innerHTML = 'A análise pericial do Agente Logcomex identificou risco aduaneiro severo para a operação. O direcionamento para o retroporto (Cenário C) estanca a sobreestadia em moeda estrangeira e mitiga custos adicionais de armazenagem portuária, proporcionando proteção financeira e previsibilidade de trânsito.';
-        if(savingsStrip) savingsStrip.innerHTML = 'Economia estimada do Cenário C sobre o A: <span class="amt">' + economiaFmt + '</span> por contêiner';
+        if(savingsStrip) savingsStrip.innerHTML = 'Economia estimada do Cenário C sobre o A: <span class="amt">' + economiaFmt + '</span> (custo total)';
       } else {
         if(decTitle) decTitle.textContent = 'Manter no Cais — Cenário A';
         if(decText) decText.innerHTML = 'A análise pericial do Agente Logcomex atesta baixo risco de retenção e conformidade cadastral compatível com a janela de free time. A manutenção no cais evita despesas desnecessárias com transporte rodoviário e movimentação para zona secundária.';
-        if(savingsStrip) savingsStrip.innerHTML = 'Economia estimada do Cenário A sobre o C: <span class="amt">' + economiaFmt + '</span> por contêiner';
+        if(savingsStrip) savingsStrip.innerHTML = 'Economia estimada do Cenário A sobre o C: <span class="amt">' + economiaFmt + '</span> (custo total)';
       }
 
       if(impactRow){
         impactRow.innerHTML = 
-          '<div class="impact"><div class="num">' + economiaFmt.replace(',00', '') + '</div><div class="lbl">economia estimada / contêiner</div></div>' +
+          '<div class="impact"><div class="num">' + economiaFmt.replace(',00', '') + '</div><div class="lbl">economia estimada (total)</div></div>' +
           '<div class="impact"><div class="num">' + probRetencao + '%</div><div class="lbl">probabilidade de conferência / risco</div></div>' +
           '<div class="impact"><div class="num">' + demurrageDias + '</div><div class="lbl">dias de demurrage no cenário recomendado</div></div>';
       }

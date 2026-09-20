@@ -394,11 +394,15 @@ class LogcomexMCPAgent(AgentClient):
                 status_res = self._invocar_ferramenta("get_task_status", {"task_id": task_id})
                 if not status_res:
                     continue
+                # Se a resposta for substancial (> 200 caracteres), o laudo analítico já foi gerado
+                if len(status_res.strip()) > 200:
+                    return status_res
                 s_lower = status_res.lower()
-                # Continua em espera enquanto o servidor informar processamento ativo
+                # Continua em espera apenas para mensagens curtas de status pendente
                 if any(term in s_lower for term in ["processando", "processing", "pendente", "aguardando", "tente novamente", "running", "queued"]):
                     continue
                 return status_res
             logger.warning(f"Timeout aguardando conclusão da task {task_id}.")
+            raise TimeoutError(f"Tempo limite excedido aguardando conclusão da task {task_id}")
 
         return resposta
