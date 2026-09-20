@@ -827,11 +827,11 @@
             <span class="risk-tag crit" id="a-risktag"><span class="tag-dot" style="background:var(--crit-ink);"></span>Risco crítico</span>
           </div>
           <div>
-            <div class="line-item" id="a-l1"><span class="l">Tempo médio de permanência</span><span class="r">10 dias <small style="color:var(--crit-ink); font-weight:600;">(estouro de 5)</small></span></div>
-            <div class="line-item" id="a-l2"><span class="l">Sobreestadia (demurrage)</span><span class="r">US$ 750,00 <small>(R$ 4.125,00)</small></span></div>
-            <div class="line-item" id="a-l3"><span class="l">Armazenagem básica de cais</span><span class="r">R$ 4.500,00</span></div>
+            <div class="line-item" id="a-l1"><span class="l">Tempo médio de permanência</span><span class="r">26 dias <small style="color:var(--crit-ink); font-weight:600;">(estouro de 21)</small></span></div>
+            <div class="line-item" id="a-l2"><span class="l">Sobreestadia (demurrage)</span><span class="r">US$ 3,150.00 <small>(R$ 17,325.00)</small></span></div>
+            <div class="line-item" id="a-l3"><span class="l">Armazenagem básica de cais</span><span class="r">R$ 51,946.12</span></div>
           </div>
-          <div class="total"><span class="l">Custo total previsto</span><span class="r" id="a-total">R$ 8.625,00</span></div>
+          <div class="total"><span class="l">Custo total previsto</span><span class="r" id="a-total">R$ 69,271.12</span></div>
         </div>
 
         <div class="scenario risk-ok" id="scenarioC">
@@ -847,12 +847,12 @@
             <div class="line-item" id="c-l2"><span class="l">Devolução do contêiner vazio</span><span class="r">2º dia</span></div>
             <div class="line-item" id="c-l3"><span class="l">Demurrage</span><span class="r">R$ 0,00</span></div>
           </div>
-          <div class="total"><span class="l">Custo total previsto</span><span class="r" id="c-total">R$ 2.200,00</span></div>
+          <div class="total"><span class="l">Custo total previsto</span><span class="r" id="c-total">R$ 4,235.12</span></div>
         </div>
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; flex-wrap:wrap; gap:10px;">
-        <div class="savings-strip" id="savingsStrip" style="margin:0;">Economia estimada do Cenário C sobre o A: <span class="amt">R$ 6.425,00</span> (custo total)</div>
+        <div class="savings-strip" id="savingsStrip" style="margin:0;">Economia estimada do Cenário C sobre o A: <span class="amt">R$ 65.036,00</span> (custo total)</div>
         <span class="timestamp-badge" id="tsMatrizComparativa">Aguardando auditoria</span>
       </div>
     </section>
@@ -869,7 +869,7 @@
           <p id="decisionText">A análise da <span class="ncm-tag">NCM 38089329</span> indica alta probabilidade de retenção fitossanitária pelo MAPA e ANVISA. Direcionar a operação para o retroporto estanca a cobrança de sobreestadia em dólar, gerando economia estimada e garantindo previsibilidade logística para a fábrica de Anápolis/GO.</p>
 
           <div class="impact-row" id="impactRow">
-            <div class="impact"><div class="num">R$ 6.425</div><div class="lbl">economia estimada (total)</div></div>
+            <div class="impact"><div class="num">R$ 65.036</div><div class="lbl">economia estimada (total)</div></div>
             <div class="impact"><div class="num">82%</div><div class="lbl">probabilidade de retenção evitada</div></div>
             <div class="impact"><div class="num">0</div><div class="lbl">dias de demurrage no Cenário C</div></div>
           </div>
@@ -1181,17 +1181,17 @@
       alertText: 'Inconsistência cadastral detectada no catálogo de produtos. Probabilidade de retenção sanitária (MAPA/ANVISA):',
       alertProb: 82,
       scenarioA: { riskTag:'crit', riskLabel:'Risco crítico',
-        l1:['Tempo médio de permanência','10 dias','(estouro de 5)'],
-        l2:['Sobreestadia (demurrage)','US$ 750,00','(R$ 4.125,00)'],
-        l3:['Armazenagem básica de cais','R$ 4.500,00',''], total:'R$ 8.625,00' },
+        l1:['Tempo médio de permanência','26 dias','(estouro de 21)'],
+        l2:['Sobreestadia (demurrage)','US$ 3,150.00','(R$ 17,325.00)'],
+        l3:['Armazenagem básica de cais','R$ 51,946.12',''], total:'R$ 69,271.12' },
       scenarioC: { riskTag:'ok', riskLabel:'Protegido',
         l1:['Transferência + armazenagem (15d)','R$ 2.200,00',''],
         l2:['Devolução do contêiner vazio','2º dia',''],
-        l3:['Demurrage','R$ 0,00',''], total:'R$ 2.200,00' },
-      savingsHtml: 'Economia estimada do Cenário C sobre o A: <span class="amt">R$ 6.425,00</span> (custo total)',
+        l3:['Demurrage','R$ 0,00',''], total:'R$ 4,235.12' },
+      savingsHtml: 'Economia estimada do Cenário C sobre o A: <span class="amt">R$ 65.036,00</span> (custo total)',
       decisionTitle: 'Direcionar para a Zona Secundária — Cenário C',
       decisionHtml: 'A análise da <span class="ncm-tag">NCM 38089329</span> indica alta probabilidade de retenção fitossanitária pelo MAPA e ANVISA. Direcionar a operação para o retroporto estanca a cobrança de sobreestadia em dólar, gerando economia estimada e garantindo previsibilidade logística para a fábrica de Anápolis/GO.',
-      impact: [['R$ 6.425','economia estimada (total)'],['82%','probabilidade de retenção evitada'],['0','dias de demurrage no Cenário C']],
+      impact: [['R$ 65.036','economia estimada (total)'],['82%','probabilidade de retenção evitada'],['0','dias de demurrage no Cenário C']],
       ctaLabel: 'Selecionar Cenário C & emitir instrução de trânsito DTE/DTC',
       ctaAlert: 'Instrução de trânsito DTE/DTC emitida (protótipo).',
       railFoot: 'NCM 38089329 · Carga Anápolis/GO'
@@ -1331,9 +1331,45 @@
           const c = apiCenarios[i];
           if(c.cais_total) scenarios[i].scenarioA.total = c.cais_total;
           if(c.retro_total) scenarios[i].scenarioC.total = c.retro_total;
-          if(c.cais_tempo) scenarios[i].scenarioA.l1[1] = c.cais_tempo;
-          if(c.cais_demurrage) scenarios[i].scenarioA.l2[1] = c.cais_demurrage;
-          if(c.cais_armazenagem) scenarios[i].scenarioA.l3[1] = c.cais_armazenagem;
+
+          if(c.cais_tempo){
+            const mTempo = c.cais_tempo.match(/^(.*?)\s*(\(.*?\))$/);
+            if(mTempo){
+              scenarios[i].scenarioA.l1[1] = mTempo[1].trim();
+              scenarios[i].scenarioA.l1[2] = mTempo[2].trim();
+            } else {
+              scenarios[i].scenarioA.l1[1] = c.cais_tempo;
+              scenarios[i].scenarioA.l1[2] = '';
+            }
+          }
+          if(c.cais_demurrage){
+            const mDem = c.cais_demurrage.match(/^(.*?)\s*(\(.*?\))$/);
+            if(mDem){
+              scenarios[i].scenarioA.l2[1] = mDem[1].trim();
+              scenarios[i].scenarioA.l2[2] = mDem[2].trim();
+            } else {
+              scenarios[i].scenarioA.l2[1] = c.cais_demurrage;
+              scenarios[i].scenarioA.l2[2] = '';
+            }
+          }
+          if(c.cais_armazenagem){
+            scenarios[i].scenarioA.l3[1] = c.cais_armazenagem;
+            scenarios[i].scenarioA.l3[2] = '';
+          }
+
+          // Atualiza a economia estimada calculada pelo motor deterministico
+          if(c.cais_total && c.retro_total){
+            const numCais = parseFloat(c.cais_total.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+            const numRetro = parseFloat(c.retro_total.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+            const diffEco = Math.abs(numCais - numRetro);
+            const ecoStr = 'R$ ' + diffEco.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            const prefEco = numCais >= numRetro ? 'Cenário C sobre o A' : 'Cenário A sobre o C';
+            scenarios[i].savingsHtml = 'Economia estimada do ' + prefEco + ': <span class="amt">' + ecoStr + '</span> (custo total)';
+            if(scenarios[i].impact && scenarios[i].impact.length > 0){
+              scenarios[i].impact[0] = [ecoStr.replace(',00', ''), 'economia estimada (total)'];
+            }
+          }
+
           if(c.prob_retencao){
             const pVal = parseInt(c.prob_retencao);
             scenarios[i].alertProb = isNaN(pVal) ? scenarios[i].alertProb : pVal;
@@ -1843,6 +1879,61 @@
         if(decTitle) decTitle.textContent = 'Manter no Cais — Cenário A';
         if(decText) decText.innerHTML = 'A análise pericial do Agente Logcomex atesta baixo risco de retenção e conformidade cadastral compatível com a janela de free time. A manutenção no cais evita despesas desnecessárias com transporte rodoviário e movimentação para zona secundária.';
         if(savingsStrip) savingsStrip.innerHTML = 'Economia estimada do Cenário A sobre o C: <span class="amt">' + economiaFmt + '</span> (custo total)';
+      }
+
+      // Atualizacao dinamica dos cards comparativos da Tela 2 (Cais vs Retroporto)
+      if(c.custo_esperado_cais_brl !== undefined && c.custo_esperado_retro_brl !== undefined){
+        const caisTotalFmt = 'R$ ' + c.custo_esperado_cais_brl.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        const retroTotalFmt = 'R$ ' + c.custo_esperado_retro_brl.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+        const elTotalA = document.getElementById('a-total');
+        if(elTotalA) elTotalA.textContent = caisTotalFmt;
+        const elTotalC = document.getElementById('c-total');
+        if(elTotalC) elTotalC.textContent = retroTotalFmt;
+
+        const pMedia = (dados.risco && dados.risco.permanencia_media) ? dados.risco.permanencia_media.toFixed(1) : '4.0';
+        const p90 = (dados.risco && dados.risco.permanencia_p90) ? Math.round(dados.risco.permanencia_p90) : 7;
+        const ft = (dados.operacao && dados.operacao.free_time_dias) || 5;
+        const estouro = Math.max(0, p90 - ft);
+
+        const elA1 = document.getElementById('a-l1');
+        if(elA1){
+          elA1.querySelector('.l').textContent = 'Tempo médio de permanência';
+          elA1.querySelector('.r').innerHTML = pMedia + ' dias ' + (estouro > 0 ? '<small style="color:var(--crit-ink); font-weight:600;">(estouro de ' + estouro + ')</small>' : '<small style="color:var(--ok-ink); font-weight:600;">(dentro do free time)</small>');
+        }
+
+        const elA2 = document.getElementById('a-l2');
+        if(elA2){
+          const demEst = (estouro > 0) ? (c.custo_esperado_cais_brl * 0.45) : 0;
+          elA2.querySelector('.l').textContent = 'Sobreestadia (demurrage)';
+          elA2.querySelector('.r').innerHTML = demEst > 0 ? ('R$ ' + demEst.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})) : 'R$ 0,00';
+        }
+
+        const elA3 = document.getElementById('a-l3');
+        if(elA3){
+          const demEst = (estouro > 0) ? (c.custo_esperado_cais_brl * 0.45) : 0;
+          const armEst = Math.max(0, c.custo_esperado_cais_brl - demEst);
+          elA3.querySelector('.l').textContent = 'Armazenagem básica de cais';
+          elA3.querySelector('.r').innerHTML = 'R$ ' + armEst.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        const elC1 = document.getElementById('c-l1');
+        if(elC1){
+          elC1.querySelector('.l').textContent = 'Transferência + armazenagem';
+          elC1.querySelector('.r').innerHTML = retroTotalFmt;
+        }
+
+        const elC2 = document.getElementById('c-l2');
+        if(elC2){
+          elC2.querySelector('.l').textContent = 'Devolução do contêiner vazio';
+          elC2.querySelector('.r').innerHTML = '2º dia';
+        }
+
+        const elC3 = document.getElementById('c-l3');
+        if(elC3){
+          elC3.querySelector('.l').textContent = 'Demurrage';
+          elC3.querySelector('.r').innerHTML = 'R$ 0,00';
+        }
       }
 
       if(impactRow){
@@ -2790,13 +2881,21 @@ function createWaveFallback({ canvas }) {
   }
   const isGpuFailure = function(x){
     const msg = String((x && (x.message || (x.reason && x.reason.message))) || x || '');
-    return /GPU device was lost|VGPUError/i.test(msg);
+    return /GPU device was lost|VGPUError|WebGPU|navigator\.gpu|createRenderer/i.test(msg);
   };
 
   if (navigator.gpu && window.DatawaveOcean && !reduceMotion) {
     hero.dataset.renderer = 'webgpu';
-    renderer = window.DatawaveOcean.createRenderer({ canvas, showGui: false });
-    renderer.ready.catch(oceanFailed);
+    try {
+      renderer = window.DatawaveOcean.createRenderer({ canvas, showGui: false });
+      if (renderer && renderer.ready) {
+        renderer.ready.catch(oceanFailed);
+      } else {
+        oceanFailed(new Error('Renderer WebGPU sem promise ready'));
+      }
+    } catch (err) {
+      oceanFailed(err);
+    }
     window.addEventListener('error', function(e){ if (isGpuFailure(e.error || e.message)) oceanFailed(e.error || e.message); });
     window.addEventListener('unhandledrejection', function(e){ if (isGpuFailure(e.reason)) oceanFailed(e.reason); });
   } else {
