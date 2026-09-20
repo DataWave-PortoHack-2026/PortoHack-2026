@@ -31,6 +31,10 @@ MAPA_COLUNAS: Dict[str, List[str]] = {
     "peso_bruto_packing_kg": ["peso_bruto_packing_kg", "peso_bruto_packing", "peso_packing", "peso_pl", "pl_gross_weight", "packing_weight", "peso_romaneio", "gross_weight_pl"],
     "incoterm": ["incoterm", "termo_venda", "condicao_venda", "terms"],
     "porto_descarga": ["porto", "porto_descarga", "porto_destino", "port_of_discharge", "pod", "recinto"],
+    "origem": ["origem", "pais_origem", "pais_procedencia", "procedencia", "country_of_origin", "origin", "procedencia_pais"],
+    "porto_embarque": ["porto_embarque", "pol", "port_of_loading", "porto_origem", "loading_port"],
+    "destino_final": ["destino_final", "destino", "cidade_destino", "uf_destino", "final_destination", "destination", "recinto_destino", "planta_destino"],
+    "consignatario": ["consignatario", "importador", "consignee", "comprador", "empresa_importadora"],
     "armador": ["armador", "carrier", "shipping_line", "transportador_maritimo"],
     "tipo_conteiner": ["tipo_conteiner", "container_type", "equipamento", "tipo_equipamento"],
     "free_time_dias": ["free_time", "free_time_dias", "freetime", "dias_free_time", "demurrage_free_time"],
@@ -142,6 +146,10 @@ def parsear_csv_planilha(conteudo_ou_caminho: Union[str, Path]) -> List[ItemPlan
             peso_bruto_packing_kg=p_pl,
             incoterm=str(norm.get("incoterm", "FOB")).strip().upper(),
             porto_descarga=str(norm.get("porto_descarga", "Santos")).strip(),
+            origem=str(norm.get("origem")).strip() if norm.get("origem") else None,
+            porto_embarque=str(norm.get("porto_embarque")).strip() if norm.get("porto_embarque") else None,
+            destino_final=str(norm.get("destino_final")).strip() if norm.get("destino_final") else None,
+            consignatario=str(norm.get("consignatario")).strip() if norm.get("consignatario") else None,
             armador=str(norm.get("armador")).strip() if norm.get("armador") else None,
             tipo_conteiner=str(norm.get("tipo_conteiner", "40HC")).strip(),
             free_time_dias=free_time,
@@ -168,6 +176,13 @@ def consolidar_operacao_de_planilha(itens: List[ItemPlanilhaAduaneira]) -> Tuple
     valor_total_usd = sum(item.valor_total_usd for item in itens)
     qtd_conteineres = max(1, len(set(getattr(item, "tipo_conteiner", "40HC") for item in itens)))
 
+    # Extrai procedencia real e destino final
+    origem_resolvida = primeiro.origem or primeiro.porto_embarque or "Origem Internacional"
+    porto_embarque = primeiro.porto_embarque or (primeiro.origem if primeiro.origem else None)
+    destino_final = primeiro.destino_final or primeiro.consignatario or "Destino Nacional"
+    porto_fmt = "Santos/SP" if "santos" in porto_descarga.lower() else porto_descarga
+    rota_formatada = f"{origem_resolvida} → {porto_fmt} → {destino_final}"
+
     divergencias: List[str] = []
 
     # Auditoria cruzada de pesos em cada item
@@ -192,9 +207,12 @@ def consolidar_operacao_de_planilha(itens: List[ItemPlanilhaAduaneira]) -> Tuple
         qtd_conteineres=qtd_conteineres,
         tipo_conteiner=tipo_conteiner,
         incoterm=primeiro.incoterm or "FOB",
+        porto_embarque=porto_embarque,
         porto_descarga=porto_descarga,
         armador=armador,
-        origem="Internacional",
+        origem=origem_resolvida,
+        destino_final=destino_final,
+        rota_completa=rota_formatada,
         divergencias=divergencias
     )
 

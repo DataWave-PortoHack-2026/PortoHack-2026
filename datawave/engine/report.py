@@ -6,6 +6,7 @@ correspondam rigorosamente aos valores apurados pelos motores determinísticos.
 """
 from __future__ import annotations
 
+import json
 import logging
 import re
 from typing import Any, Dict, List, Optional, Tuple
@@ -15,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 from datawave.schemas import (
     CorrecaoAduaneira,
+    CronogramaLinhaDoTempo,
+    EstagioLinhaDoTempo,
     OperacaoExtraida,
     PlanoCorrecoesAduaneiras,
     RecomendacaoDecisao,
@@ -417,4 +420,86 @@ def gerar_parecer_via_agente_logcomex(
         valores_esperados=parecer_seguro.valores_esperados,
         inconsistencias=parecer_seguro.inconsistencias
     )
+
+
+def gerar_linha_do_tempo_via_agente_logcomex(
+    client: Any,
+    op: OperacaoExtraida,
+    risco: ResultadoRiscoPermanencia,
+    tarifas: TarifasConfig,
+    rec: RecomendacaoDecisao
+) -> List[EstagioLinhaDoTempo]:
+    """Consulta o Agente Logcomex para obter a linha do tempo operacional e de permanência sob medida."""
+    destino = op.destino_final or "Planta do Importador"
+    ft = int(tarifas.free_time_demurrage_dias)
+    p50 = float(risco.permanencia_p50)
+    p90 = float(risco.permanencia_p90)
+    canal = risco.canal_mais_provavel.upper()
+
+    prompt = (
+        f"Como especialista em inteligência aduaneira e logística portuária da Logcomex, "
+        f"defina os marcos cronológicos operacionais da linha do tempo estimada de permanência "
+        f"para a importação de {op.descricao} (NCM {op.ncm}) com atracação no Porto de Santos e destino a {destino}.\n"
+        f"Parâmetros operacionais apurados:\n"
+        f"- Free Time contratual da carga: {ft} dias\n"
+        f"- Canal mais provável de parametrização: {canal}\n"
+        f"- Permanência mediana simulada (P50): {p50:.1f} dias\n"
+        f"- Permanência no pior cenário (P90): {p90:.1f} dias\n"
+        f"- Recomendação da Matriz: {rec.opcao_recomendada}\n"
+        f"- Tarifa de sobreestadia: US$ {tarifas.demurrage_diaria_usd:.0f}/dia/contêiner\n"
+        f"- Destino terrestre: {destino}\n\n"
+        f"Requisitos essenciais:\n"
+        f"NÃO utilize divisões genéricas ou fixas como 7 em 7 dias. "
+        f"Estime os prazos com base na regulamentação técnica da mercadoria, eventuais órgãos anuentes (MAPA, ANVISA, etc.), "
+        f"tempo de liberação documental/física e trânsito rodoviário até {destino}.\n"
+        f"Retorne 3 estágios operacionais em formato JSON compatível com o schema CronogramaLinhaDoTempo "
+        f"contendo a lista 'estagios' (faixa_dias, fase, status_cais, status_retro, detalhes)."
+    )
+
+    if client:
+        try:
+            if hasattr(client, "ask_json"):
+                cronograma = client.ask_json(prompt, CronogramaLinhaDoTempo)
+                if cronograma and cronograma.estagios:
+                    return cronograma.estagios
+
+            if hasattr(client, "ask_agent"):
+                txt = client.ask_agent(prompt)
+                if txt:
+                    txt_clean = re.sub(r"```json\s*", "", txt)
+                    txt_clean = re.sub(r"```\s*", "", txt_clean).strip()
+                    parsed = json.loads(txt_clean)
+                    if isinstance(parsed, dict) and "estagios" in parsed:
+                        return [EstagioLinhaDoTempo(**e) for e in parsed["estagios"]]
+                    elif isinstance(parsed, list):
+                        return [EstagioLinhaDoTempo(**e) for e in parsed]
+        except Exception as exc:
+            logger.info(f"Consulta de cronograma ao agente direcionada ao motor determinístico por NCM: {exc}")
+
+    # Fallback determinístico contextualizado nos parâmetros reais da carga (sem divisões fixas de 7 em 7 dias)
+    dia_despacho_fim = max(ft + 1, int(round(p90)))
+    return [
+        EstagioLinhaDoTempo(
+            faixa_dias=f"0 a {ft} dias",
+            fase="Free Time Contratual",
+            status_cais="Cais: Sem sobreestadia (US$ 0,00)",
+            status_retro="Retroporto: Remoção sob DTC/DTE iniciada",
+            detalhes=f"Atracação e descarga no Porto de Santos. Registro da DUIMP e conferência durante a janela de {ft} dias de free time."
+        ),
+        EstagioLinhaDoTempo(
+            faixa_dias=f"{ft} a {dia_despacho_fim} dias",
+            fase=f"Conferência e Despacho Aduaneiro ({canal})",
+            status_cais=f"Cais: Demurrage progressivo de US$ {tarifas.demurrage_diaria_usd:.0f}/dia + armazenagem",
+            status_retro="Retroporto: Desova rápida no 2º dia e contêiner devolvido (Demurrage R$ 0,00)",
+            detalhes=f"Parametrização em canal {canal} e fiscalização aduaneira. No cais, cobrança em dólar ativo; no retroporto, proteção contra demurrage."
+        ),
+        EstagioLinhaDoTempo(
+            faixa_dias=f"{dia_despacho_fim}+ dias",
+            fase="Desembaraço, Trânsito e Entrega Final",
+            status_cais="Cais: Carregamento rodoviário com alto demurrage acumulado",
+            status_retro=f"Retroporto: Carregamento protegido até {destino}",
+            detalhes=f"Emissão do Comprovante de Importação (CI), liberação na RFB, carregamento na carreta e trânsito rodoviário até {destino}."
+        )
+    ]
+
 

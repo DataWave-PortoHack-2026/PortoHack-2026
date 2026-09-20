@@ -4,9 +4,13 @@
     "cenario_nome": "Cenário 1: Defensivos Agrícolas (Anápolis/GO)",
     "ncm": "38089329",
     "fob_lote": "US$ 128.500,00",
-    "rota": "China → Santos → Anápolis/GO",
-    "detalhe_rota": "46.194 TEUs no histórico",
-    "fornecedores": "66 importadores / 153 exportadores",
+    "mercado_anual_fob": "US$ 1,037 bilhão",
+    "origem": "China (Qingdao)",
+    "porto_descarga": "Santos/SP",
+    "destino_final": "Anápolis/GO (DAA)",
+    "rota": "China (Qingdao) → Santos/SP → Anápolis/GO (DAA)",
+    "detalhe_rota": "46.194 TEUs no histórico Logcomex",
+    "fornecedores": "66 importadores / 153 exportadores (Logcomex)",
     "importador_tipo": "AgroQuímica do Brasil (Não-OEA)",
     "free_time": "5 dias · US$ 150/dia (MSC)",
     "catalogo_status": "A01 · Registro de Aptidão ausente",
@@ -14,7 +18,7 @@
     "prob_retencao": "82%",
     "alert_tipo": "Risco Crítico de Retenção (82%)",
     "alert_class": "alert",
-    "alert_icon": "⚠️",
+    "alert_icon": "[!]",
     "alerta_texto": "Inconsistência cadastral detectada no catálogo de atributos da NCM 38089329. Exigência conjunta MAPA/ANVISA com atributo A01 em falta.",
     "cais_tempo": "26 dias (estouro de 21)",
     "cais_demurrage": "US$ 3,150.00 (R$ 17,325.00)",
@@ -30,16 +34,43 @@
     "impacto_economia": "R$ 65.036",
     "impacto_risco": "82%",
     "impacto_demurrage": "0 dias",
-    "cta_principal": "Emitir Instrução DTE/DTC (Porto Seco)"
+    "cta_principal": "Emitir Instrução DTE/DTC (Porto Seco)",
+    "linha_do_tempo": [
+      {
+        "faixa_dias": "0 a 5 dias",
+        "fase": "Free Time do Armador e Registro DUIMP",
+        "status_cais": "Cais: Sem sobreestadia (US$ 0,00)",
+        "status_retro": "Retroporto: Remoção prioritária sob DTE para terminal químico licenciado",
+        "detalhes": "Atracação no Porto de Santos, descarga portuária e registro da DUIMP com LPCO/MAPA."
+      },
+      {
+        "faixa_dias": "5 a 17 dias",
+        "fase": "Retenção e Inspeção Fitossanitária MAPA (Canal Vermelho)",
+        "status_cais": "Cais: Demurrage progressivo de US$ 150/dia por contêiner + armazenagem escalonada",
+        "status_retro": "Retroporto: Desova rápida no 2º dia e contêiner devolvido (Demurrage R$ 0,00)",
+        "detalhes": "Coleta de amostras e perícia fiscal. No cais, o custo diário em dólar acumula perdas críticas; no retroporto, a armazenagem em pátio seco isola o risco."
+      },
+      {
+        "faixa_dias": "17+ dias",
+        "fase": "Desembaraço, Liberação DAA e Trânsito até Anápolis/GO",
+        "status_cais": "Cais: Carregamento rodoviário com demurrage máximo acumulado",
+        "status_retro": "Retroporto: Carregamento seguro direto para Anápolis/GO (DAA)",
+        "detalhes": "Deferimento da licença MAPA, desembaraço da DUIMP pela RFB e trânsito interestadual pela BR-050 até Anápolis/GO."
+      }
+    ]
   },
   {
     "id": "CEN-002",
     "cenario_nome": "Cenário 2 · Eletrônico (São Paulo/SP)",
     "ncm": "85258090",
     "fob_lote": "US$ 412.000,00",
-    "rota": "China → Santos → São Paulo/SP",
-    "detalhe_rota": "21.500 TEUs no recorte",
-    "fornecedores": "40 importadores / 88 exportadores",
+    "mercado_anual_fob": "US$ 412 milhões",
+    "origem": "China (Shenzhen)",
+    "porto_descarga": "Santos/SP",
+    "destino_final": "São Paulo/SP",
+    "rota": "China (Shenzhen) → Santos/SP → São Paulo/SP",
+    "detalhe_rota": "21.500 TEUs no histórico Logcomex",
+    "fornecedores": "40 importadores / 88 exportadores (Logcomex)",
     "importador_tipo": "Empresa OEA (Certificada)",
     "free_time": "7 dias · US$ 150/dia",
     "catalogo_status": "Cadastro completo e validado",
@@ -47,7 +78,7 @@
     "prob_retencao": "45%",
     "alert_tipo": "Alerta preditivo da IA (45%)",
     "alert_class": "alert warn",
-    "alert_icon": "⚠️",
+    "alert_icon": "[!]",
     "alerta_texto": "Risco moderado de conferência aduaneira (Receita Federal), dentro da janela de free time.",
     "cais_tempo": "6 dias (dentro dos 7)",
     "cais_demurrage": "R$ 0,00",
@@ -63,16 +94,43 @@
     "impacto_economia": "R$ 800",
     "impacto_risco": "45%",
     "impacto_demurrage": "0 dias",
-    "cta_principal": "Manter Cenário A & liberar carga no cais"
+    "cta_principal": "Manter Cenário A & liberar carga no cais",
+    "linha_do_tempo": [
+      {
+        "faixa_dias": "0 a 7 dias",
+        "fase": "Free Time e Parametrização Aduaneira",
+        "status_cais": "Cais: Sem sobreestadia durante os 7 dias contratuais",
+        "status_retro": "Retroporto: Custos fixos de transferência e seguro de carga sensível",
+        "detalhes": "Descarga em Santos, registro aduaneiro e parametrização pela Receita Federal."
+      },
+      {
+        "faixa_dias": "7 a 11 dias",
+        "fase": "Conferência Documental RFB (Canal Amarelo)",
+        "status_cais": "Cais: Cobrança de demurrage de US$ 150/dia/contêiner",
+        "status_retro": "Retroporto: Armazenagem em câmara monitorada sem demurrage",
+        "detalhes": "Conferência de faturas, certificados de conformidade e romaneios pela equipe fiscal."
+      },
+      {
+        "faixa_dias": "11+ dias",
+        "fase": "Desembaraço Aduaneiro e Entrega em São Paulo/SP",
+        "status_cais": "Cais: Liberação e transporte sob custos portuários de 2º período",
+        "status_retro": "Retroporto: Embarque rodoviário expresso via Rodovia dos Imigrantes até SP",
+        "detalhes": "Emissão do Comprovante de Importação (CI) e expedição rodoviária até o polo tecnológico da capital paulista."
+      }
+    ]
   },
   {
     "id": "CEN-003",
     "cenario_nome": "Cenário 3 · Alimentício (Anápolis/GO)",
     "ncm": "21069090",
     "fob_lote": "US$ 268.000,00",
-    "rota": "Argentina → Santos → Anápolis/GO",
-    "detalhe_rota": "9.320 TEUs no recorte",
-    "fornecedores": "18 importadores / 34 exportadores",
+    "mercado_anual_fob": "US$ 268 milhões",
+    "origem": "Argentina (Buenos Aires)",
+    "porto_descarga": "Santos/SP",
+    "destino_final": "Anápolis/GO",
+    "rota": "Argentina (Buenos Aires) → Santos/SP → Anápolis/GO",
+    "detalhe_rota": "9.320 TEUs no histórico Logcomex",
+    "fornecedores": "18 importadores / 34 exportadores (Logcomex)",
     "importador_tipo": "Empresa Não-OEA",
     "free_time": "4 dias · US$ 140/dia",
     "catalogo_status": "FCE · Ficha de Cadastro de Estabelecimento ausente",
@@ -80,7 +138,7 @@
     "prob_retencao": "95%",
     "alert_tipo": "Alerta preditivo da IA (95%)",
     "alert_class": "alert",
-    "alert_icon": "⚠️",
+    "alert_icon": "[!]",
     "alerta_texto": "Inconsistência cadastral crítica identificada no catálogo de produtos. Probabilidade de retenção sanitária (MAPA): 95%.",
     "cais_tempo": "12 dias (estouro de 8)",
     "cais_demurrage": "US$ 1.120,00 (R$ 6.160,00)",
@@ -96,16 +154,43 @@
     "impacto_economia": "R$ 8.460",
     "impacto_risco": "95%",
     "impacto_demurrage": "0 dias",
-    "cta_principal": "Selecionar Cenário C & emitir instrução de trânsito DTE/DTC"
+    "cta_principal": "Selecionar Cenário C & emitir instrução de trânsito DTE/DTC",
+    "linha_do_tempo": [
+      {
+        "faixa_dias": "0 a 4 dias",
+        "fase": "Free Time Contratual de 4 Dias e Protocolo FCE/MAPA",
+        "status_cais": "Cais: Sem sobreestadia (US$ 0,00)",
+        "status_retro": "Retroporto: Remoção para recinto alfandegado com alvará sanitário",
+        "detalhes": "Conferência prévia de dossiê técnico sanitário e protocolo de anuência no MAPA/ANVISA."
+      },
+      {
+        "faixa_dias": "4 a 12 dias",
+        "fase": "Perícia Técnica e Regularização de Estabelecimento",
+        "status_cais": "Cais: Demurrage progressivo de US$ 140/dia + armazenagem portuária",
+        "status_retro": "Retroporto: Desova realizada, devolução do contêiner e pátio estável",
+        "detalhes": "Aguardando regularização documental da ficha de estabelecimento e inspeção fiscal."
+      },
+      {
+        "faixa_dias": "12+ dias",
+        "fase": "Desembaraço e Trânsito Rodoviário até Anápolis/GO",
+        "status_cais": "Cais: Liberação com tarifas de retenção acumuladas",
+        "status_retro": "Retroporto: Carregamento expresso via malha rodoviária até Anápolis/GO",
+        "detalhes": "Conclusão do desembaraço aduaneiro e trânsito rodoviário até a fábrica."
+      }
+    ]
   },
   {
     "id": "CEN-004",
     "cenario_nome": "Cenário 4: Polímeros / Resinas (Piracicaba/SP)",
     "ncm": "39011010",
     "fob_lote": "US$ 63.000,00",
-    "rota": "EUA → Santos → Piracicaba/SP",
+    "mercado_anual_fob": "US$ 145 milhões",
+    "origem": "EUA (Houston)",
+    "porto_descarga": "Santos/SP",
+    "destino_final": "Piracicaba/SP",
+    "rota": "EUA (Houston) → Santos/SP → Piracicaba/SP",
     "detalhe_rota": "44.000 kg · 2x 40' HC",
-    "fornecedores": "BraskPolímeros do Brasil",
+    "fornecedores": "BraskPolímeros do Brasil (Logcomex)",
     "importador_tipo": "OEA-C Nível 2 (Conformidade 98/100)",
     "free_time": "10 dias · US$ 120/dia (ONE)",
     "catalogo_status": "Catálogo 100% Saneado",
@@ -113,7 +198,7 @@
     "prob_retencao": "5%",
     "alert_tipo": "Operação de Baixo Risco (Canal Verde)",
     "alert_class": "alert ok",
-    "alert_icon": "✅",
+    "alert_icon": "[OK]",
     "alerta_texto": "Importador certificado OEA Nível 2 sem anuência. Desembaraço sobre águas imediato com saída prevista em até 36 horas.",
     "cais_tempo": "1.5 dias (Dentro do Free Time)",
     "cais_demurrage": "R$ 0,00",
@@ -129,16 +214,43 @@
     "impacto_economia": "R$ 900",
     "impacto_risco": "5%",
     "impacto_demurrage": "0 dias",
-    "cta_principal": "Confirmar Saída Direta Cais (Canal Verde)"
+    "cta_principal": "Confirmar Saída Direta Cais (Canal Verde)",
+    "linha_do_tempo": [
+      {
+        "faixa_dias": "0 a 2 dias",
+        "fase": "Despacho Sobre Águas e Liberação em 36h (Canal Verde OEA)",
+        "status_cais": "Cais: Saída imediata com custo mínimo de armazenagem",
+        "status_retro": "Retroporto: Não recomendada transferência por custos desnecessários",
+        "detalhes": "Atracação em Santos, conferência de dados em canal verde sobre águas e liberação aduaneira ultraveloz."
+      },
+      {
+        "faixa_dias": "2 a 10 dias",
+        "fase": "Janela Protegida de Free Time (Até 10 Dias)",
+        "status_cais": "Cais: Ampla margem de segurança contratual sem demurrage",
+        "status_retro": "Retroporto: Pátio não acionado",
+        "detalhes": "Carregamento imediato na carreta rodoviária com 8 dias de folga antes de qualquer incidência de sobreestadia."
+      },
+      {
+        "faixa_dias": "10+ dias",
+        "fase": "Operação Concluída com Margem de Segurança",
+        "status_cais": "Cais: Contêineres devolvidos vazios ao armador ONE",
+        "status_retro": "Retroporto: Sem custos adicionais",
+        "detalhes": "Entrega final realizada com sucesso na planta industrial de Piracicaba/SP."
+      }
+    ]
   },
   {
     "id": "CEN-005",
     "cenario_nome": "Cenário 5: Vinhos Finos Portugueses (Tejo / Lisboa)",
     "ncm": "2204.21.00",
     "fob_lote": "US$ 54.200,00",
-    "rota": "Portugal (Lisboa) → Santos → São Paulo/SP",
+    "mercado_anual_fob": "US$ 483 milhões",
+    "origem": "Portugal (Lisboa)",
+    "porto_descarga": "Santos/SP",
+    "destino_final": "São Paulo/SP",
+    "rota": "Portugal (Lisboa) → Santos/SP → São Paulo/SP",
     "detalhe_rota": "12.000 garrafas · Quinta do Casal Branco DOC Tejo",
-    "fornecedores": "CASAL BRANCO - SOCIEDADE DE VINHOS S.A (ATT_10076)",
+    "fornecedores": "CASAL BRANCO - SOCIEDADE DE VINHOS S.A (Logcomex)",
     "importador_tipo": "Adega Tejo Brasil Ltda (Não-OEA)",
     "free_time": "7 dias · US$ 160/dia (CMA CGM)",
     "catalogo_status": "ATT_14240 Vazio / Falta Cert. Enológico MAPA",
@@ -162,6 +274,29 @@
     "impacto_economia": "R$ 5.720",
     "impacto_risco": "74%",
     "impacto_demurrage": "0 dias",
-    "cta_principal": "Emitir DTC Climatizado (Porto Seco)"
+    "cta_principal": "Emitir DTC Climatizado (Porto Seco)",
+    "linha_do_tempo": [
+      {
+        "faixa_dias": "0 a 7 dias",
+        "fase": "Free Time Contratual de 7 Dias e Coleta Vigiagro/MAPA",
+        "status_cais": "Cais: Isenção de sobreestadia até o 7º dia",
+        "status_retro": "Retroporto: Transferência imediata sob DTA para armazém climatizado",
+        "detalhes": "Descarga no porto e agendamento de vistoria para coleta de amostras de vinho pelo MAPA."
+      },
+      {
+        "faixa_dias": "7 a 14 dias",
+        "fase": "Análise Enológica Laboratorial e Guarda Climatizada",
+        "status_cais": "Cais: Demurrage progressivo de US$ 160/dia com alto risco térmico",
+        "status_retro": "Retroporto: Desova em câmara climatizada e contêiner devolvido (Demurrage R$ 0,00)",
+        "detalhes": "Período de ensaio laboratorial oficial do MAPA. No retroporto os vinhos permanecem preservados em ambiente controlado sem custos de demurrage."
+      },
+      {
+        "faixa_dias": "14+ dias",
+        "fase": "Emissão de Certificado de Inspeção e Transporte a SP",
+        "status_cais": "Cais: Custos severos acumulados de demurrage",
+        "status_retro": "Retroporto: Distribuição segura para o centro logístico em São Paulo/SP",
+        "detalhes": "Liberação do certificado de inspeção de bebidas e transporte rodoviário protegido até a capital."
+      }
+    ]
   }
 ]

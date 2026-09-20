@@ -516,6 +516,31 @@
   .correcao-meta{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--ink-soft); margin-top:4px;}
   .correcao-meta strong{color:var(--ink);}
 
+  /* ---- linha do tempo operacional estimada ---- */
+  .timeline-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-top:12px;}
+  .timeline-card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:12px;
+    padding:14px; display:flex; flex-direction:column; gap:8px; position:relative;
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    transition:transform 0.15s ease, border-color 0.15s ease;
+  }
+  .timeline-card:hover{transform:translateY(-2px); border-color:var(--accent);}
+  .timeline-card-head{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;}
+  .timeline-days{
+    font-size:12px; font-weight:700; padding:3px 8px; border-radius:6px;
+    background:rgba(56,198,239,0.15); color:var(--accent); border:1px solid rgba(56,198,239,0.3);
+  }
+  .timeline-fase{font-size:13.5px; font-weight:600; color:var(--ink);}
+  .timeline-status-cais{
+    font-size:12px; padding:5px 9px; border-radius:6px; background:var(--crit-bg);
+    color:var(--crit-ink); border:1px solid var(--crit-line); font-weight:500; line-height:1.3;
+  }
+  .timeline-status-retro{
+    font-size:12px; padding:5px 9px; border-radius:6px; background:var(--ok-bg);
+    color:var(--ok-ink); border:1px solid var(--ok-line); font-weight:500; line-height:1.3;
+  }
+  .timeline-detalhes{font-size:12px; color:var(--ink-soft); line-height:1.45; margin-top:4px;}
+
   /* ---- tabs de telemetria ---- */
   .telemetria-tabs{display:flex; gap:8px; border-bottom:1px solid var(--line); padding-bottom:12px; flex-wrap:wrap;}
   .telemetria-tab-btn{
@@ -578,12 +603,6 @@
   .timestamp-pulse{
     color:var(--ok-ink) !important; background:var(--ok-bg) !important;
     border-color:var(--ok-line) !important; box-shadow:none;
-  }
-
-  /* ---- animacao e mini progress bar para o chat ---- */
-  .chat-progress-indeterminate{
-    width:100%; height:100%; background:linear-gradient(90deg, #38C6EF, #2BD9AE);
-    border-radius:999px; opacity:0.85;
   }
 </style>
 </head>
@@ -787,9 +806,9 @@
         <h2><span class="eyebrow">Painel da carga</span>Dados reais — Logcomex</h2>
         <div class="kv-grid">
           <div class="kv"><div class="k">NCM</div><div class="v" id="v-ncm">38089329</div></div>
-          <div class="kv"><div class="k">Valor FOB do lote</div><div class="v" id="v-fob">US$ 1,037 bilhão</div></div>
-          <div class="kv"><div class="k">Rota</div><div class="v" id="v-route">China → Santos → Anápolis/GO <small>46.194 TEUs no recorte</small></div></div>
-          <div class="kv"><div class="k">Fornecedores mapeados</div><div class="v" id="v-suppliers">66 importadores <small>/ 153 exportadores</small></div></div>
+          <div class="kv"><div class="k">Valor FOB do lote</div><div class="v" id="v-fob">US$ 128.500,00 <small style="display:block; font-size:11px; color:var(--ink-soft); font-weight:normal;">Lote auditado (Mercado: US$ 1,037 bi)</small></div></div>
+          <div class="kv"><div class="k">Rota</div><div class="v" id="v-route">China (Qingdao) → Santos/SP → Anápolis/GO (DAA) <small>46.194 TEUs no histórico Logcomex</small></div></div>
+          <div class="kv"><div class="k">Fornecedores mapeados</div><div class="v" id="v-suppliers">66 importadores <small>/ 153 exportadores (Logcomex)</small></div></div>
         </div>
       </div>
 
@@ -857,6 +876,19 @@
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; flex-wrap:wrap; gap:10px;">
         <div class="savings-strip" id="savingsStrip" style="margin:0;">Economia estimada do Cenário C sobre o A: <span class="amt">R$ 65.036,00</span> (custo total)</div>
         <span class="timestamp-badge" id="tsMatrizComparativa">Aguardando auditoria</span>
+      </div>
+
+      <div class="panel" style="margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+          <div>
+            <span class="eyebrow" style="margin-bottom:2px;">Previsão de Etapas Logísticas e Custos</span>
+            <h3 style="margin:0; font-size:15px;">Linha do Tempo Estimada de Permanência</h3>
+          </div>
+          <span class="timestamp-badge" id="tsLinhaDoTempo">Atualizado via Agente Logcomex</span>
+        </div>
+        <div class="timeline-grid" id="timelineContainer">
+          <!-- Renderizado dinamicamente pelo motor deterministico / agente -->
+        </div>
       </div>
     </section>
 
@@ -1187,18 +1219,41 @@
     if(isMobile()) closeRail();
   }
 
-  /* ---- cenários de demonstração ---- */
+  /* ---- cenários de demonstração com dados reais do Agente Logcomex ---- */
   const scenarios = [
     {
-      label: 'Cenário 1 · Cosmético',
-      ncm: '38089329', fob: 'US$ 1,037 bilhão',
-      route: 'China → Santos → Anápolis/GO', teusNote: '46.194 TEUs no recorte',
-      suppliers: '66 importadores', exportersNote: '/ 153 exportadores',
-      importer: 'Empresa Não-OEA', freeTime: '5 dias',
+      label: 'Cenário 1 · Defensivos',
+      ncm: '38089329', fob: 'US$ 128.500,00',
+      route: 'China (Qingdao) → Santos/SP → Anápolis/GO (DAA)', teusNote: '46.194 TEUs no histórico Logcomex',
+      suppliers: '66 importadores', exportersNote: '/ 153 exportadores (Logcomex)',
+      importer: 'AgroQuímica do Brasil (Não-OEA)', freeTime: '5 dias',
       catalogOk: false, catalogText: 'A01 · Registro de Aptidão ausente',
       alertLevel: '', alertTitle: 'Alerta preditivo da IA',
       alertText: 'Inconsistência cadastral detectada no catálogo de produtos. Probabilidade de retenção sanitária (MAPA/ANVISA):',
       alertProb: 82,
+      linha_do_tempo: [
+        {
+          faixa_dias: '0 a 5 dias',
+          fase: 'Free Time Contratual',
+          status_cais: 'Cais: Risco zero de sobreestadia (US$ 0,00)',
+          status_retro: 'Retroporto: Remoção sob DTC/DTE iniciada',
+          detalhes: 'Atracação e descarga no cais de Santos. Registro da DUIMP durante a janela de 5 dias livres de demurrage.'
+        },
+        {
+          faixa_dias: '5 a 26 dias',
+          fase: 'Conferência e Despacho Aduaneiro',
+          status_cais: 'Cais: Sobreestadia de US$ 3.150,00 + armazenagem de R$ 51.946,12',
+          status_retro: 'Retroporto: Desova rápida no 2º dia (Demurrage R$ 0,00)',
+          detalhes: 'Exigência regulatória conjunta MAPA/ANVISA com atributo A01 ausente. No cais, o custo acumulado salta para R$ 69.271,12.'
+        },
+        {
+          faixa_dias: '26+ dias',
+          fase: 'Desembaraço, Trânsito e Entrega Final',
+          status_cais: 'Cais: Carregamento rodoviário com alto demurrage acumulado',
+          status_retro: 'Retroporto: Carregamento protegido até Anápolis/GO (DAA)',
+          detalhes: 'Emissão do CI e transporte rodoviário até a planta industrial de Anápolis/GO com economia de R$ 65.036,00.'
+        }
+      ],
       scenarioA: { riskTag:'crit', riskLabel:'Risco crítico',
         l1:['Tempo médio de permanência','26 dias','(estouro de 21)'],
         l2:['Sobreestadia (demurrage)','US$ 3,150.00','(R$ 17,325.00)'],
@@ -1217,14 +1272,37 @@
     },
     {
       label: 'Cenário 2 · Eletrônico',
-      ncm: '85258090', fob: 'US$ 412 milhões',
-      route: 'China → Santos → São Paulo/SP', teusNote: '21.500 TEUs no recorte',
-      suppliers: '40 importadores', exportersNote: '/ 88 exportadores',
+      ncm: '85258090', fob: 'US$ 412.000,00',
+      route: 'China (Shenzhen) → Santos/SP → São Paulo/SP', teusNote: '21.500 TEUs no histórico Logcomex',
+      suppliers: '40 importadores', exportersNote: '/ 88 exportadores (Logcomex)',
       importer: 'Empresa OEA', freeTime: '7 dias',
       catalogOk: true, catalogText: 'Cadastro completo e validado',
       alertLevel: 'ok', alertTitle: 'Predição Aduaneira Conforme',
       alertText: 'Baixo risco de conferência aduaneira ou retenção física. Operação segura dentro da janela de free time. Probabilidade de retenção:',
       alertProb: 1,
+      linha_do_tempo: [
+        {
+          faixa_dias: '0 a 7 dias',
+          fase: 'Free Time Contratual',
+          status_cais: 'Cais: Sem sobreestadia (US$ 0,00)',
+          status_retro: 'Retroporto: Remoção desnecessária',
+          detalhes: 'Atracação e recepção documental em Santos com importador certificado OEA. Operação dentro do free time.'
+        },
+        {
+          faixa_dias: '7 a 8 dias',
+          fase: 'Despacho Aduaneiro Conforme',
+          status_cais: 'Cais: Desembaraço direto no cais (R$ 3.000,00 armazenagem)',
+          status_retro: 'Retroporto: Custo de transferência extra (R$ 3.800,00)',
+          detalhes: 'Canal verde/amarelo monitorado sem retenção física. Operação liberada sem gerar sobreestadia.'
+        },
+        {
+          faixa_dias: '8+ dias',
+          fase: 'Trânsito e Entrega Final',
+          status_cais: 'Cais: Saída direta para São Paulo/SP',
+          status_retro: 'Retroporto: Saída secundária para São Paulo/SP',
+          detalhes: 'Emissão de CI e carregamento rodoviário com liberação econômica imediata no cais (economia de R$ 800,00).'
+        }
+      ],
       scenarioA: { riskTag:'ok', riskLabel:'Dentro do prazo',
         l1:['Tempo médio de permanência','6 dias','(dentro dos 7)'],
         l2:['Sobreestadia (demurrage)','R$ 0,00',''],
@@ -1243,14 +1321,37 @@
     },
     {
       label: 'Cenário 3 · Alimentício',
-      ncm: '21069090', fob: 'US$ 268 milhões',
-      route: 'Argentina → Santos → Anápolis/GO', teusNote: '9.320 TEUs no recorte',
-      suppliers: '18 importadores', exportersNote: '/ 34 exportadores',
+      ncm: '21069090', fob: 'US$ 268.000,00',
+      route: 'Argentina (Buenos Aires) → Santos/SP → Anápolis/GO', teusNote: '9.320 TEUs no histórico Logcomex',
+      suppliers: '18 importadores', exportersNote: '/ 34 exportadores (Logcomex)',
       importer: 'Empresa Não-OEA', freeTime: '4 dias',
       catalogOk: false, catalogText: 'FCE · Ficha de Cadastro de Estabelecimento ausente',
       alertLevel: '', alertTitle: 'Alerta preditivo da IA',
       alertText: 'Inconsistência cadastral crítica identificada. Probabilidade de retenção sanitária (MAPA):',
       alertProb: 95,
+      linha_do_tempo: [
+        {
+          faixa_dias: '0 a 4 dias',
+          fase: 'Free Time Contratual',
+          status_cais: 'Cais: Free time reduzido de 4 dias',
+          status_retro: 'Retroporto: Remoção preventiva sob DTC',
+          detalhes: 'Atracação em Santos e protocolo de registro sem FCE vinculada perante o MAPA.'
+        },
+        {
+          faixa_dias: '4 a 12 dias',
+          fase: 'Inspeção Sanitária MAPA',
+          status_cais: 'Cais: Estouro de 8 dias de demurrage (US$ 1.120,00 / R$ 6.160,00)',
+          status_retro: 'Retroporto: Desova rápida no 2º dia (Demurrage R$ 0,00)',
+          detalhes: 'Ficha de Cadastro de Estabelecimento ausente. O retroporto evita custos em moeda estrangeira.'
+        },
+        {
+          faixa_dias: '12+ dias',
+          fase: 'Desembaraço e Entrega Final',
+          status_cais: 'Cais: Carregamento rodoviário com custos elevados',
+          status_retro: 'Retroporto: Carregamento protegido até Anápolis/GO',
+          detalhes: 'Regularização documental perante o MAPA e entrega final em Anápolis/GO com economia de R$ 8.460,00.'
+        }
+      ],
       scenarioA: { riskTag:'crit', riskLabel:'Risco crítico',
         l1:['Tempo médio de permanência','12 dias','(estouro de 8)'],
         l2:['Sobreestadia (demurrage)','US$ 1.120,00','(R$ 6.160,00)'],
@@ -1270,6 +1371,57 @@
   ];
 
   let currentScenario = 0;
+
+  function renderizarLinhaDoTempo(estagios){
+    const container = document.getElementById('timelineContainer');
+    if(!container) return;
+    container.innerHTML = '';
+
+    const sAtual = (typeof currentScenario !== 'undefined' && scenarios[currentScenario]) ? scenarios[currentScenario] : null;
+    const lista = (Array.isArray(estagios) && estagios.length > 0) 
+      ? estagios 
+      : (sAtual && Array.isArray(sAtual.linha_do_tempo) && sAtual.linha_do_tempo.length > 0 
+          ? sAtual.linha_do_tempo 
+          : [
+              {
+                faixa_dias: '0 a 5 dias',
+                fase: 'Free Time do Armador e Registro DUIMP',
+                status_cais: 'Cais: Sem sobreestadia (US$ 0,00)',
+                status_retro: 'Retroporto: Remoção prioritária iniciada',
+                detalhes: 'Atracação no Porto de Santos, descarga portuária e conferência aduaneira.'
+              },
+              {
+                faixa_dias: '5 a 17 dias',
+                fase: 'Inspeção e Despacho Aduaneiro',
+                status_cais: 'Cais: Demurrage progressivo em USD + armazenagem',
+                status_retro: 'Retroporto: Desova rápida e contêiner devolvido (Demurrage R$ 0,00)',
+                detalhes: 'Parametrização e fiscalização aduaneira. Proteção patrimonial em retroporto.'
+              },
+              {
+                faixa_dias: '17+ dias',
+                fase: 'Desembaraço, Trânsito e Entrega Final',
+                status_cais: 'Cais: Carregamento rodoviário com tarifas acumuladas',
+                status_retro: 'Retroporto: Carregamento seguro até a planta final',
+                detalhes: 'Emissão do CI, liberação na RFB e trânsito rodoviário seguro.'
+              }
+            ]);
+
+    lista.forEach(function(st){
+      const card = document.createElement('div');
+      card.className = 'timeline-card';
+      card.innerHTML = 
+        '<div class="timeline-card-head">' +
+          '<span class="timeline-days">' + (st.faixa_dias || '--') + '</span>' +
+          '<span class="timeline-fase">' + (st.fase || 'Etapa') + '</span>' +
+        '</div>' +
+        '<div class="timeline-status-cais">' + (st.status_cais || '--') + '</div>' +
+        '<div class="timeline-status-retro">' + (st.status_retro || '--') + '</div>' +
+        '<div class="timeline-detalhes">' + (st.detalhes || '') + '</div>';
+      container.appendChild(card);
+    });
+
+    aplicarTimestamp('tsLinhaDoTempo', 'Atualizado');
+  }
 
   function fillLine(prefix, data){
     const rows = [[prefix+'-l1',data.l1],[prefix+'-l2',data.l2],[prefix+'-l3',data.l3]];
@@ -1314,6 +1466,9 @@
     document.getElementById('decisionTitle').textContent = s.decisionTitle;
     document.getElementById('decisionText').innerHTML = s.decisionHtml;
 
+    // Renderiza a linha do tempo correspondente ao cenário selecionado
+    renderizarLinhaDoTempo(s.linha_do_tempo);
+
     const impactRow = document.getElementById('impactRow');
     impactRow.innerHTML = '';
     s.impact.forEach(function(pair){
@@ -1350,6 +1505,18 @@
           const c = apiCenarios[i];
           if(c.cais_total) scenarios[i].scenarioA.total = c.cais_total;
           if(c.retro_total) scenarios[i].scenarioC.total = c.retro_total;
+
+          // Sincroniza rota real, detalhes, FOB do lote e fornecedores apurados pelo agente
+          if(c.rota) scenarios[i].route = c.rota;
+          if(c.detalhe_rota) scenarios[i].teusNote = c.detalhe_rota;
+          if(c.fob_lote) scenarios[i].fob = c.fob_lote;
+          if(c.ncm) scenarios[i].ncm = c.ncm;
+          if(c.fornecedores){
+            const parts = c.fornecedores.split('/');
+            scenarios[i].suppliers = parts[0].trim();
+            scenarios[i].exportersNote = parts.length > 1 ? ('/ ' + parts[1].trim()) : '';
+          }
+          if(c.linha_do_tempo) scenarios[i].linha_do_tempo = c.linha_do_tempo;
 
           if(c.cais_tempo){
             const mTempo = c.cais_tempo.match(/^(.*?)\s*(\(.*?\))$/);
@@ -1535,6 +1702,7 @@
     aplicarTimestamp('tsAuditoriaDoc', 'Auditado');
     aplicarTimestamp('tsPermanenciaMonteCarlo', 'Calculado');
     aplicarTimestamp('tsMatrizComparativa', 'Matriz atualizada');
+    aplicarTimestamp('tsLinhaDoTempo', 'Linha do tempo gerada');
     aplicarTimestamp('tsDecisaoPrescritiva', 'Recomendação emitida');
     aplicarTimestamp('tsPlanoCorrecoes', 'Auditado');
     aplicarTimestamp('tsParecerTecnico', 'Parecer gerado via MCP');
@@ -1962,6 +2130,56 @@
           '<div class="impact"><div class="num">' + demurrageDias + '</div><div class="lbl">dias de demurrage no cenário recomendado</div></div>';
       }
     }
+
+    // Atualização dinâmica do Painel da Carga com dados reais do Agente Logcomex
+    if(dados.operacao && dados.operacao.ncm){
+      const elNcm = document.getElementById('v-ncm');
+      if(elNcm) elNcm.textContent = dados.operacao.ncm;
+    }
+
+    if(dados.operacao && dados.operacao.valor_lote_usd){
+      const elFob = document.getElementById('v-fob');
+      if(elFob){
+        const fobNum = dados.operacao.valor_lote_usd;
+        const fobFmt = 'US$ ' + fobNum.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        let mercadoInfo = '';
+        if(dados.rota_comex && dados.rota_comex.mercado_fob_total_usd){
+          const mBi = (dados.rota_comex.mercado_fob_total_usd / 1e9).toFixed(2).replace('.', ',');
+          mercadoInfo = ' <small style="display:block; font-size:11px; color:var(--ink-soft); font-weight:normal;">Lote auditado (Mercado: US$ ' + mBi + ' bi)</small>';
+        }
+        elFob.innerHTML = fobFmt + mercadoInfo;
+      }
+    }
+
+    const elRoute = document.getElementById('v-route');
+    if(elRoute){
+      if(dados.rota_comex && dados.rota_comex.rota_formatada){
+        const rStr = dados.rota_comex.rota_formatada;
+        const teusStr = dados.rota_comex.detalhes ? (' <small>' + dados.rota_comex.detalhes + '</small>') : '';
+        elRoute.innerHTML = rStr + teusStr;
+      } else if(dados.operacao && dados.operacao.rota_completa){
+        const rStr = dados.operacao.rota_completa;
+        const teusStr = dados.operacao.volume_teus_recorte ? (' <small>' + dados.operacao.volume_teus_recorte + '</small>') : ' <small>Apurado via Agente Logcomex</small>';
+        elRoute.innerHTML = rStr + teusStr;
+      }
+    }
+
+    const elSupp = document.getElementById('v-suppliers');
+    if(elSupp){
+      if(dados.rota_comex && (dados.rota_comex.total_importadores || dados.rota_comex.total_exportadores)){
+        const imp = dados.rota_comex.total_importadores || '--';
+        const exp = dados.rota_comex.total_exportadores || '--';
+        elSupp.innerHTML = imp + ' importadores <small>/ ' + exp + ' exportadores (Logcomex)</small>';
+      } else if(dados.agente_dados && dados.agente_dados.mercado && dados.agente_dados.mercado.origens_top){
+        const topOrigens = dados.agente_dados.mercado.origens_top.slice(0, 3).join(', ');
+        elSupp.innerHTML = 'Origens: ' + topOrigens + ' <small>(Top Comexstat)</small>';
+      }
+    }
+
+    // Renderiza a linha do tempo dinâmica correspondente
+    if(dados.linha_do_tempo){
+      renderizarLinhaDoTempo(dados.linha_do_tempo);
+    }
   }
 
   function renderizarPlanoCorrecoes(plano){
@@ -2268,12 +2486,11 @@
     wrap.className = 'chat-msg agent thinking';
     wrap.id = thinkingId;
     wrap.innerHTML = 
-      '<div class="bubble" style="background:var(--bg-sunken); border:1px solid var(--line); min-width:250px;">' +
-        '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">' +
-          '<span style="font-size:11px; font-weight:600; color:var(--accent);">Consultando Agente Logcomex via MCP...</span>' +
+      '<div class="bubble" style="background:var(--bg-sunken); border:1px solid var(--line); min-width:220px;">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">' +
+          '<span style="font-size:11.5px; font-weight:600; color:var(--accent);">Consultando Agente Logcomex via MCP...</span>' +
           '<span class="chat-timer" id="' + thinkingId + '_timer" style="font-family:monospace; font-size:11px; color:var(--ink-soft);">0.0s</span>' +
         '</div>' +
-        '<div class="chat-progress-indeterminate"></div>' +
       '</div>';
     log.appendChild(wrap);
     log.scrollTop = log.scrollHeight;
@@ -2286,8 +2503,6 @@
         el.textContent = seg + 's';
       }
     }, 100);
-
-    iniciarProgressoGlobal(50, 'Agente Logcomex MCP: Processando consulta do assistente...');
 
     try {
       const resp = await fetch('/api/agente/chat', {
@@ -2302,7 +2517,6 @@
       if(resp.ok) {
         const data = await resp.json();
         const duracaoFormatada = data.tempo_resposta_s ? data.tempo_resposta_s.toFixed(2) + 's' : ((performance.now() - tStart) / 1000).toFixed(2) + 's';
-        concluirProgressoGlobal('Resposta do Agente concluída', duracaoFormatada);
         const badgeHtml = '<div style="font-size:11px; font-weight:600; color:var(--accent); margin-bottom:4px;">' +
           (data.origem || 'Agente DataWave · Logcomex AI (MCP)') + ' · Resposta em ' + duracaoFormatada + '</div>';
         appendChatMessageHtml('agent', badgeHtml + (data.resposta ? data.resposta.replace(/\n/g, '<br>') : ''));
@@ -2312,7 +2526,6 @@
       clearInterval(chatTimerInterval);
       const thinkingEl = document.getElementById(thinkingId);
       if(thinkingEl) thinkingEl.remove();
-      concluirProgressoGlobal('Resposta local gerada', '0.45s');
     }
 
     // Fallback local
@@ -2773,161 +2986,364 @@ ${e}`}function Zd(e){return is(e,`effect.wgsl`).entryPoints.some(e=>e.stage===`v
 </script>
 
 <script>
-/* ===== Fallback: ondas WebGL 1 (usado quando não há WebGPU, ou o oceano falha ao iniciar) ===== */
-function createWaveFallback({ canvas }) {
+/* ===== Renderizador de Oceano 3D Universal em WebGL (Compatível com 100% dos navegadores e máquinas) ===== */
+function createRealisticSeaRenderer({ canvas }) {
   const VERT = `
     attribute vec2 aPos;
-    void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }
+    void main(){
+      gl_Position = vec4(aPos, 0.0, 1.0);
+    }
   `;
+
   const FRAG = `
     #ifdef GL_FRAGMENT_PRECISION_HIGH
     precision highp float;
     #else
     precision mediump float;
     #endif
-    uniform vec2  uRes;
-    uniform float uTime;
 
-    const int   N    = 24;
-    const vec3  CYAN = vec3(0.114, 0.663, 0.812);   // #1DA9CF
-    const vec3  TEAL = vec3(0.090, 0.678, 0.573);   // #17AD92
+    uniform vec2 u_resolution;
+    uniform float u_time;
+    uniform vec2 u_mouse;
 
-    float ridge(float x, float i, float t){
-      float a = 0.55 + 0.45 * sin(i * 1.7);
-      return sin(x * 2.2 + t * 0.60 + i * 0.35) * 0.10 * a
-           + sin(x * 4.7 - t * 0.90 + i * 0.90) * 0.045
-           + sin(x * 0.9 + t * 0.25 + i * 0.15) * 0.14;
+    const int NUM_STEPS = 7;
+    const float PI = 3.14159265;
+    const float EPSILON = 1e-3;
+
+    const int ITER_GEOMETRY = 3;
+    const int ITER_FRAGMENT = 4;
+    const float SEA_HEIGHT = 0.52;
+    const float SEA_CHOPPY = 3.2;
+    const float SEA_SPEED = 0.72;
+    const float SEA_FREQ = 0.16;
+    const vec3 SEA_BASE = vec3(0.032, 0.058, 0.14);
+    const vec3 SEA_WATER_COLOR = vec3(0.08, 0.38, 0.44);
+
+    mat2 octave_m = mat2(1.6, 1.2, -1.2, 1.6);
+
+    float hash(vec2 p) {
+      float h = dot(p, vec2(127.1, 311.7));
+      return fract(sin(h) * 43758.5453123);
     }
 
-    void main(){
-      vec2  uv = gl_FragCoord.xy / uRes;
-      float ar = uRes.x / uRes.y;
-      float x  = (uv.x - 0.5) * ar * 0.7;
-      float y  = uv.y - 0.5;
-      float px = 1.0 / uRes.y;
+    float noise(vec2 p) {
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      vec2 u = f * f * (3.0 - 2.0 * f);
+      return -1.0 + 2.0 * mix(
+        mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x),
+        mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+        u.y
+      );
+    }
 
-      vec3 col = vec3(0.0);
-      for (int k = 0; k < N; k++){
-        float i = float(k);
-        float f = i / float(N - 1);                       // 0 = fundo, 1 = frente
-        float yy = mix(-0.30, 0.30, f) + ridge(x, i, uTime) * (0.55 + 0.9 * f);
-        float d  = abs(y - yy);
+    float diffuse(vec3 n, vec3 l, float p) {
+      return pow(dot(n, l) * 0.4 + 0.6, p);
+    }
 
-        float line  = smoothstep(1.6 * px, 0.0, d);
-        float glow  = 0.00035 / (d * d + 0.00035);
-        float pulse = pow(0.5 + 0.5 * sin(x * 3.2 - uTime * 1.5 + i * 1.3), 26.0);
+    float specular(vec3 n, vec3 l, vec3 e, float s) {
+      float nrm = (s + 8.0) / (PI * 8.0);
+      return pow(max(dot(reflect(e, n), l), 0.0), s) * nrm;
+    }
 
-        vec3 tint = mix(CYAN, TEAL, clamp(f + 0.35 * sin(x * 1.3 + i), 0.0, 1.0));
-        float lvl = 0.30 + 0.70 * f;
-        col += tint * (line * lvl + glow * 0.10 * lvl + pulse * line * 1.1);
+    vec3 getSkyColor(vec3 e) {
+      e.y = max(e.y, 0.0);
+      vec3 sky = vec3(0.015, 0.035, 0.09) + vec3(0.065, 0.19, 0.27) * (1.0 - e.y);
+      return sky;
+    }
+
+    float sea_octave(vec2 uv, float choppy) {
+      uv += noise(uv);
+      vec2 wv = 1.0 - abs(sin(uv));
+      vec2 swv = abs(cos(uv));
+      wv = mix(wv, swv, wv);
+      return pow(1.0 - pow(wv.x * wv.y, 0.65), choppy);
+    }
+
+    float map(vec3 p) {
+      float freq = SEA_FREQ;
+      float amp = SEA_HEIGHT;
+      float choppy = SEA_CHOPPY;
+      vec2 uv = p.xz; uv.x *= 0.75;
+      
+      float d, h = 0.0;
+      float sea_time = 1.0 + u_time * SEA_SPEED;
+      for(int i = 0; i < ITER_GEOMETRY; i++) {
+        d = sea_octave((uv + sea_time) * freq, choppy);
+        d += sea_octave((uv - sea_time) * freq, choppy);
+        h += d * amp;
+        uv *= octave_m; freq *= 1.9; amp *= 0.22;
+        choppy = mix(choppy, 1.0, 0.2);
       }
+      return p.y - h;
+    }
 
-      float edge = smoothstep(0.0, 0.14, uv.x) * smoothstep(1.0, 0.86, uv.x);
-      col *= edge;
-      gl_FragColor = vec4(1.0 - exp(-col * 1.6), 1.0);   // tone-map suave, fundo segue preto
+    float map_detailed(vec3 p) {
+      float freq = SEA_FREQ;
+      float amp = SEA_HEIGHT;
+      float choppy = SEA_CHOPPY;
+      vec2 uv = p.xz; uv.x *= 0.75;
+      
+      float d, h = 0.0;
+      float sea_time = 1.0 + u_time * SEA_SPEED;
+      for(int i = 0; i < ITER_FRAGMENT; i++) {
+        d = sea_octave((uv + sea_time) * freq, choppy);
+        d += sea_octave((uv - sea_time) * freq, choppy);
+        h += d * amp;
+        uv *= octave_m; freq *= 1.9; amp *= 0.22;
+        choppy = mix(choppy, 1.0, 0.2);
+      }
+      return p.y - h;
+    }
+
+    vec3 getSeaColor(vec3 p, vec3 n, vec3 l, vec3 eye, vec3 dist) {
+      float fresnel = clamp(1.0 - dot(n, -eye), 0.0, 1.0);
+      fresnel = pow(fresnel, 3.0) * 0.55;
+      
+      vec3 reflected = getSkyColor(reflect(eye, n));
+      vec3 refracted = SEA_BASE + diffuse(n, l, 80.0) * SEA_WATER_COLOR * 0.15;
+      
+      vec3 color = mix(refracted, reflected, fresnel);
+      
+      float atten = max(1.0 - dot(dist, dist) * 0.001, 0.0);
+      color += SEA_WATER_COLOR * (p.y - SEA_HEIGHT) * 0.18 * atten;
+      
+      color += vec3(specular(n, l, eye, 60.0) * 1.35);
+      
+      return color;
+    }
+
+    vec3 getNormal(vec3 p, float eps) {
+      vec3 n;
+      n.y = map_detailed(p);
+      n.x = map_detailed(vec3(p.x + eps, p.y, p.z)) - n.y;
+      n.z = map_detailed(vec3(p.x, p.y, p.z + eps)) - n.y;
+      n.y = eps;
+      return normalize(n);
+    }
+
+    float heightMapTracing(vec3 ori, vec3 dir, out vec3 p) {
+      float tm = 0.0;
+      float tx = 1000.0;
+      float hx = map(ori + dir * tx);
+      if(hx > 0.0) return tx;
+      float hm = map(ori + dir * tm);
+      float tmid = 0.0;
+      for(int i = 0; i < NUM_STEPS; i++) {
+        tmid = mix(tm, tx, hm / (hm - hx));
+        p = ori + dir * tmid;
+        float hmid = map(p);
+        if(hmid < 0.0) {
+          tx = tmid;
+          hx = hmid;
+        } else {
+          tm = tmid;
+          hm = hmid;
+        }
+      }
+      return tmid;
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+      uv = uv * 2.0 - 1.0;
+      uv.x *= u_resolution.x / u_resolution.y;
+      
+      // Controle de orbição da câmera com amortecimento
+      vec3 ang = vec3(sin(u_time * 0.1) * 0.04, sin(u_time * 0.05) * 0.04 - 0.22, 0.0);
+      ang.y += (u_mouse.x / u_resolution.x - 0.5) * 2.2;
+      ang.x += (u_mouse.y / u_resolution.y - 0.5) * 0.45;
+      
+      vec3 ori = vec3(0.0, 3.5, u_time * 1.6);
+      vec3 dir = normalize(vec3(uv.xy, -2.0));
+      
+      mat3 rx = mat3(1.0, 0.0, 0.0, 0.0, cos(ang.x), sin(ang.x), 0.0, -sin(ang.x), cos(ang.x));
+      mat3 ry = mat3(cos(ang.y), 0.0, -sin(ang.y), 0.0, 1.0, 0.0, sin(ang.y), 0.0, cos(ang.y));
+      dir = normalize(dir * rx * ry);
+      
+      vec3 p;
+      heightMapTracing(ori, dir, p);
+      vec3 dist = p - ori;
+      vec3 n = getNormal(p, dot(dist, dist) * (0.1 / u_resolution.x));
+      vec3 light = normalize(vec3(0.0, 1.0, 0.8));
+      
+      vec3 color = mix(
+        getSkyColor(dir),
+        getSeaColor(p, n, light, dir, dist),
+        pow(smoothstep(0.0, -0.02, dir.y), 0.2)
+      );
+      
+      color = pow(color, vec3(0.75));
+      gl_FragColor = vec4(color, 1.0);
     }
   `;
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let gl = null, prog = null, buf = null, uRes = null, uTime = null;
-  let raf = 0, disposed = false, firstFrame = false, ro = null;
+  let gl = null, prog = null, buf = null;
+  let uRes = null, uTime = null, uMouse = null;
+  let raf = 0, disposed = false, ro = null;
   const t0 = performance.now();
   let resolveReady;
   const ready = new Promise(r => { resolveReady = r; });
 
-  function compile(type, src){
+  // Controle interativo suave de mouse/touch
+  let curMouseX = 0, curMouseY = 0;
+  let tgtMouseX = 0, tgtMouseY = 0;
+  let isDragging = false, lastPtrX = 0, lastPtrY = 0;
+
+  function onPointerDown(e) {
+    if (e.target.closest('.home') || e.target.closest('#sea')) {
+      isDragging = true;
+      lastPtrX = e.clientX;
+      lastPtrY = e.clientY;
+    }
+  }
+  function onPointerMove(e) {
+    if (isDragging) {
+      const dx = e.clientX - lastPtrX;
+      const dy = e.clientY - lastPtrY;
+      tgtMouseX += dx * 1.8;
+      tgtMouseY += dy * 1.8;
+      lastPtrX = e.clientX;
+      lastPtrY = e.clientY;
+    }
+  }
+  function onPointerUp() { isDragging = false; }
+
+  function compileShader(type, src) {
     const sh = gl.createShader(type);
     gl.shaderSource(sh, src);
     gl.compileShader(sh);
-    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)){
-      console.error('[renderer] shader:', gl.getShaderInfoLog(sh));
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      console.warn('[sea-shader] compile error:', gl.getShaderInfoLog(sh));
       gl.deleteShader(sh);
       return null;
     }
     return sh;
   }
 
-  function init(){
-    gl = canvas.getContext('webgl', { alpha:false, antialias:false, powerPreference:'low-power' })
+  function initGL() {
+    gl = canvas.getContext('webgl2', { alpha: false, antialias: false, powerPreference: 'high-performance' })
+      || canvas.getContext('webgl', { alpha: false, antialias: false, powerPreference: 'default' })
       || canvas.getContext('experimental-webgl');
     if (!gl) return false;
-    const vs = compile(gl.VERTEX_SHADER, VERT);
-    const fs = compile(gl.FRAGMENT_SHADER, FRAG);
+
+    const vs = compileShader(gl.VERTEX_SHADER, VERT);
+    const fs = compileShader(gl.FRAGMENT_SHADER, FRAG);
     if (!vs || !fs) return false;
+
     prog = gl.createProgram();
-    gl.attachShader(prog, vs); gl.attachShader(prog, fs);
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
     gl.linkProgram(prog);
-    gl.deleteShader(vs); gl.deleteShader(fs);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)){
-      console.error('[renderer] link:', gl.getProgramInfoLog(prog));
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      console.warn('[sea-shader] link error:', gl.getProgramInfoLog(prog));
       return false;
     }
+
     gl.useProgram(prog);
     buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+
     const loc = gl.getAttribLocation(prog, 'aPos');
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    uRes  = gl.getUniformLocation(prog, 'uRes');
-    uTime = gl.getUniformLocation(prog, 'uTime');
-    gl.clearColor(0, 0, 0, 1);
+
+    uRes = gl.getUniformLocation(prog, 'u_resolution');
+    uTime = gl.getUniformLocation(prog, 'u_time');
+    uMouse = gl.getUniformLocation(prog, 'u_mouse');
+
+    gl.clearColor(0.015, 0.035, 0.09, 1.0);
     return true;
   }
 
-  function resize(){
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const w = Math.round(canvas.clientWidth  * dpr);
-    const h = Math.round(canvas.clientHeight * dpr);
-    if (!w || !h) return false;                 // tela oculta (display:none)
-    if (canvas.width !== w || canvas.height !== h){ canvas.width = w; canvas.height = h; }
+  function resizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+    const w = Math.round((canvas.clientWidth || window.innerWidth) * dpr);
+    const h = Math.round((canvas.clientHeight || window.innerHeight) * dpr);
+    if (!w || !h) return false;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
     return true;
   }
 
-  function draw(now){
+  function drawFrame(now) {
     if (disposed || !gl || gl.isContextLost()) return;
-    if (!resize()) return;
+    if (!resizeCanvas()) return;
+
+    curMouseX += (tgtMouseX - curMouseX) * 0.08;
+    curMouseY += (tgtMouseY - curMouseY) * 0.08;
+
     gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.uniform2f(uRes, canvas.width, canvas.height);
-    gl.uniform1f(uTime, reduceMotion.matches ? 6.0 : (now - t0) / 1000);
+    if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
+    if (uTime) gl.uniform1f(uTime, reduceMotion.matches ? 8.0 : (now - t0) * 0.001);
+    if (uMouse) gl.uniform2f(uMouse, curMouseX + canvas.width * 0.5, curMouseY + canvas.height * 0.5);
+
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    if (!firstFrame){ firstFrame = true; resolveReady(true); }
+    resolveReady(true);
   }
 
-  function loop(now){ draw(now); raf = requestAnimationFrame(loop); }
-  function play(){
+  function renderLoop(now) {
+    drawFrame(now);
+    if (!reduceMotion.matches) {
+      raf = requestAnimationFrame(renderLoop);
+    }
+  }
+
+  function play() {
     cancelAnimationFrame(raf);
-    if (reduceMotion.matches) draw(performance.now());   // quadro estático
-    else raf = requestAnimationFrame(loop);
+    if (reduceMotion.matches) {
+      drawFrame(performance.now());
+    } else {
+      raf = requestAnimationFrame(renderLoop);
+    }
   }
 
-  const onResize    = () => { if (reduceMotion.matches) draw(performance.now()); };
-  const onMotion    = () => play();
-  const onLost      = (e) => { e.preventDefault(); cancelAnimationFrame(raf); };
-  const onRestored  = () => { if (init()) play(); };
+  const onResize = () => { if (reduceMotion.matches) drawFrame(performance.now()); };
+  const onMotionChange = () => play();
+  const onContextLost = (e) => { e.preventDefault(); cancelAnimationFrame(raf); };
+  const onContextRestored = () => { if (initGL()) play(); };
 
-  if (!init()){ resolveReady(false); return { ready, dispose(){ disposed = true; } }; }
+  if (!initGL()) {
+    resolveReady(false);
+    return { ready, dispose() { disposed = true; } };
+  }
 
   ro = new ResizeObserver(onResize);
   ro.observe(canvas);
-  reduceMotion.addEventListener('change', onMotion);
-  canvas.addEventListener('webglcontextlost', onLost);
-  canvas.addEventListener('webglcontextrestored', onRestored);
+  reduceMotion.addEventListener('change', onMotionChange);
+  canvas.addEventListener('webglcontextlost', onContextLost);
+  canvas.addEventListener('webglcontextrestored', onContextRestored);
+  window.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', onPointerUp);
+
   play();
 
   return {
     ready,
-    dispose(){
+    dispose() {
       if (disposed) return;
       disposed = true;
       cancelAnimationFrame(raf);
       ro && ro.disconnect();
-      reduceMotion.removeEventListener('change', onMotion);
-      canvas.removeEventListener('webglcontextlost', onLost);
-      canvas.removeEventListener('webglcontextrestored', onRestored);
-      if (gl && !gl.isContextLost()){
+      reduceMotion.removeEventListener('change', onMotionChange);
+      canvas.removeEventListener('webglcontextlost', onContextLost);
+      canvas.removeEventListener('webglcontextrestored', onContextRestored);
+      window.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+      if (gl && !gl.isContextLost()) {
         prog && gl.deleteProgram(prog);
-        buf  && gl.deleteBuffer(buf);
+        buf && gl.deleteBuffer(buf);
         const ext = gl.getExtension('WEBGL_lose_context');
         ext && ext.loseContext();
       }
@@ -2936,61 +3352,104 @@ function createWaveFallback({ canvas }) {
   };
 }
 
-
-/* ===== equivalente vanilla do componente <Example /> (useEffect: monta + cleanup) ===== */
-(function mountExample(){
+/* ===== Inicializador Universal Resiliente do Oceano 3D DataWave ===== */
+(function mountUniversalOcean(){
   const hero = document.querySelector('.wave-hero');
   let canvas = document.getElementById('waveCanvas');
   if (!hero || !canvas) return;
 
-  let renderer = null;
-  let usingFallback = false;
+  let activeRenderer = null;
+  let seaActive = false;
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  function startFallback(){
-    if (usingFallback) return;
-    usingFallback = true;
-    hero.querySelectorAll('.lil-gui').forEach(function(n){ n.remove(); });
-    // um canvas que já recebeu contexto WebGPU não aceita WebGL: troca por um novo
-    const fresh = canvas.cloneNode(false);
-    canvas.replaceWith(fresh);
-    canvas = fresh;
-    hero.dataset.renderer = 'webgl';
-    renderer = createWaveFallback({ canvas });
-    void renderer.ready;
+  // Inicializa o renderizador de mar 3D realista universal (WebGL)
+  function startRealisticSea(reason){
+    if (seaActive) return;
+    seaActive = true;
+    hero.querySelectorAll('.lil-gui').forEach(n => n.remove());
+    
+    // Canvas limpo para evitar conflitos de contexto WebGPU/WebGL
+    const freshCanvas = canvas.cloneNode(false);
+    canvas.replaceWith(freshCanvas);
+    canvas = freshCanvas;
+    hero.dataset.renderer = 'webgl-sea';
+
+    try {
+      activeRenderer = createRealisticSeaRenderer({ canvas });
+    } catch(err) {
+      console.error('[ocean] Falha ao iniciar renderizador de mar 3D WebGL:', err);
+    }
   }
 
-  // Falha do oceano (na inicialização OU depois, ex.: device lost): descarta e usa o fallback.
-  function oceanFailed(err){
-    if (usingFallback) return;
-    console.warn('[ocean] WebGPU falhou, usando fallback WebGL:', err);
-    try { renderer && renderer.dispose(); } catch (_) {}
-    startFallback();
+  // Falha ou timeout de WebGPU: cai imediatamente no oceano 3D realista
+  function handleWebGPUFailure(err){
+    if (seaActive) return;
+    console.warn('[ocean] WebGPU indisponivel ou demorado, ativando Oceano 3D WebGL:', err);
+    try { activeRenderer && activeRenderer.dispose(); } catch (_) {}
+    startRealisticSea(err);
   }
+
   const isGpuFailure = function(x){
     const msg = String((x && (x.message || (x.reason && x.reason.message))) || x || '');
     return /GPU device was lost|VGPUError|WebGPU|navigator\.gpu|createRenderer/i.test(msg);
   };
 
-  if (navigator.gpu && window.DatawaveOcean && !reduceMotion) {
+  // Se o usuário especificar na URL "?renderer=webgl" ou se o navegador não suportar WebGPU nativo:
+  const forceWebGL = new URLSearchParams(window.location.search).get('renderer') === 'webgl';
+  if (forceWebGL || !navigator.gpu || !window.DatawaveOcean || reduceMotion) {
+    startRealisticSea('Navegador padrao WebGL / sem WebGPU');
+  } else {
     hero.dataset.renderer = 'webgpu';
+    let isWebGPUReady = false;
+
+    // Timeout de seguranca de 700ms para evitar qualquer tela preta ou travamento
+    const safetyTimeout = setTimeout(function(){
+      if (!isWebGPUReady) {
+        handleWebGPUFailure('Timeout de 700ms excedido no WebGPU');
+      }
+    }, 700);
+
     try {
-      renderer = window.DatawaveOcean.createRenderer({ canvas, showGui: false });
-      if (renderer && renderer.ready) {
-        renderer.ready.catch(oceanFailed);
+      activeRenderer = window.DatawaveOcean.createRenderer({ canvas, showGui: false });
+      if (activeRenderer && activeRenderer.ready) {
+        activeRenderer.ready.then(() => {
+          isWebGPUReady = true;
+          clearTimeout(safetyTimeout);
+        }).catch(err => {
+          clearTimeout(safetyTimeout);
+          handleWebGPUFailure(err);
+        });
       } else {
-        oceanFailed(new Error('Renderer WebGPU sem promise ready'));
+        clearTimeout(safetyTimeout);
+        handleWebGPUFailure(new Error('Renderer WebGPU sem promise ready'));
       }
     } catch (err) {
-      oceanFailed(err);
+      clearTimeout(safetyTimeout);
+      handleWebGPUFailure(err);
     }
-    window.addEventListener('error', function(e){ if (isGpuFailure(e.error || e.message)) oceanFailed(e.error || e.message); });
-    window.addEventListener('unhandledrejection', function(e){ if (isGpuFailure(e.reason)) oceanFailed(e.reason); });
-  } else {
-    startFallback();
+
+    window.addEventListener('error', function(e){
+      if (isGpuFailure(e.error || e.message)) handleWebGPUFailure(e.error || e.message);
+    });
+    window.addEventListener('unhandledrejection', function(e){
+      if (isGpuFailure(e.reason)) handleWebGPUFailure(e.reason);
+    });
   }
 
-  window.addEventListener('pagehide', function(){ renderer && renderer.dispose(); });
+  // Controle de alternância global para depuração
+  window.setSeaRenderer = function(tipo) {
+    try { activeRenderer && activeRenderer.dispose(); } catch(_) {}
+    seaActive = false;
+    if (tipo === 'webgl') {
+      startRealisticSea('Solicitado manualmente');
+    } else {
+      location.search = '?renderer=webgpu';
+    }
+  };
+
+  window.addEventListener('pagehide', function(){
+    activeRenderer && activeRenderer.dispose();
+  });
 })();
 </script>
 <script>

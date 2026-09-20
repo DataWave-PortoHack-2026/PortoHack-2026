@@ -46,3 +46,21 @@ def test_parsear_csv_ponto_e_virgula_brasileiro():
 def test_consolidar_operacao_vazia_lanca_erro():
     with pytest.raises(ValueError, match="não contém itens"):
         consolidar_operacao_de_planilha([])
+
+
+def test_parsear_csv_com_rota_completa_e_destino():
+    csv_conteudo = """ncm,descricao,quantidade,valor_total_usd,peso_bruto_bl_kg,peso_bruto_packing_kg,origem,porto_descarga,destino_final
+3808.93.29,Herbicida Glifosato,500,128500.0,24000.0,24000.0,China (Qingdao),Santos,Anápolis/GO (DAA)
+"""
+    itens = parsear_csv_planilha(csv_conteudo)
+    assert len(itens) == 1
+    assert itens[0].origem == "China (Qingdao)"
+    assert itens[0].destino_final == "Anápolis/GO (DAA)"
+
+    op, divergencias = consolidar_operacao_de_planilha(itens)
+    assert op.origem == "China (Qingdao)"
+    assert op.destino_final == "Anápolis/GO (DAA)"
+    assert "China (Qingdao)" in op.rota_completa
+    assert "Santos/SP" in op.rota_completa
+    assert "Anápolis/GO (DAA)" in op.rota_completa
+

@@ -25,6 +25,10 @@ class OperacaoExtraida(BaseModel):
     porto_descarga: Optional[str] = Field("Santos", description="Porto de descarga da carga")
     armador: Optional[str] = Field(None, description="Companhia de navegação marítima emitente do BL")
     origem: Optional[str] = Field(None, description="País de procedência/origem da mercadoria")
+    porto_embarque: Optional[str] = Field(None, description="Porto de embarque da mercadoria (POL)")
+    destino_final: Optional[str] = Field(None, description="Destino final da carga (recinto alfandegado ou planta)")
+    rota_completa: Optional[str] = Field(None, description="Rota logística formatada: Origem -> Porto Descarga -> Destino Final")
+    volume_teus_recorte: Optional[str] = Field(None, description="Estatística de TEUs apurados no histórico da rota")
     data_chegada_prevista: Optional[date] = Field(None, description="Data estimada de atracação/chegada (ETA)")
     divergencias: List[str] = Field(default_factory=list, description="Lista de inconsistências apuradas entre os documentos")
 
@@ -36,6 +40,10 @@ class MercadoNCM(BaseModel):
     volume_mensal: Optional[Dict[str, float]] = Field(None, description="Volume importado por mês (toneladas ou USD)")
     origens_top: Optional[List[str]] = Field(None, description="Principais países de origem por volume")
     importadores_top: Optional[List[str]] = Field(None, description="Principais importadores registrados")
+    total_importadores: Optional[int] = Field(None, description="Quantidade de importadores mapeados pela Logcomex")
+    total_exportadores: Optional[int] = Field(None, description="Quantidade de exportadores mapeados pela Logcomex")
+    fob_total_mercado_usd: Optional[float] = Field(None, description="Volume total FOB anual importado no Porto de Santos")
+    teus_registrados: Optional[str] = Field(None, description="Total de TEUs movimentados no recorte histórico Logcomex")
     dias_chegada_desembaraco: Optional[Dict[str, float]] = Field(
         None, description="Tempo médio de liberação em dias por canal de parametrização"
     )
@@ -134,6 +142,23 @@ class ResultadoRiscoPermanencia(BaseModel):
     fonte_parametros: str = Field(..., description="Origem dos parâmetros (agente | premissa | simulado)")
 
 
+class EstagioLinhaDoTempo(BaseModel):
+    """Marco temporal e operacional estimado para a matriz comparativa de decisão."""
+    faixa_dias: str = Field(..., description="Faixa de dias da etapa (ex.: '0 a 5 dias', '5 a 17 dias', '17+ dias')")
+    fase: str = Field(..., description="Denominação da fase (ex.: 'Free Time Contratual', 'Retenção MAPA / Despacho', 'Entrega Final')")
+    status_cais: str = Field(..., description="Status e impacto de custos no Cais")
+    status_retro: str = Field(..., description="Status e impacto de custos no Retroporto")
+    detalhes: str = Field(..., description="Detalhamento das operações aduaneiras e logísticas")
+
+
+class CronogramaLinhaDoTempo(BaseModel):
+    """Conjunto de marcos operacionais apurados e estimados pelo Agente Logcomex."""
+    ncm: str = Field(..., description="NCM analisada")
+    canal_esperado: str = Field("verde", description="Canal estimado de conferência")
+    justificativa_prazos: Optional[str] = Field(None, description="Explicação técnica dos prazos apurados pelo agente")
+    estagios: List[EstagioLinhaDoTempo] = Field(default_factory=list, description="Lista de estágios operacionais da carga")
+
+
 # ---------------------------------------------------------------------------
 # 4. Modelos de Planilha do Despachante e Auditoria Prescritiva
 # ---------------------------------------------------------------------------
@@ -151,6 +176,10 @@ class ItemPlanilhaAduaneira(BaseModel):
     peso_bruto_packing_kg: Optional[float] = Field(None, ge=0.0, description="Peso bruto no Packing List")
     incoterm: str = Field("FOB", description="Termo internacional de comércio")
     porto_descarga: str = Field("Santos", description="Porto de atracação/descarga")
+    origem: Optional[str] = Field(None, description="País ou procedência da mercadoria")
+    porto_embarque: Optional[str] = Field(None, description="Porto de embarque (POL)")
+    destino_final: Optional[str] = Field(None, description="Destino final da carga ou planta")
+    consignatario: Optional[str] = Field(None, description="Importador consignatário")
     armador: Optional[str] = Field(None, description="Companhia de navegação marítima")
     tipo_conteiner: str = Field("40HC", description="Tipo de equipamento")
     free_time_dias: int = Field(5, ge=0, description="Dias livres de demurrage")

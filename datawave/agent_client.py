@@ -207,7 +207,7 @@ class FakeAgent(AgentClient):
         # 1. Tentar localizar fixture gravada
         if self.fixtures_dir.exists():
             # Priorizar o prompt original do usuário antes do schema JSON appended pelo ask_json
-            prompt_user = message.split("\n\nResponda EXCLUSIVAMENTE")[0].strip()
+            prompt_user = message.split("\n\nREQUISITO OBRIGATÓRIO")[0].split("\n\nResponda EXCLUSIVAMENTE")[0].strip()
             alvo_busca = prompt_user if prompt_user else message
 
             for fix_file in sorted(self.fixtures_dir.glob("*.json")):
@@ -226,14 +226,101 @@ class FakeAgent(AgentClient):
                             break
 
                     if matched:
+                        # Se a fixture contiver NCM e o alvo da mensagem contiver outro NCM explicito, nao usar esta fixture
+                        fix_ncm = fix_data.get("ncm") or (fix_data.get("response", {}).get("ncm") if isinstance(fix_data.get("response"), dict) else None)
+                        if fix_ncm:
+                            fix_digits = "".join(filter(str.isdigit, str(fix_ncm)))
+                            prompt_digits = re.findall(r"\b\d{4,8}\b", alvo_busca)
+                            if prompt_digits and not any(d in fix_digits or fix_digits.startswith(d) or d.startswith(fix_digits) for d in prompt_digits):
+                                matched = False
+
+                    if matched:
                         resp = fix_data["response"]
                         return json.dumps(resp, ensure_ascii=False) if not isinstance(resp, str) else resp
                 except Exception:
                     continue
 
-        # 2. Mock determinístico de resposta com base no conteúdo da mensagem
+        # 2. Mock determinístico de resposta com base no conteúdo da mensagem e NCM consultado
         msg_lower = message.lower()
-        if "operacaoextraida" in msg_lower or "bill of lading" in msg_lower or "invoice" in msg_lower:
+        if "operacaoextraida" in msg_lower or "bill of lading" in msg_lower or "invoice" in msg_lower or "conferência técnica" in msg_lower or "conferencia tecnica" in msg_lower:
+            if "3808" in msg_lower:
+                return json.dumps({
+                    "ncm": "3808.93.29",
+                    "descricao": "Herbicidas à base de glifosato e sais derivados",
+                    "valor_lote_usd": 128500.0,
+                    "qtd_conteineres": 2,
+                    "tipo_conteiner": "40HC",
+                    "incoterm": "FOB",
+                    "porto_embarque": "Porto de Qingdao",
+                    "porto_descarga": "Santos/SP",
+                    "armador": "MSC",
+                    "origem": "China (Qingdao)",
+                    "destino_final": "Anápolis/GO (DAA)",
+                    "rota_completa": "China (Qingdao) → Santos/SP → Anápolis/GO (DAA)",
+                    "volume_teus_recorte": "46.194 TEUs no histórico Logcomex",
+                    "data_chegada_prevista": "2026-04-12",
+                    "divergencias": [
+                        "Inconsistência cadastral: Atributo regulatório A01 (Aptidão MAPA/ANVISA) ausente no catálogo DUIMP."
+                    ]
+                })
+            elif "8525" in msg_lower:
+                return json.dumps({
+                    "ncm": "8525.80.90",
+                    "descricao": "Câmeras digitais de alta precisão e gravadores de vídeo",
+                    "valor_lote_usd": 412000.0,
+                    "qtd_conteineres": 1,
+                    "tipo_conteiner": "40HC",
+                    "incoterm": "FOB",
+                    "porto_embarque": "Porto de Shenzhen",
+                    "porto_descarga": "Santos/SP",
+                    "armador": "Maersk",
+                    "origem": "China (Shenzhen)",
+                    "destino_final": "São Paulo/SP",
+                    "rota_completa": "China (Shenzhen) → Santos/SP → São Paulo/SP",
+                    "volume_teus_recorte": "21.500 TEUs no histórico Logcomex",
+                    "data_chegada_prevista": "2026-04-05",
+                    "divergencias": []
+                })
+            elif "2106" in msg_lower:
+                return json.dumps({
+                    "ncm": "2106.90.90",
+                    "descricao": "Preparações alimentícias, suplementos e extratos aromáticos",
+                    "valor_lote_usd": 268000.0,
+                    "qtd_conteineres": 1,
+                    "tipo_conteiner": "40HC",
+                    "incoterm": "FOB",
+                    "porto_embarque": "Porto de Buenos Aires",
+                    "porto_descarga": "Santos/SP",
+                    "armador": "CMA CGM",
+                    "origem": "Argentina (Buenos Aires)",
+                    "destino_final": "Anápolis/GO",
+                    "rota_completa": "Argentina (Buenos Aires) → Santos/SP → Anápolis/GO",
+                    "volume_teus_recorte": "9.320 TEUs no histórico Logcomex",
+                    "data_chegada_prevista": "2026-04-08",
+                    "divergencias": [
+                        "Pendência cadastral sanitária: Ficha de Cadastro de Estabelecimento (FCE/MAPA) não vinculada."
+                    ]
+                })
+            elif "2204" in msg_lower or "vinho" in msg_lower:
+                return json.dumps({
+                    "ncm": "2204.21.00",
+                    "descricao": "Vinhos de uvas frescas em recipientes de até 2L - DOC Tejo",
+                    "valor_lote_usd": 54200.0,
+                    "qtd_conteineres": 1,
+                    "tipo_conteiner": "40HC",
+                    "incoterm": "FOB",
+                    "porto_embarque": "Porto de Lisboa",
+                    "porto_descarga": "Santos/SP",
+                    "armador": "CMA CGM",
+                    "origem": "Portugal (Lisboa)",
+                    "destino_final": "São Paulo/SP",
+                    "rota_completa": "Portugal (Lisboa) → Santos/SP → São Paulo/SP",
+                    "volume_teus_recorte": "38.900 TEUs no histórico Logcomex",
+                    "data_chegada_prevista": "2026-04-15",
+                    "divergencias": [
+                        "Exigência de certificação enológica perante o MAPA/Vigiagro no Porto de Santos."
+                    ]
+                })
             return json.dumps({
                 "ncm": "8481.80.95",
                 "descricao": "Válvulas industriais de controle de fluxo em aço inox",
@@ -241,24 +328,231 @@ class FakeAgent(AgentClient):
                 "qtd_conteineres": 1,
                 "tipo_conteiner": "40HC",
                 "incoterm": "FOB",
-                "porto_descarga": "Santos",
+                "porto_embarque": "Porto de Hamburgo",
+                "porto_descarga": "Santos/SP",
                 "armador": "Maersk",
-                "origem": "Alemanha",
+                "origem": "Alemanha (Hamburgo)",
+                "destino_final": "Campinas/SP",
+                "rota_completa": "Alemanha (Hamburgo) → Santos/SP → Campinas/SP",
+                "volume_teus_recorte": "12.450 TEUs no histórico Logcomex",
                 "data_chegada_prevista": "2026-04-10",
                 "divergencias": [
                     "Divergência de peso bruto: BL indica 14.500 kg, enquanto o Packing List indica 14.150 kg."
                 ]
             })
 
-        if "mercadoncm" in msg_lower or "mercado" in msg_lower:
+        if ("mercadoncm" in msg_lower or bool(re.search(r"\bmercado\b", msg_lower))) and not any(k in msg_lower for k in ("cronograma", "linha do tempo", "marcos cronológicos", "estagio")):
+            if "3808" in msg_lower:
+                return json.dumps({
+                    "ncm": "3808.93.29",
+                    "periodo": "Últimos 12 meses",
+                    "volume_mensal": {"2025-04": 3800000.0, "2025-05": 4100000.0, "2025-06": 4500000.0},
+                    "origens_top": ["China", "Índia", "Estados Unidos"],
+                    "importadores_top": ["AgroQuímica do Brasil Ltda", "Fertilizantes Centro-Oeste S.A."],
+                    "total_importadores": 66,
+                    "total_exportadores": 153,
+                    "fob_total_mercado_usd": 1037000000.0,
+                    "teus_registrados": "46.194 TEUs no histórico Logcomex",
+                    "dias_chegada_desembaraco": {"canal_verde": 2.5, "canal_amarelo": 6.0, "canal_vermelho": 18.0}
+                })
+            elif "8525" in msg_lower:
+                return json.dumps({
+                    "ncm": "8525.80.90",
+                    "periodo": "Últimos 12 meses",
+                    "volume_mensal": {"2025-04": 1200000.0, "2025-05": 1450000.0},
+                    "origens_top": ["China", "Vietnã", "Coreia do Sul"],
+                    "importadores_top": ["TechImport Distribuidora S.A.", "Vision Componentes Ltda"],
+                    "total_importadores": 40,
+                    "total_exportadores": 88,
+                    "fob_total_mercado_usd": 412000000.0,
+                    "teus_registrados": "21.500 TEUs no histórico Logcomex",
+                    "dias_chegada_desembaraco": {"canal_verde": 1.8, "canal_amarelo": 4.2, "canal_vermelho": 11.0}
+                })
+            elif "2106" in msg_lower:
+                return json.dumps({
+                    "ncm": "2106.90.90",
+                    "periodo": "Últimos 12 meses",
+                    "volume_mensal": {"2025-04": 800000.0, "2025-05": 920000.0},
+                    "origens_top": ["Argentina", "Uruguai", "Chile"],
+                    "importadores_top": ["Alimentos do Brasil Ltda", "NutriSul Distribuidora"],
+                    "total_importadores": 18,
+                    "total_exportadores": 34,
+                    "fob_total_mercado_usd": 268000000.0,
+                    "teus_registrados": "9.320 TEUs no histórico Logcomex",
+                    "dias_chegada_desembaraco": {"canal_verde": 2.2, "canal_amarelo": 5.5, "canal_vermelho": 12.0}
+                })
+            elif "2204" in msg_lower or "vinho" in msg_lower:
+                return json.dumps({
+                    "ncm": "2204.21.00",
+                    "periodo": "Últimos 12 meses",
+                    "volume_mensal": {"2025-04": 32150000.0, "2025-05": 35400000.0},
+                    "origens_top": ["Chile", "Argentina", "Portugal", "Itália", "França"],
+                    "importadores_top": ["Grand Cru Importadora Ltda", "World Wine Comercial", "Mistral Importadora"],
+                    "total_importadores": 52,
+                    "total_exportadores": 120,
+                    "fob_total_mercado_usd": 483200000.0,
+                    "teus_registrados": "38.900 TEUs no histórico Logcomex",
+                    "dias_chegada_desembaraco": {"canal_verde": 2.8, "canal_amarelo": 5.4, "canal_vermelho": 14.2}
+                })
             return json.dumps({
                 "ncm": "8481.80.95",
                 "periodo": "Últimos 12 meses",
                 "volume_mensal": {"2025-04": 250000.0, "2025-05": 310000.0},
                 "origens_top": ["Alemanha", "China", "Estados Unidos"],
                 "importadores_top": ["Indústria Mecânica Modelo S.A."],
+                "total_importadores": 35,
+                "total_exportadores": 62,
+                "fob_total_mercado_usd": 180000000.0,
+                "teus_registrados": "12.450 TEUs no histórico Logcomex",
                 "dias_chegada_desembaraco": {"canal_verde": 3.2, "canal_amarelo": 6.8, "canal_vermelho": 15.5}
             })
+
+        if "cronogramalinhadotempo" in msg_lower or "linha do tempo" in msg_lower or "marcos cronológicos" in msg_lower or "estagio" in msg_lower:
+            if "3808" in msg_lower:
+                return json.dumps({
+                    "ncm": "3808.93.29",
+                    "canal_esperado": "vermelho",
+                    "justificativa_prazos": "Carga química/defensivo sujeita a inspeção física e documental pelo MAPA. P90 estimado em 17 dias.",
+                    "estagios": [
+                        {
+                            "faixa_dias": "0 a 5 dias",
+                            "fase": "Free Time do Armador e Registro DUIMP",
+                            "status_cais": "Cais: Sem sobreestadia (US$ 0,00)",
+                            "status_retro": "Retroporto: Remoção prioritária sob DTE para terminal químico licenciado",
+                            "detalhes": "Atracação no Porto de Santos, descarga portuária e registro da DUIMP com LPCO/MAPA."
+                        },
+                        {
+                            "faixa_dias": "5 a 17 dias",
+                            "fase": "Retenção e Inspeção Fitossanitária MAPA (Canal Vermelho)",
+                            "status_cais": "Cais: Demurrage progressivo de US$ 120/dia por contêiner + armazenagem escalonada",
+                            "status_retro": "Retroporto: Desova rápida no 2º dia e contêiner devolvido (Demurrage R$ 0,00)",
+                            "detalhes": "Coleta de amostras e perícia fiscal. No cais, o custo diário em dólar acumula perdas críticas; no retroporto, a armazenagem em pátio seco isola o risco."
+                        },
+                        {
+                            "faixa_dias": "17+ dias",
+                            "fase": "Desembaraço, Liberação DAA e Trânsito até Anápolis/GO",
+                            "status_cais": "Cais: Carregamento rodoviário com demurrage máximo acumulado",
+                            "status_retro": "Retroporto: Carregamento seguro direto para Anápolis/GO (DAA)",
+                            "detalhes": "Deferimento da licença MAPA, desembaraço da DUIMP pela RFB e trânsito interestadual pela BR-050 até Anápolis/GO."
+                        }
+                    ]
+                })
+            elif "8525" in msg_lower:
+                return json.dumps({
+                    "ncm": "8525.80.90",
+                    "canal_esperado": "amarelo",
+                    "justificativa_prazos": "Componentes ópticos e sensores de alta precisão com parametrização em canal amarelo da RFB.",
+                    "estagios": [
+                        {
+                            "faixa_dias": "0 a 7 dias",
+                            "fase": "Free Time e Parametrização Aduaneira",
+                            "status_cais": "Cais: Sem sobreestadia durante os 7 dias contratuais",
+                            "status_retro": "Retroporto: Custos fixos de transferência e seguro de carga sensível",
+                            "detalhes": "Descarga em Santos, registro aduaneiro e parametrização pela Receita Federal."
+                        },
+                        {
+                            "faixa_dias": "7 a 11 dias",
+                            "fase": "Conferência Documental RFB (Canal Amarelo)",
+                            "status_cais": "Cais: Cobrança de demurrage de US$ 100/dia/contêiner",
+                            "status_retro": "Retroporto: Armazenagem em câmara monitorada sem demurrage",
+                            "detalhes": "Conferência de faturas, certificados de conformidade e romaneios pela equipe fiscal."
+                        },
+                        {
+                            "faixa_dias": "11+ dias",
+                            "fase": "Desembaraço Aduaneiro e Entrega em São Paulo/SP",
+                            "status_cais": "Cais: Liberação e transporte sob custos portuários de 2º período",
+                            "status_retro": "Retroporto: Embarque rodoviário expresso via Rodovia dos Imigrantes até SP",
+                            "detalhes": "Emissão do Comprovante de Importação (CI) e expedição rodoviária até o polo tecnológico da capital paulista."
+                        }
+                    ]
+                })
+            elif "2204" in msg_lower or "vinho" in msg_lower:
+                return json.dumps({
+                    "ncm": "2204.21.00",
+                    "canal_esperado": "vermelho",
+                    "justificativa_prazos": "Bebidas alcoólicas importadas exigem coleta de amostras e análise laboratorial enológica pelo MAPA.",
+                    "estagios": [
+                        {
+                            "faixa_dias": "0 a 10 dias",
+                            "fase": "Free Time Contratual de 10 Dias e Coleta MAPA",
+                            "status_cais": "Cais: Isenção de sobreestadia até o 10º dia",
+                            "status_retro": "Retroporto: Transferência imediata sob DTA para armazém climatizado (16°C)",
+                            "detalhes": "Descarga refrigerada no porto e agendamento de vistoria para coleta de contraprovas pelo MAPA."
+                        },
+                        {
+                            "faixa_dias": "10 a 21 dias",
+                            "fase": "Análise Enológica Laboratorial e Guarda Climatizada",
+                            "status_cais": "Cais: Demurrage progressivo de contêiner reefer (US$ 180/dia) com alto risco térmico",
+                            "status_retro": "Retroporto: Desova em câmara fria, contêiner devolvido (Demurrage R$ 0,00)",
+                            "detalhes": "Período de ensaio laboratorial oficial do MAPA. No retroporto os vinhos permanecem preservados em ambiente controlado sem custos de demurrage."
+                        },
+                        {
+                            "faixa_dias": "21+ dias",
+                            "fase": "Emissão do Certificado de Inspeção e Distribuição em Campinas",
+                            "status_cais": "Cais: Custos severos acumulados de demurrage reefer",
+                            "status_retro": "Retroporto: Distribuição fracionada ou direta para o centro logístico em Campinas/SP",
+                            "detalhes": "Liberação do certificado de inspeção de bebidas e transporte protegido até o importador."
+                        }
+                    ]
+                })
+            elif "2106" in msg_lower:
+                return json.dumps({
+                    "ncm": "2106.90.90",
+                    "canal_esperado": "amarelo",
+                    "justificativa_prazos": "Suplementos alimentares sujeitos a validação de rotulagem e formulação técnica pela ANVISA.",
+                    "estagios": [
+                        {
+                            "faixa_dias": "0 a 7 dias",
+                            "fase": "Free Time Contratual e Anuência Sanitária ANVISA",
+                            "status_cais": "Cais: Sem sobreestadia (US$ 0,00)",
+                            "status_retro": "Retroporto: Remoção para recinto alfandegado com alvará sanitário",
+                            "detalhes": "Conferência prévia de dossiê técnico sanitário e protocolo de anuência na ANVISA."
+                        },
+                        {
+                            "faixa_dias": "7 a 14 dias",
+                            "fase": "Inspeção Técnica de Lote e Parametrização Fiscal",
+                            "status_cais": "Cais: Demurrage de US$ 90/dia + armazenagem portuária",
+                            "status_retro": "Retroporto: Desova realizada, devolução do contêiner e pátio estável",
+                            "detalhes": "Validação de laudos de estabilidade e desembaraço formal da DUIMP."
+                        },
+                        {
+                            "faixa_dias": "14+ dias",
+                            "fase": "Desembaraço e Trânsito Rodoviário até Curitiba/PR",
+                            "status_cais": "Cais: Liberação com sobretaxas de permanência estendida",
+                            "status_retro": "Retroporto: Carregamento expresso via BR-116 até Curitiba/PR",
+                            "detalhes": "Conclusão do desembaraço aduaneiro e trânsito rodoviário até a fábrica em Curitiba."
+                        }
+                    ]
+                })
+            elif "2905" in msg_lower:
+                return json.dumps({
+                    "ncm": "2905.11.00",
+                    "canal_esperado": "vermelho",
+                    "justificativa_prazos": "Produtos químicos controlados pela Polícia Federal e ANVISA.",
+                    "estagios": [
+                        {
+                            "faixa_dias": "0 a 7 dias",
+                            "fase": "Free Time e Licença de Controle de Químicos (PF/ANVISA)",
+                            "status_cais": "Cais: Sem sobreestadia durante o free time contratado",
+                            "status_retro": "Retroporto: Remoção especializada para pátio químico com bacia de contenção",
+                            "detalhes": "Verificação de licença de funcionamento e certificado de registro cadastral."
+                        },
+                        {
+                            "faixa_dias": "7 a 13 dias",
+                            "fase": "Vistoria Especializada e Laudo Técnico",
+                            "status_cais": "Cais: Demurrage de US$ 110/dia + armazenagem perigosa (IMO)",
+                            "status_retro": "Retroporto: Carga acomodada em baia IMO segregada sem demurrage",
+                            "detalhes": "Vistoria física da integridade dos tambores metálicos e conformidade dos lacres."
+                        },
+                        {
+                            "faixa_dias": "13+ dias",
+                            "fase": "Desembaraço e Entrega no Polo de Cubatão/SP",
+                            "status_cais": "Cais: Liberação sob tarifas acumuladas",
+                            "status_retro": "Retroporto: Entrega direta ao polo industrial de Cubatão/SP",
+                            "detalhes": "Emissão de guia de desembaraço e envio direto para refino no polo industrial."
+                        }
+                    ]
+                })
 
         if "sugestaoatributos" in msg_lower or "atributo" in msg_lower:
             return json.dumps({
