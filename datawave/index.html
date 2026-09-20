@@ -299,7 +299,7 @@
 </main>
 
 <script>
-  const CENARIOS_DATABASE = [
+  let CENARIOS_DATABASE = [
     {
       "duimp": "26BR000192834-1",
       "ncm": "38089329",
@@ -607,9 +607,38 @@
     window.scrollTo(0,0);
   }
 
-  // Renderiza o Cenário 5 (Vinhos) por padrão
+  async function conectarApiDinamica() {
+    try {
+      const resp = await fetch('/api/cenarios');
+      if (resp.ok) {
+        const dados = await resp.json();
+        if (Array.isArray(dados) && dados.length > 0) {
+          dados.forEach((d, i) => {
+            if (CENARIOS_DATABASE[i]) {
+              Object.assign(CENARIOS_DATABASE[i], d);
+            }
+          });
+          const statusEl = document.getElementById('apiStatus');
+          if (statusEl) {
+            statusEl.textContent = 'Motor de Cálculo Ativo (FastAPI)';
+          }
+          const sel = document.getElementById('cenarioSelect');
+          const activeIdx = sel ? parseInt(sel.value, 10) : 4;
+          renderCenario(activeIdx);
+        }
+      }
+    } catch (e) {
+      const statusEl = document.getElementById('apiStatus');
+      if (statusEl) {
+        statusEl.textContent = 'Modo Standalone (Dados Locais)';
+      }
+    }
+  }
+
+  // Renderiza o Cenário 5 (Vinhos) por padrão e tenta conexão dinâmica com o motor
   window.addEventListener('DOMContentLoaded', () => {
     renderCenario(4);
+    conectarApiDinamica();
   });
   renderCenario(4);
 </script>
