@@ -7,8 +7,15 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+# Garante que o pacote datawave seja encontrado independentemente de onde o script for executado
+HERE = Path(__file__).resolve().parent
+WORKSPACE_ROOT = HERE.parent
+if str(WORKSPACE_ROOT) not in sys.path:
+    sys.path.insert(0, str(WORKSPACE_ROOT))
 
 from datawave.engine.cost import (
     calcular_armazenagem_cais,
