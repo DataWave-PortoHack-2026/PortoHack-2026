@@ -1,0 +1,19 @@
+{
+  "match_keyword": "conferência técnica de documentos",
+  "response": {
+    "ncm": "2905.11.00",
+    "descricao": "Produtos químicos em tambores metálicos",
+    "valor_lote_usd": 85000.0,
+    "qtd_conteineres": 1,
+    "tipo_conteiner": "40HC",
+    "incoterm": "FOB",
+    "porto_descarga": "Santos",
+    "armador": "MSC",
+    "origem": "Bélgica",
+    "data_chegada_prevista": null,
+    "divergencias": [
+      "Divergência de peso bruto de 450 kg: BL indica 22.400 kg enquanto Fatura e Romaneio informam 21.950 kg.",
+      "Inconsistência entre Incoterm e frete: Fatura Comercial estabelece FOB Antuérpia, mas o BL registra frete como Freight Prepaid."
+    ]
+  }
+}
