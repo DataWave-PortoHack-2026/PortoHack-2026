@@ -429,38 +429,49 @@ def gerar_linha_do_tempo_via_agente_logcomex(
     tarifas: TarifasConfig,
     rec: RecomendacaoDecisao
 ) -> List[EstagioLinhaDoTempo]:
-    """Consulta o Agente Logcomex para obter a linha do tempo operacional e de permanência sob medida."""
+    """Consulta o Agente Logcomex para obter a linha do tempo operacional e de permanência autoral sob medida."""
     destino = op.destino_final or "Planta do Importador"
     ft = int(tarifas.free_time_demurrage_dias)
     p50 = float(risco.permanencia_p50)
     p90 = float(risco.permanencia_p90)
     canal = risco.canal_mais_provavel.upper()
+    porto = op.porto_descarga or "Porto de Santos"
 
     prompt = (
-        f"Como especialista em inteligência aduaneira e logística portuária da Logcomex, "
-        f"defina os marcos cronológicos operacionais da linha do tempo estimada de permanência "
-        f"para a importação de {op.descricao} (NCM {op.ncm}) com atracação no Porto de Santos e destino a {destino}.\n"
-        f"Parâmetros operacionais apurados:\n"
-        f"- Free Time contratual da carga: {ft} dias\n"
-        f"- Canal mais provável de parametrização: {canal}\n"
-        f"- Permanência mediana simulada (P50): {p50:.1f} dias\n"
-        f"- Permanência no pior cenário (P90): {p90:.1f} dias\n"
-        f"- Recomendação da Matriz: {rec.opcao_recomendada}\n"
-        f"- Tarifa de sobreestadia: US$ {tarifas.demurrage_diaria_usd:.0f}/dia/contêiner\n"
-        f"- Destino terrestre: {destino}\n\n"
-        f"Requisitos essenciais:\n"
-        f"NÃO utilize divisões genéricas ou fixas como 7 em 7 dias. "
-        f"Estime os prazos com base na regulamentação técnica da mercadoria, eventuais órgãos anuentes (MAPA, ANVISA, etc.), "
-        f"tempo de liberação documental/física e trânsito rodoviário até {destino}.\n"
-        f"Retorne 3 estágios operacionais em formato JSON compatível com o schema CronogramaLinhaDoTempo "
-        f"contendo a lista 'estagios' (faixa_dias, fase, status_cais, status_retro, detalhes)."
+        f"Como especialista sênior em inteligência aduaneira e logística portuária da Logcomex, "
+        f"você é o autor integral da linha do tempo operacional e dos marcos cronológicos de permanência "
+        f"para a importação de {op.descricao} (NCM {op.ncm}), com atracação no {porto} e destino terrestre a {destino}.\n\n"
+        f"Parâmetros da operação calculados pelo motor analítico:\n"
+        f"- Janela de Free Time de Demurrage contratual: {ft} dias\n"
+        f"- Canal mais provável de parametrização fiscal: {canal}\n"
+        f"- Tempo de permanência mediano simulado (P50): {p50:.1f} dias\n"
+        f"- Tempo de permanência em pior cenário com 90% de confiança (P90): {p90:.1f} dias\n"
+        f"- Recomendação da Matriz de Decisão: {rec.opcao_recomendada}\n"
+        f"- Tarifa diária de sobreestadia de contêiner: US$ {tarifas.demurrage_diaria_usd:.0f}/dia\n"
+        f"- Custo esperado projetado no Cais: R$ {rec.custo_esperado_cais_brl:,.2f}\n"
+        f"- Custo esperado projetado no Retroporto: R$ {rec.custo_esperado_retro_brl:,.2f}\n"
+        f"- Economia líquida estimada: R$ {rec.economia_esperada_brl:,.2f}\n"
+        f"- Destino terrestre da carga: {destino}\n"
+        f"- Apontamentos e divergências documentais: {', '.join(op.divergencias) if op.divergencias else 'Nenhuma'}\n\n"
+        f"Instruções autorais para elaboração dos estágios:\n"
+        f"Você deve formular de maneira autoral e inédita, sem moldes estáticos ou divisões genéricas de 7 em 7 dias, "
+        f"uma sequência de 3 estágios operacionais cronológicos fundamentados na complexidade regulatória da mercadoria "
+        f"(interveniência de órgãos anuentes como MAPA, ANVISA, IBAMA, Inmetro ou conferência exclusiva da Receita Federal).\n"
+        f"Para CADA um dos 3 estágios, crie de forma autoral todos os 5 campos obrigatórios:\n"
+        f"1. 'faixa_dias': a estimativa da faixa de dias correspondente à fase (exemplo: '0 a {ft} dias', '{ft} a {int(round(p90))} dias', '{int(round(p90))}+ dias').\n"
+        f"2. 'fase': título técnico e expressivo da fase operacional.\n"
+        f"3. 'status_cais': análise técnica dos impactos e custos específicos no Cais (sobreestadia em dólar, escalonamento tarifário e riscos).\n"
+        f"4. 'status_retro': análise técnica dos impactos e proteções específicas no Retroporto (estratégia de trânsito aduaneiro DTC/DTE, desova ágil e isolamento financeiro).\n"
+        f"5. 'detalhes': descrição técnica aprofundada dos atos aduaneiros, vistorias fiscais, inspeções de anuentes, desembaraço da DUIMP e transporte rodoviário até {destino}.\n\n"
+        f"Retorne o resultado em formato JSON estritamente compatível com o schema CronogramaLinhaDoTempo "
+        f"contendo a lista 'estagios' com os 3 objetos e todos os 5 campos preenchidos de forma completa."
     )
 
     if client:
         try:
             if hasattr(client, "ask_json"):
                 cronograma = client.ask_json(prompt, CronogramaLinhaDoTempo)
-                if cronograma and cronograma.estagios:
+                if cronograma and cronograma.estagios and len(cronograma.estagios) >= 3:
                     return cronograma.estagios
 
             if hasattr(client, "ask_agent"):

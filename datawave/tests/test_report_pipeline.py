@@ -261,6 +261,52 @@ class TestReportAndPipeline(unittest.TestCase):
         self.assertEqual(timeline_8525[2].faixa_dias, "11+ dias")
         self.assertNotEqual(timeline_3808[1].faixa_dias, timeline_8525[1].faixa_dias)
 
+    def test_linha_do_tempo_autoral_cinco_campos_todos_ncms(self):
+        """Valida se a linha do tempo autoral preenche com precisão todos os 5 campos para múltiplos NCMs e genéricos."""
+        from datawave.agent_client import FakeAgent
+        from datawave.engine.report import gerar_linha_do_tempo_via_agente_logcomex
+        from datawave.schemas import OperacaoExtraida, ResultadoRiscoPermanencia, TarifasConfig, RecomendacaoDecisao
+
+        client = FakeAgent()
+
+        casos = [
+            ("2204.21.00", "Vinho do Porto", 10, 21.0, "vermelho", "RETROPORTO"),
+            ("2106.90.90", "Suplementos alimentares", 7, 14.0, "amarelo", "RETROPORTO"),
+            ("2905.11.00", "Metanol químico", 7, 13.0, "vermelho", "RETROPORTO"),
+            ("8481.80.95", "Válvulas industriais de controle", 7, 12.0, "verde", "CAIS"),
+        ]
+
+        for ncm, desc, ft, p90, canal, opcao in casos:
+            op = OperacaoExtraida(ncm=ncm, descricao=desc, valor_lote_usd=80000.0, porto_descarga="Santos")
+            risco = ResultadoRiscoPermanencia(
+                canal_mais_provavel=canal,
+                permanencia_media=p90 - 2,
+                permanencia_p50=p90 - 4,
+                permanencia_p90=p90,
+                probabilidade_estouro_free_time=0.6,
+                distribuicao_dias={int(p90): 1.0},
+                fonte_parametros="agente"
+            )
+            tarifas = TarifasConfig(free_time_demurrage_dias=ft, demurrage_diaria_usd=150.0)
+            rec = RecomendacaoDecisao(
+                opcao_recomendada=opcao,
+                custo_esperado_cais_brl=12000.0,
+                custo_esperado_retro_brl=5000.0,
+                economia_esperada_brl=7000.0,
+                probabilidade_estouro_free_time=0.6,
+                p90_dias_permanencia=p90,
+                justificativa="Parecer técnico"
+            )
+
+            timeline = gerar_linha_do_tempo_via_agente_logcomex(client, op, risco, tarifas, rec)
+            self.assertEqual(len(timeline), 3)
+            for estagio in timeline:
+                self.assertTrue(bool(estagio.faixa_dias), f"faixa_dias vazia para NCM {ncm}")
+                self.assertTrue(bool(estagio.fase), f"fase vazia para NCM {ncm}")
+                self.assertTrue(bool(estagio.status_cais), f"status_cais vazio para NCM {ncm}")
+                self.assertTrue(bool(estagio.status_retro), f"status_retro vazio para NCM {ncm}")
+                self.assertTrue(bool(estagio.detalhes), f"detalhes vazios para NCM {ncm}")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -109,10 +109,12 @@ O DataWave inclui uma interface executiva interativa para tomada de decisão e v
 PortoHack-2026/
 ├── README.md                                # Documentação mestre do projeto
 ├── .gitignore                               # Diretivas de exclusão do Git
-├── PH2026_E1_PESQUISA_DATAWAVE.pdf          # Relatório executivo consolidado da pesquisa de campo
-├── pesquisa_setorial_porto_hack_santos_2026.md # Base analítica e dados setoriais do Porto de Santos
-├── prototipo-pesquisa-campo.md              # Documentação das entrevistas de campo com despachantes
-├── gerar_copies_pesquisa_porto_hack.py      # Automação de síntese da pesquisa
+├── docs/                                    # Documentação técnica, pesquisa de campo e relatórios
+│   ├── PH2026_E1_PESQUISA_DATAWAVE.pdf      # Relatório executivo consolidado da pesquisa de campo
+│   ├── pesquisa_setorial_porto_hack_santos_2026.md # Base analítica e dados setoriais do Porto de Santos
+│   └── prototipo-pesquisa-campo.md          # Documentação das entrevistas de campo com despachantes
+├── scripts/                                 # Scripts utilitários de suporte e pesquisa
+│   └── gerar_copies_pesquisa_porto_hack.py  # Automação de síntese da pesquisa
 └── datawave/
     ├── main.py                              # Servidor da API e entrega do frontend executivo
     ├── pipeline.py                          # Pipeline orquestrador end-to-end com trilha de auditoria
@@ -121,7 +123,7 @@ PortoHack-2026/
     ├── auth_manager.py                      # Gerenciador de credenciais e fluxo OAuth do MCP
     ├── autenticar_mcp.py                    # Script utilitário para autenticação interativa
     ├── index.html                           # Painel executivo interativo e visualizador de cenários
-    ├── mock_scenarios.json                  # Especificação dos 4 cenários estratégicos do porto
+    ├── mock_scenarios.json                  # Especificação dos cenários estratégicos do porto
     ├── catalogo_produtos_vinhos.csv         # Amostra real para auditoria de atributos da DUIMP
     ├── data/
     │   ├── risk_priors.yaml                 # Priors empíricos de canais e prazos por NCM
@@ -145,7 +147,7 @@ PortoHack-2026/
     │   ├── 03_glossario_premissas_cais_retroporto.md # Skill: premissas operacionais de Santos
     │   └── 04_playbook_extracao_documental.md # Skill: matriz de conferência cruzada
     ├── skills_prontas_para_copiar.md        # Gabarito formatado para implantação direta na Logcomex
-    └── tests/                               # Suíte com 46 testes automatizados
+    └── tests/                               # Suíte com testes automatizados
         ├── test_agent_client.py
         ├── test_api.py
         ├── test_cost_engine.py

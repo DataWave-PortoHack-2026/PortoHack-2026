@@ -186,6 +186,70 @@ class TestDatawaveAPI(unittest.TestCase):
         if httpd:
             httpd.shutdown()
 
+    def test_chat_tela4_contexto_global_sessao(self):
+        """Valida se o chat da Tela 4 acessa o contexto global das outras telas (planilha, rotas, custos e divergências)."""
+        from datawave import main
+
+        csv_auditoria = """ncm,descricao,quantidade,valor_total_usd,peso_bruto_bl_kg,peso_bruto_packing_kg,incoterm,porto_descarga,origem,destino_final
+3808.93.29,Herbicida Glifosato Concentrado,2,128500.0,22500.0,22100.0,FOB,Santos,China (Qingdao),Anápolis/GO (DAA)
+"""
+        payload_planilha = {"conteudo_csv": csv_auditoria, "usar_agente": True, "usar_mcp": False}
+        resultado_pipeline = main.processar_planilha_despachante_api(payload_planilha)
+
+        # 1. Verifica se ultimo_resultado_pipeline foi atualizado na memória
+        ultimo = main.obter_ultimo_resultado_pipeline()
+        self.assertIsNotNone(ultimo)
+        self.assertEqual(ultimo["operacao"]["ncm"], "3808.93.29")
+        self.assertIn("Qingdao", ultimo["rota_comex"]["rota_formatada"])
+
+        # 2. Pergunta sobre a rota da planilha auditada
+        resp_rota = main.responder_chat_agente({"mensagem": "qual a rota da planilha auditada?"})
+        self.assertIn("resposta", resp_rota)
+        self.assertTrue(
+            "qingdao" in resp_rota["resposta"].lower() or "anápolis" in resp_rota["resposta"].lower() or "santos" in resp_rota["resposta"].lower(),
+            f"Rota não encontrada na resposta: {resp_rota['resposta']}"
+        )
+
+        # 3. Pergunta sobre divergências encontradas
+        resp_div = main.responder_chat_agente({"mensagem": "quais as divergências encontradas na auditoria?"})
+        self.assertTrue(
+            "divergência" in resp_div["resposta"].lower() or "peso" in resp_div["resposta"].lower() or "catálogo" in resp_div["resposta"].lower() or "400" in resp_div["resposta"] or "450" in resp_div["resposta"],
+            f"Divergência não mencionada: {resp_div['resposta']}"
+        )
+
+        # 4. Pergunta sobre custos e economia calculada
+        resp_custo = main.responder_chat_agente({"mensagem": "qual o custo no cais vs retroporto e qual a economia calculada?"})
+        self.assertTrue(
+            "cais" in resp_custo["resposta"].lower() and "retroporto" in resp_custo["resposta"].lower(),
+            f"Custos não citados: {resp_custo['resposta']}"
+        )
+
+        # 5. Envio de objeto de contexto explícito enviado pelo frontend
+        contexto_customizado = {
+            "operacao": {
+                "ncm": "8525.80.90",
+                "descricao": "Câmeras Profissionais 4K",
+                "valor_lote_usd": 412000.0,
+                "qtd_conteineres": 1,
+                "divergencias": ["Certificado de calibração pendente"]
+            },
+            "rota_comex": {
+                "rota_formatada": "China (Shenzhen) → Santos/SP → Campinas/SP"
+            },
+            "custo": {
+                "opcao_recomendada": "CAIS",
+                "custo_esperado_cais_brl": 4500.0,
+                "custo_esperado_retro_brl": 8900.0,
+                "economia_esperada_brl": 4400.0
+            }
+        }
+        resp_custom = main.responder_chat_agente({
+            "mensagem": "qual a rota da mercadoria e qual a recomendação?",
+            "contexto": contexto_customizado
+        })
+        self.assertTrue("shenzhen" in resp_custom["resposta"].lower() or "campinas" in resp_custom["resposta"].lower())
+        self.assertTrue("cais" in resp_custom["resposta"].lower() or "4.400" in resp_custom["resposta"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -34,6 +34,20 @@ HTML_FILE = HERE / "datawave-6-1.html"
 if not HTML_FILE.exists():
     HTML_FILE = HERE / "index.html"
 
+# Estado global em memória da sessão DataWave com o último resultado de pipeline ou simulação
+ultimo_resultado_pipeline: Optional[Dict[str, Any]] = None
+
+
+def obter_ultimo_resultado_pipeline() -> Optional[Dict[str, Any]]:
+    """Retorna o último resultado de pipeline ou simulação registrado na sessão."""
+    return ultimo_resultado_pipeline
+
+
+def definir_ultimo_resultado_pipeline(resultado: Dict[str, Any]) -> None:
+    """Atualiza o estado global em memória do último resultado de pipeline ou simulação."""
+    global ultimo_resultado_pipeline
+    ultimo_resultado_pipeline = resultado
+
 
 def carregar_cenarios_mock() -> List[Dict[str, Any]]:
     """Carrega os cenários definidos em mock_scenarios.json."""
@@ -199,6 +213,7 @@ def calcular_cenario_dinamico(cenario_base: Dict[str, Any], cambio_usd_brl: floa
 
 def executar_simulacao_customizada(params: Dict[str, Any]) -> Dict[str, Any]:
     """Executa simulação de ponta a ponta a partir de parâmetros livres enviados pelo usuário."""
+    global ultimo_resultado_pipeline
     ncm = params.get("ncm", "8481.80.95")
     valor_lote = float(params.get("valor_lote_usd", 50000.0))
     qtd_cont = int(params.get("qtd_conteineres", 1))
@@ -231,7 +246,7 @@ def executar_simulacao_customizada(params: Dict[str, Any]) -> Dict[str, Any]:
     )
     rec = gerar_recomendacao(op, tarifas, risco.distribuicao_dias)
 
-    return {
+    res_sim = {
         "opcao_recomendada": rec.opcao_recomendada,
         "dia_break_even": rec.dia_break_even,
         "economia_esperada_brl": rec.economia_esperada_brl,
@@ -244,22 +259,211 @@ def executar_simulacao_customizada(params: Dict[str, Any]) -> Dict[str, Any]:
         "distribuicao_dias": risco.distribuicao_dias
     }
 
+    # Atualiza o estado global em memória com o contexto operacional da simulação
+    destino_sim = params.get("destino_final", "Planta do Importador")
+    origem_sim = params.get("origem", "Origem Internacional")
+    porto_sim = params.get("porto_descarga", "Santos/SP")
+    p90_val = int(round(rec.p90_dias_permanencia))
 
-def gerar_resposta_assistente(mensagem: str, cenario_idx: int = 0) -> str:
-    """Gera resposta consultiva e técnica do Agente DataWave fundamentada nos dados do cenário e cálculos."""
-    cenarios = carregar_cenarios_mock()
-    idx = max(0, min(cenario_idx, len(cenarios) - 1))
-    c_raw = cenarios[idx]
-    c = calcular_cenario_dinamico(c_raw)
+    ultimo_resultado_pipeline = {
+        "origem_execucao": "simulacao",
+        "operacao": op.model_dump(mode="json"),
+        "rota_comex": {
+            "ncm": ncm,
+            "origem": origem_sim,
+            "porto_descarga": porto_sim,
+            "destino_final": destino_sim,
+            "rota_formatada": f"{origem_sim} → {porto_sim} → {destino_sim}",
+            "valor_lote_fob_usd": valor_lote
+        },
+        "risco": risco.model_dump(),
+        "custo": res_sim,
+        "plano_correcoes": {"total_divergencias": len(divergencias), "correcoes": []},
+        "linha_do_tempo": [
+            {
+                "faixa_dias": f"0 a {free_time} dias",
+                "fase": "Free Time Contratual",
+                "status_cais": "Cais: Sem sobreestadia (US$ 0,00)",
+                "status_retro": "Retroporto: Remoção preventiva sob DTC/DTE iniciada",
+                "detalhes": f"Atracação no {porto_sim} e descarga de {qtd_cont} contêiner(es)."
+            },
+            {
+                "faixa_dias": f"{free_time} a {p90_val} dias",
+                "fase": f"Conferência Aduaneira ({risco.canal_mais_provavel.upper()})",
+                "status_cais": f"Cais: Demurrage progressivo de US$ {dem_usd:.0f}/dia + armazenagem",
+                "status_retro": "Retroporto: Desova rápida e isenção de sobreestadia",
+                "detalhes": f"Fiscalização aduaneira em canal {risco.canal_mais_provavel.upper()}."
+            },
+            {
+                "faixa_dias": f"{p90_val}+ dias",
+                "fase": "Desembaraço Concluído e Trânsito Final",
+                "status_cais": "Cais: Liberação portuária e expedição rodoviária",
+                "status_retro": f"Retroporto: Carregamento protegido até {destino_sim}",
+                "detalhes": f"Emissão do CI e transporte rodoviário até {destino_sim}."
+            }
+        ]
+    }
+
+    return res_sim
+
+
+def montar_bloco_contexto_operacional(ctx: Optional[Dict[str, Any]]) -> str:
+    """Monta o bloco padronizado CONTEXTO OPERACIONAL DA SESSÃO DATAWAVE a partir dos dados do pipeline ou cenário."""
+    if not ctx:
+        return ""
+
+    op = ctx.get("operacao") or {}
+    rota_obj = ctx.get("rota_comex") or {}
+
+    rota = (
+        rota_obj.get("rota_formatada")
+        or op.get("rota_completa")
+        or ctx.get("rota")
+        or "Santos/SP"
+    )
+    ncm = op.get("ncm") or rota_obj.get("ncm") or ctx.get("ncm") or "N/D"
+    mercadoria = op.get("descricao") or ctx.get("cenario_nome") or ctx.get("descricao") or "Carga Geral"
+
+    fob_raw = op.get("valor_lote_usd") or rota_obj.get("valor_lote_fob_usd") or ctx.get("fob_lote") or "N/D"
+    if isinstance(fob_raw, (int, float)):
+        fob_str = f"US$ {fob_raw:,.2f}"
+    else:
+        fob_str = str(fob_raw)
+
+    qtd_cont = op.get("qtd_conteineres") or ctx.get("qtd_conteineres") or 1
+
+    divs = op.get("divergencias") or ctx.get("divergencias") or []
+    if not divs and ctx.get("alerta_texto"):
+        divs = [f"{ctx.get('alerta_texto')} ({ctx.get('alert_tipo', '')})"]
+    if not divs and ctx.get("catalogo_status") and "ausente" in str(ctx.get("catalogo_status")).lower():
+        divs = [f"Inconsistência cadastral: {ctx.get('catalogo_status')}"]
+    divs_str = "; ".join(divs) if divs else "Nenhuma divergência impeditiva detectada"
+
+    risco_obj = ctx.get("risco") or {}
+    canal = risco_obj.get("canal_mais_provavel") or ctx.get("alert_tipo") or "Verde"
+    p50 = risco_obj.get("permanencia_p50")
+    p90 = risco_obj.get("permanencia_p90") or ctx.get("p90_dias")
+    if p50 is not None and p90 is not None:
+        perm_str = f"P50 = {float(p50):.1f} dias | P90 = {float(p90):.1f} dias"
+    elif p90 is not None:
+        perm_str = f"P90 = {float(p90):.1f} dias"
+    else:
+        perm_str = ctx.get("cais_tempo") or "Conforme parâmetros do porto"
+
+    custo_obj = ctx.get("custo") or {}
+    decisao = (
+        custo_obj.get("opcao_recomendada")
+        or ctx.get("decisao_titulo")
+        or ctx.get("opcao_recomendada")
+        or "Análise em andamento"
+    )
+
+    econ_raw = custo_obj.get("economia_esperada_brl") or ctx.get("impacto_economia") or ctx.get("economia") or "R$ 0,00"
+    if isinstance(econ_raw, (int, float)):
+        econ_str = f"R$ {econ_raw:,.2f}"
+    else:
+        econ_str = str(econ_raw)
+
+    cais_raw = custo_obj.get("custo_esperado_cais_brl") or ctx.get("cais_total") or "N/D"
+    if isinstance(cais_raw, (int, float)):
+        cais_str = f"R$ {cais_raw:,.2f}"
+    else:
+        cais_str = str(cais_raw)
+
+    retro_raw = custo_obj.get("custo_esperado_retro_brl") or ctx.get("retro_total") or "N/D"
+    if isinstance(retro_raw, (int, float)):
+        retro_str = f"R$ {retro_raw:,.2f}"
+    else:
+        retro_str = str(retro_raw)
+
+    parecer_obj = ctx.get("parecer") or {}
+    if isinstance(parecer_obj, dict) and parecer_obj.get("texto"):
+        parecer_resumo = parecer_obj.get("texto", "")[:250].replace("\n", " ") + "..."
+    else:
+        parecer_resumo = f"Recomendação prescritiva de {decisao} com economia de {econ_str}."
+
+    linha_obj = ctx.get("linha_do_tempo") or []
+    if linha_obj and isinstance(linha_obj, list):
+        fases = []
+        for est in linha_obj:
+            if isinstance(est, dict):
+                fases.append(f"{est.get('faixa_dias', '')}: {est.get('fase', '')}")
+        linha_str = " | ".join(fases) if fases else "3 estágios operacionais configurados"
+    else:
+        linha_str = "Cronograma conforme prazos regulatórios"
+
+    return (
+        "CONTEXTO OPERACIONAL DA SESSÃO DATAWAVE:\n"
+        f"- Rota da Operação: {rota}\n"
+        f"- Classificação Fiscal (NCM): {ncm}\n"
+        f"- Mercadoria Declarada: {mercadoria}\n"
+        f"- Volume: {qtd_cont} contêiner(es)\n"
+        f"- Valor FOB Declarado: {fob_str}\n"
+        f"- Divergências Cadastrais e Documentais: {divs_str}\n"
+        f"- Canal Parametrizado: {canal}\n"
+        f"- Tempo de Permanência Projetado: {perm_str}\n"
+        f"- Decisão Recomendada: {decisao}\n"
+        f"- Economia Financeira Calculada: {econ_str}\n"
+        f"- Custo Projetado no Cais: {cais_str}\n"
+        f"- Custo Projetado no Retroporto: {retro_str}\n"
+        f"- Linha do Tempo: {linha_str}\n"
+        f"- Parecer Resumo: {parecer_resumo}"
+    )
+
+
+def gerar_resposta_assistente(
+    mensagem: str,
+    cenario_idx: int = 0,
+    contexto: Optional[Dict[str, Any]] = None
+) -> str:
+    """Gera resposta consultiva e técnica do Agente DataWave fundamentada no contexto global ou cenário ativo."""
+    global ultimo_resultado_pipeline
+    ctx = contexto or ultimo_resultado_pipeline
+    if ctx:
+        op = ctx.get("operacao") or {}
+        rota_obj = ctx.get("rota_comex") or {}
+        risco_obj = ctx.get("risco") or {}
+        custo_obj = ctx.get("custo") or {}
+
+        nome = op.get("descricao") or ctx.get("cenario_nome") or "Operação Auditada"
+        ncm = op.get("ncm") or ctx.get("ncm") or "N/D"
+        rota = rota_obj.get("rota_formatada") or op.get("rota_completa") or ctx.get("rota") or "Santos/SP"
+        fob = op.get("valor_lote_usd") or rota_obj.get("valor_lote_fob_usd") or ctx.get("fob_lote") or "N/D"
+        fob_str = f"US$ {fob:,.2f}" if isinstance(fob, (int, float)) else str(fob)
+
+        prob_val = risco_obj.get("probabilidade_estouro_free_time")
+        prob = f"{int(round(float(prob_val) * 100))}%" if prob_val is not None else ctx.get("prob_retencao", "N/D")
+
+        decisao = custo_obj.get("opcao_recomendada") or ctx.get("decisao_titulo") or "Análise Concluída"
+
+        econ = custo_obj.get("economia_esperada_brl") or ctx.get("economia") or "R$ 0,00"
+        economia = f"R$ {econ:,.2f}" if isinstance(econ, (int, float)) else str(econ)
+
+        cais = custo_obj.get("custo_esperado_cais_brl") or ctx.get("cais_total") or "N/D"
+        cais_tot = f"R$ {cais:,.2f}" if isinstance(cais, (int, float)) else str(cais)
+
+        retro = custo_obj.get("custo_esperado_retro_brl") or ctx.get("retro_total") or "N/D"
+        retro_tot = f"R$ {retro:,.2f}" if isinstance(retro, (int, float)) else str(retro)
+
+        divs = op.get("divergencias") or ctx.get("divergencias") or []
+        divs_str = "; ".join(divs) if divs else "Nenhuma divergência impeditiva detectada"
+    else:
+        cenarios = carregar_cenarios_mock()
+        idx = max(0, min(cenario_idx, len(cenarios) - 1))
+        c_raw = cenarios[idx]
+        c = calcular_cenario_dinamico(c_raw)
+        nome = c.get("cenario_nome", f"Cenário {idx+1}")
+        ncm = c.get("ncm", "N/D")
+        rota = c.get("rota", "Santos")
+        fob_str = str(c.get("fob_lote", "N/D"))
+        prob = c.get("prob_retencao", "N/D")
+        decisao = c.get("decisao_titulo", "")
+        economia = c.get("economia", "")
+        cais_tot = c.get("cais_total", "")
+        retro_tot = c.get("retro_total", "")
+        divs_str = c.get("alerta_texto", "Nenhuma inconformidade impeditiva")
 
     q = mensagem.lower()
-    nome = c.get("cenario_nome", f"Cenário {idx+1}")
-    ncm = c.get("ncm", "N/D")
-    prob = c.get("prob_retencao", "N/D")
-    decisao = c.get("decisao_titulo", "")
-    economia = c.get("economia", "")
-    cais_tot = c.get("cais_total", "")
-    retro_tot = c.get("retro_total", "")
 
     if any(k in q for k in ("mcp", "conexão", "conexao", "autentic", "online", "status")):
         from datawave.auth_manager import carregar_dados_tokens, token_esta_expirado
@@ -276,20 +480,26 @@ def gerar_resposta_assistente(mensagem: str, cenario_idx: int = 0) -> str:
          "Atuo como Agente Aduaneiro da DataWave conectado ao ecossistema Logcomex AI. "
          "Executo a auditoria preventiva de DUIMP e catálogos de produtos, predição probabilística de retenção fiscal "
          "em Santos (Monte Carlo P50/P90), matriz comparativa de custos entre Cais e Retroporto e redação formal de parecer técnico com prescrição de DTC/DTE."),
-        (("cust", "preço", "preco", "valor", "econom", "financeir", "demurrage", "armazenag"),
-         f"Na análise de custos comparativos para o {nome}, o despacho no Cais está projetado em {cais_tot}, "
-         f"enquanto a remoção ao Retroporto totaliza {retro_tot}. {economia}."),
+        (("rota", "origem", "trajeto", "itinerário", "itinerario"),
+         f"A rota da operação em análise na sessão DataWave é: {rota}. Mercadoria declarada: {nome} (NCM {ncm}), com valor FOB de {fob_str}."),
+        (("planilha", "divergência", "divergencia", "inconsistência", "inconsistencia"),
+         f"Na auditoria realizada para a mercadoria {nome} (NCM {ncm}), foram identificados os seguintes apontamentos: {divs_str}."),
+        (("cust", "preço", "preco", "valor", "financeir", "demurrage", "armazenag"),
+         f"Na análise de custos comparativos para {nome}, o despacho no Cais está projetado em {cais_tot}, "
+         f"enquanto a remoção ao Retroporto totaliza {retro_tot}. Diferencial econômico: {economia}."),
         (("risco", "retenç", "probabilidade", "canal", "fiscal"),
-         f"Para o {nome} (NCM {ncm}), nosso modelo estocástico apurou probabilidade de retenção de {prob}. "
+         f"Para a mercadoria {nome} (NCM {ncm}), nosso modelo estocástico apurou probabilidade de retenção de {prob}. "
          f"Isso decorre do histórico amostral da NCM e dos intervenientes regulatórios associados à operação."),
-        (("recomend", "decis", "sugest", "prescrit", "para onde", "melhor opção", "melhor opcao", "retroporto", "cais"),
-         f"A recomendação prescritiva para o {nome} é: {decisao}. "
-         f"Essa estratégia maximiza a eficiência operacional e protege a carga contra custos imprevistos."),
+        (("recomend", "decis", "sugest", "prescrit", "para onde", "melhor opção", "melhor opcao"),
+         f"A recomendação prescritiva para {nome} é: {decisao}. "
+         f"Essa estratégia maximiza a eficiência operacional e gera uma economia calculada de {economia}."),
+        (("econom", "vantagem", "economizar", "ganho"),
+         f"A economia estimada na operação para {nome} é de {economia}, favorecendo a opção {decisao}."),
         (("ncm", "produto", "mercadoria", "classific"),
-         f"A operação em análise refere-se à NCM {ncm} na rota {c.get('rota', 'Santos')}, "
-         f"com lote valorado em {c.get('fob_lote', 'N/D')}."),
+         f"A operação em análise refere-se à NCM {ncm} ({nome}) na rota {rota}, "
+         f"com lote valorado em {fob_str}."),
         (("cenário", "cenari", "trocar", "alternar"),
-         f"Você está atualmente visualizando o {nome}. É possível alternar entre os cenários demonstrativos "
+         f"Você está atualmente visualizando a operação {nome}. É possível alternar entre os cenários demonstrativos "
          f"no seletor localizado na Tela 1."),
     ]
 
@@ -298,9 +508,9 @@ def gerar_resposta_assistente(mensagem: str, cenario_idx: int = 0) -> str:
             return texto
 
     return (
-        f"Como consultor DataWave para o {nome} (NCM {ncm}), posso esclarecer qualquer detalhe da operação: "
-        f"o risco de conferência aduaneira ({prob}), a composição da matriz financeira ({cais_tot} no cais vs. {retro_tot} no retroporto) "
-        f"ou orientações normativas para regularização documental."
+        f"Como consultor DataWave para a operação {nome} (NCM {ncm}), posso esclarecer qualquer detalhe da operação: "
+        f"a rota ({rota}), o risco de conferência aduaneira ({prob}), a composição financeira ({cais_tot} no cais vs. {retro_tot} no retroporto, "
+        f"economia de {economia}) ou divergências cadastrais ({divs_str})."
     )
 
 
@@ -387,10 +597,13 @@ try:
 
     @app.post("/api/pipeline")
     def api_pipeline(payload: Dict[str, Any]):
+        global ultimo_resultado_pipeline
         from datawave.pipeline import executar_pipeline_datawave
         usar_ag = payload.get("usar_agente", True)
         usar_mcp = payload.get("usar_mcp", False)
-        return executar_pipeline_datawave(payload, usar_agente=usar_ag, usar_mcp=usar_mcp)
+        resultado = executar_pipeline_datawave(payload, usar_agente=usar_ag, usar_mcp=usar_mcp)
+        ultimo_resultado_pipeline = resultado
+        return resultado
 
     @app.get("/api/agente/status")
     def api_agente_status():
@@ -458,34 +671,75 @@ def obter_status_agente_logcomex() -> Dict[str, Any]:
 
 
 def processar_planilha_despachante_api(payload: Dict[str, Any]) -> Dict[str, Any]:
+    global ultimo_resultado_pipeline
     from datawave.pipeline import executar_pipeline_datawave
     csv_conteudo = payload.get("conteudo_csv", "")
     usar_ag = payload.get("usar_agente", True)
-    usar_mcp = payload.get("usar_mcp", True)
-    return executar_pipeline_datawave(
+    usar_mcp = payload.get("usar_mcp", False)
+    resultado = executar_pipeline_datawave(
         dados_input=payload,
         usar_agente=usar_ag,
         usar_mcp=usar_mcp,
         planilha_csv=csv_conteudo if csv_conteudo else None
     )
+    ultimo_resultado_pipeline = resultado
+    return resultado
 
 
-def responder_chat_agente(payload: Any, cenario_idx: int = 0) -> Dict[str, Any]:
+def responder_chat_agente(payload: Any, cenario_idx: int = 0, agent_client: Optional[Any] = None) -> Dict[str, Any]:
+    global ultimo_resultado_pipeline
     import time
     t_start = time.perf_counter()
-    from datawave.agent_client import LogcomexMCPAgent
+    from datawave.agent_client import FakeAgent, LogcomexMCPAgent
     if isinstance(payload, str):
         msg = payload
         idx = cenario_idx
+        ctx_param = None
+        usar_mcp = False
     else:
         msg = payload.get("mensagem", "") if isinstance(payload, dict) else str(payload or "")
         idx = int(payload.get("cenario_idx", cenario_idx)) if isinstance(payload, dict) else cenario_idx
-    agent = LogcomexMCPAgent()
-    modo = "ONLINE_MCP" if agent.check_health() else "MOTOR_AUTONOMO"
-    origem = "Agente DataWave · Logcomex AI (MCP)" if modo == "ONLINE_MCP" else "Agente DataWave · Motor Híbrido Autônomo"
+        ctx_param = payload.get("contexto") if isinstance(payload, dict) else None
+        usar_mcp = payload.get("usar_mcp", False) if isinstance(payload, dict) else False
+
+    # Resolução de contexto global da aplicação (contexto explícito > ultimo_resultado_pipeline > cenário ativo)
+    contexto_ativo = ctx_param
+    if not contexto_ativo:
+        if ultimo_resultado_pipeline:
+            contexto_ativo = ultimo_resultado_pipeline
+        else:
+            cenarios = carregar_cenarios_mock()
+            idx_seguro = max(0, min(idx, len(cenarios) - 1))
+            contexto_ativo = calcular_cenario_dinamico(cenarios[idx_seguro])
+
+    bloco_ctx = montar_bloco_contexto_operacional(contexto_ativo) if contexto_ativo else ""
+    prompt_completo = f"{msg}\n\n{bloco_ctx}" if bloco_ctx else msg
+
+    if agent_client:
+        agent = agent_client
+        modo = "CLIENTE_INJETADO"
+        origem = "Agente DataWave · Cliente Injetado"
+    elif not usar_mcp:
+        agent = FakeAgent()
+        modo = "MOTOR_AUTONOMO"
+        origem = "Agente DataWave · Motor Híbrido Autônomo"
+    else:
+        mcp_ag = LogcomexMCPAgent()
+        if mcp_ag.check_health():
+            agent = mcp_ag
+            modo = "ONLINE_MCP"
+            origem = "Agente DataWave · Logcomex AI (MCP)"
+        else:
+            agent = mcp_ag._fallback
+            modo = "MOTOR_AUTONOMO"
+            origem = "Agente DataWave · Motor Híbrido Autônomo"
 
     try:
-        resposta_agente = agent.ask_agent(msg, skill="auditoria_aduaneira")
+        if modo == "ONLINE_MCP":
+            resposta_agente = agent.ask_agent(prompt_completo, skill="auditoria_aduaneira")
+        else:
+            resposta_agente = agent.ask_agent(prompt_completo)
+
         if resposta_agente and not resposta_agente.startswith("[Contingência"):
             duracao_s = round(time.perf_counter() - t_start, 3)
             return {
@@ -497,7 +751,7 @@ def responder_chat_agente(payload: Any, cenario_idx: int = 0) -> Dict[str, Any]:
             }
     except Exception as exc:
         logger.warning(f"Exceção no chat com Agente Logcomex: {exc}")
-    fallback = gerar_resposta_assistente(msg, idx)
+    fallback = gerar_resposta_assistente(msg, idx, contexto=contexto_ativo)
     duracao_s = round(time.perf_counter() - t_start, 3)
     return {
         "resposta": fallback,
@@ -598,10 +852,12 @@ def run_fallback_server(host: str = "127.0.0.1", port: int = 8000):
                 self.end_headers()
                 self.wfile.write(json.dumps(resultado, ensure_ascii=False).encode("utf-8"))
             elif self.path.startswith("/api/pipeline"):
+                global ultimo_resultado_pipeline
                 from datawave.pipeline import executar_pipeline_datawave
                 usar_ag = payload.get("usar_agente", True)
                 usar_mcp = payload.get("usar_mcp", False)
                 resultado = executar_pipeline_datawave(payload, usar_agente=usar_ag, usar_mcp=usar_mcp)
+                ultimo_resultado_pipeline = resultado
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.end_headers()

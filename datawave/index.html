@@ -2451,25 +2451,110 @@
     log.scrollTop = log.scrollHeight;
   }
 
+  function obterContextoGlobalApp(){
+    if(pipelineDadosAtuais){
+      const d = pipelineDadosAtuais;
+      const op = d.operacao || {};
+      const risco = d.risco || {};
+      const custo = d.custo || {};
+      const plano = d.plano_correcoes || {};
+      const rotaStr = op.rota || (op.origem ? (op.origem + ' → Santos/SP → ' + (op.destino_final || 'Destino Final')) : (scenarios[currentScenario] ? scenarios[currentScenario].route : 'Santos/SP'));
+      const divs = (plano.correcoes && plano.correcoes.length > 0)
+        ? plano.correcoes.map(function(c){ return c.problema_identificado || c.categoria; }).join('; ')
+        : (op.divergencias && op.divergencias.length > 0 ? op.divergencias.join('; ') : 'Nenhuma divergência impeditiva detectada');
+
+      return {
+        tipo: d.nome_arquivo ? 'planilha_auditada' : 'pipeline_executado',
+        nome_arquivo: d.nome_arquivo || (nomeArquivoCarregado || 'Demonstração Operacional'),
+        ncm: op.ncm || (scenarios[currentScenario] ? scenarios[currentScenario].ncm : 'N/D'),
+        descricao: op.descricao || (scenarios[currentScenario] ? scenarios[currentScenario].label : 'Carga Geral'),
+        rota: rotaStr,
+        origem: op.origem || 'Origem Internacional',
+        destino_final: op.destino_final || 'Planta do Importador',
+        valor_fob_usd: op.valor_lote_usd ? ('US$ ' + op.valor_lote_usd.toLocaleString('pt-BR', {minimumFractionDigits: 2})) : (scenarios[currentScenario] ? scenarios[currentScenario].fob : 'N/D'),
+        qtd_conteineres: op.qtd_conteineres || 1,
+        canal_predito: (risco.canal_mais_provavel || 'amarelo').toUpperCase(),
+        permanencia_media_dias: risco.permanencia_media ? risco.permanencia_media + ' dias' : '--',
+        p90_dias: risco.permanencia_p90 ? risco.permanencia_p90 + ' dias' : '--',
+        probabilidade_retencao: risco.probabilidade_estouro_free_time ? (Math.round(risco.probabilidade_estouro_free_time * 100) + '%') : (scenarios[currentScenario] ? scenarios[currentScenario].alertProb + '%' : '--'),
+        decisao_recomendada: custo.opcao_recomendada || (scenarios[currentScenario] ? scenarios[currentScenario].decisionTitle : 'RETROPORTO'),
+        economia_calculada_brl: custo.economia_esperada_brl ? ('R$ ' + custo.economia_esperada_brl.toLocaleString('pt-BR', {minimumFractionDigits: 2})) : (scenarios[currentScenario] ? scenarios[currentScenario].economy : 'R$ 0,00'),
+        custo_cais_brl: custo.custo_esperado_cais_brl ? ('R$ ' + custo.custo_esperado_cais_brl.toLocaleString('pt-BR', {minimumFractionDigits: 2})) : (scenarios[currentScenario] ? scenarios[currentScenario].scenarioA.total : 'R$ 0,00'),
+        custo_retro_brl: custo.custo_esperado_retro_brl ? ('R$ ' + custo.custo_esperado_retro_brl.toLocaleString('pt-BR', {minimumFractionDigits: 2})) : (scenarios[currentScenario] ? scenarios[currentScenario].scenarioC.total : 'R$ 0,00'),
+        divergencias: divs,
+        total_divergencias: plano.total_divergencias || (plano.correcoes ? plano.correcoes.length : 0),
+        trace_id: d.trace_id || 'DW-SESSAO'
+      };
+    }
+
+    const s = scenarios[currentScenario];
+    return {
+      tipo: 'cenario_ativo',
+      nome_arquivo: 'Cenário Base ' + (currentScenario + 1),
+      ncm: s.ncm,
+      descricao: s.label,
+      rota: s.route,
+      origem: s.route.split('→')[0] ? s.route.split('→')[0].trim() : 'Origem Internacional',
+      destino_final: s.route.split('→')[2] ? s.route.split('→')[2].trim() : 'Destino Final',
+      valor_fob_usd: s.fob,
+      qtd_conteineres: 1,
+      canal_predito: s.alertLevel === 'crit' ? 'VERMELHO' : (s.alertLevel === 'warn' ? 'AMARELO' : 'VERDE'),
+      permanencia_media_dias: s.scenarioA.l1[1] || '--',
+      p90_dias: s.scenarioA.l1[1] || '--',
+      probabilidade_retencao: s.alertProb + '%',
+      decisao_recomendada: s.decisionTitle,
+      economia_calculada_brl: (s.impact && s.impact[0]) ? s.impact[0][0] : 'R$ 0,00',
+      custo_cais_brl: s.scenarioA.total,
+      custo_retro_brl: s.scenarioC.total,
+      divergencias: s.catalogOk ? 'Nenhuma divergência impeditiva detectada' : s.catalogText,
+      total_divergencias: s.catalogOk ? 0 : 1,
+      trace_id: 'DW-DEMO'
+    };
+  }
+
   function agentReply(query){
     const q = query.toLowerCase();
-    const s = scenarios[currentScenario];
-    if(q.indexOf('risco') > -1 || q.indexOf('retenç') > -1 || q.indexOf('probabilidade') > -1){
-      return 'A probabilidade estimada para o ' + s.label + ' é de ' + s.alertProb + '%, com base no perfil cadastral e no histórico do NCM ' + s.ncm + '.';
+    const ctx = obterContextoGlobalApp();
+
+    if(q.indexOf('rota') > -1 || q.indexOf('origem') > -1 || q.indexOf('destino') > -1 || q.indexOf('trajeto') > -1){
+      if(ctx.tipo === 'planilha_auditada'){
+        return 'A rota identificada na planilha auditada ("' + ctx.nome_arquivo + '") é ' + ctx.rota + ', com origem em ' + ctx.origem + ', descarga no Porto de Santos e destino final em ' + ctx.destino_final + ' (NCM ' + ctx.ncm + ' - ' + ctx.descricao + ').';
+      }
+      return 'A rota operacional atualmente em análise para o ' + ctx.descricao + ' é: ' + ctx.rota + ', com descarga no Porto de Santos e destino final em ' + ctx.destino_final + '.';
     }
-    if(q.indexOf('cust') > -1 || q.indexOf('preç') > -1 || q.indexOf('valor') > -1 || q.indexOf('econom') > -1){
-      return 'No ' + s.label + ', o cais custaria ' + s.scenarioA.total + ' contra ' + s.scenarioC.total + ' no retroporto. Você confere a comparação completa na aba "Matriz Comparativa".';
+
+    if(q.indexOf('planilha') > -1 || q.indexOf('arquivo') > -1 || q.indexOf('auditad') > -1){
+      if(ctx.tipo === 'planilha_auditada'){
+        return 'A planilha ativa na sessão é "' + ctx.nome_arquivo + '". Mercadoria auditada: ' + ctx.descricao + ' (NCM ' + ctx.ncm + '), valor declarado: ' + ctx.valor_fob_usd + ', rota: ' + ctx.rota + '. Divergências apuradas: ' + ctx.divergencias + '.';
+      }
+      return 'No momento está carregado o ' + ctx.descricao + ' (NCM ' + ctx.ncm + ') com rota ' + ctx.rota + '. Você pode carregar qualquer planilha CSV operacional na Tela 1 para que eu realize a auditoria aduaneira completa.';
     }
+
+    if(q.indexOf('divergên') > -1 || q.indexOf('divergen') > -1 || q.indexOf('catálogo') > -1 || q.indexOf('catalogo') > -1 || q.indexOf('pendên') > -1 || q.indexOf('penden') > -1){
+      return 'Apontamentos cadastrais para o lote (NCM ' + ctx.ncm + '): ' + ctx.divergencias + '. Total de pendências registradas: ' + ctx.total_divergencias + '.';
+    }
+
+    if(q.indexOf('risco') > -1 || q.indexOf('retenç') > -1 || q.indexOf('probabilidade') > -1 || q.indexOf('canal') > -1){
+      return 'A probabilidade estimada de sobreestadia para ' + ctx.ncm + ' (' + ctx.descricao + ') é de ' + ctx.probabilidade_retencao + ', com canal provável ' + ctx.canal_predito + ' e permanência projetada de ' + ctx.permanencia_media_dias + '.';
+    }
+
+    if(q.indexOf('cust') > -1 || q.indexOf('preç') > -1 || q.indexOf('valor') > -1 || q.indexOf('econom') > -1 || q.indexOf('gasto') > -1){
+      return 'Na análise financeira para ' + ctx.descricao + ', o custo total no Cais é projetado em ' + ctx.custo_cais_brl + ' contra ' + ctx.custo_retro_brl + ' no Retroporto. O diferencial econômico apurado é de ' + ctx.economia_calculada_brl + ' a favor de ' + ctx.decisao_recomendada + '.';
+    }
+
     if(q.indexOf('retroporto') > -1 || q.indexOf('cais') > -1 || q.indexOf('recomend') > -1 || q.indexOf('decis') > -1){
-      return 'Para o ' + s.label + ', recomendamos: ' + s.decisionTitle + '. Detalhes completos na aba "Decisão Prescritiva".';
+      return 'Para a operação em análise (' + ctx.ncm + ' na rota ' + ctx.rota + '), recomendamos: ' + ctx.decisao_recomendada + '. Detalhes completos e embasamento regulatório nas abas "Matriz Comparativa" e "Decisão Prescritiva".';
     }
+
     if(q.indexOf('ncm') > -1){
-      return 'Estamos analisando o NCM ' + s.ncm + ', com rota ' + s.route + '.';
+      return 'Estamos analisando a NCM ' + ctx.ncm + ' (' + ctx.descricao + '), com rota ' + ctx.rota + ' e valor FOB ' + ctx.valor_fob_usd + '.';
     }
+
     if(q.indexOf('cenári') > -1 || q.indexOf('cenari') > -1){
-      return 'Você pode trocar de cenário a qualquer momento na Tela 1, na seção "Central de Ingestão de Planilhas". No momento estamos vendo o ' + s.label + '.';
+      return 'Você pode alternar entre os cenários ou carregar planilhas a qualquer momento na Tela 1 ("Central de Ingestão de Planilhas"). No momento estamos processando: ' + ctx.descricao + '.';
     }
-    return 'Posso te ajudar com informações sobre o risco de retenção, os custos comparados entre cais e retroporto, ou a recomendação final. Pergunte à vontade!';
+
+    return 'Compreendi sua pergunta sobre a operação (' + ctx.descricao + ' · NCM ' + ctx.ncm + ' · Rota ' + ctx.rota + '). Posso detalhar o risco de retenção, a rota completa da planilha auditada, os custos comparados ou a recomendação técnica!';
   }
 
   async function handleChatSubmit(e){
@@ -2505,10 +2590,15 @@
     }, 100);
 
     try {
+      const contextoGlobal = obterContextoGlobalApp();
       const resp = await fetch('/api/agente/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mensagem: text, cenario_idx: currentScenario })
+        body: JSON.stringify({ 
+          mensagem: text, 
+          cenario_idx: currentScenario,
+          contexto: contextoGlobal
+        })
       });
       clearInterval(chatTimerInterval);
       const thinkingEl = document.getElementById(thinkingId);
@@ -2539,6 +2629,7 @@
 
   // Alias para retrocompatibilidade
   window.sendChatMessage = handleChatSubmit;
+  window.obterContextoGlobalApp = obterContextoGlobalApp;
 </script>
 <!-- Oceano FFT (vgpu, WebGPU) — bundle IIFE gerado com Vite a partir do exemplo fft-ocean; expõe window.DatawaveOcean.createRenderer -->
 <script>

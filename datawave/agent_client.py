@@ -204,6 +204,78 @@ class FakeAgent(AgentClient):
             "timestamp": time.time()
         })
 
+        # Verificação prioritária de Contexto Operacional Global da Sessão (Tela 4 Chat)
+        if "CONTEXTO OPERACIONAL DA SESSÃO DATAWAVE" in message and "REQUISITO OBRIGATÓRIO DE RESPOSTA" not in message:
+            partes = message.split("CONTEXTO OPERACIONAL DA SESSÃO DATAWAVE")
+            pergunta = partes[0].lower().strip()
+            bloco_ctx = partes[1] if len(partes) > 1 else message
+
+            def _get_ctx(chaves: List[str], padrao: str = "") -> str:
+                for ch in chaves:
+                    m = re.search(rf"(?:^|\n)\s*-\s*{re.escape(ch)}:\s*(.+)$", bloco_ctx, re.MULTILINE | re.IGNORECASE)
+                    if m:
+                        val = m.group(1).strip()
+                        if val:
+                            return val
+                return padrao
+
+            rota_ctx = _get_ctx(["Rota da Operação", "Rota da Carga", "Rota Completa", "Rota"], "Porto de Santos")
+            ncm_ctx = _get_ctx(["Classificação Fiscal (NCM)", "NCM", "Classificação Fiscal"], "N/D")
+            merc_ctx = _get_ctx(["Mercadoria Declarada", "Mercadoria", "Descrição", "Descricao"], "Carga Geral")
+            fob_ctx = _get_ctx(["Valor FOB Declarado", "Valor FOB", "FOB"], "N/D")
+            divs_ctx = _get_ctx(["Divergências Cadastrais e Documentais", "Divergências", "Divergencias", "Apontamentos"], "Nenhuma divergência impeditiva detectada")
+            canal_ctx = _get_ctx(["Canal Parametrizado", "Canal Fiscal", "Canal"], "Verde")
+            perm_ctx = _get_ctx(["Tempo de Permanência Projetado", "Tempo de Permanência", "Permanência", "Permanencia"], "Conforme histórico portuário")
+            decisao_ctx = _get_ctx(["Decisão Recomendada", "Decisão", "Decisao", "Recomendação", "Recomendacao"], "CAIS")
+            econ_ctx = _get_ctx(["Economia Financeira Calculada", "Economia Calculada", "Economia"], "R$ 0,00")
+            cais_ctx = _get_ctx(["Custo Projetado no Cais", "Custo Cais", "Cais"], "R$ 0,00")
+            retro_ctx = _get_ctx(["Custo Projetado no Retroporto", "Custo Retroporto", "Retroporto"], "R$ 0,00")
+
+            if any(k in pergunta for k in ("rota", "origem", "destino", "trajeto", "itinerário", "itinerario")):
+                complemento_rec = f" Decisão prescritiva: {decisao_ctx} (economia de {econ_ctx})." if any(k in pergunta for k in ("recomend", "decis", "sugest", "opção", "opcao")) else ""
+                return (
+                    f"Conforme o contexto operacional auditado na sessão DataWave, a rota da operação é: {rota_ctx}. "
+                    f"A mercadoria declarada é {merc_ctx} (NCM {ncm_ctx}), com valor FOB de {fob_ctx}.{complemento_rec}"
+                )
+
+            if any(k in pergunta for k in ("divergência", "divergencia", "inconsistência", "inconsistencia", "erro", "pendência", "pendencia", "catálogo", "catalogo")):
+                return (
+                    f"Na auditoria realizada para a mercadoria {merc_ctx} (NCM {ncm_ctx}), "
+                    f"as divergências e apontamentos identificados no catálogo/documentação foram: {divs_ctx}."
+                )
+
+            if any(k in pergunta for k in ("planilha", "auditada", "auditoria")):
+                return (
+                    f"Com base na planilha auditada na sessão DataWave para o item {merc_ctx} (NCM {ncm_ctx}): "
+                    f"a rota é {rota_ctx}, com valor FOB de {fob_ctx}. "
+                    f"Divergências identificadas: {divs_ctx}. "
+                    f"Decisão financeira recomendada: {decisao_ctx} com economia prevista de {econ_ctx}."
+                )
+
+            if any(k in pergunta for k in ("custo", "cais", "retroporto", "gasto", "despesa", "demurrage", "armazenagem")):
+                return (
+                    f"De acordo com a matriz financeira apurada no contexto operacional, o custo estimado no Cais é {cais_ctx}, "
+                    f"enquanto no Retroporto é {retro_ctx}. O diferencial econômico apurado é de {econ_ctx} a favor de {decisao_ctx}."
+                )
+
+            if any(k in pergunta for k in ("economia", "vantagem", "economizar", "ganho", "diferencial")):
+                return (
+                    f"A economia financeira calculada para esta operação é de {econ_ctx}, "
+                    f"justificando a recomendação da opção {decisao_ctx}."
+                )
+
+            if any(k in pergunta for k in ("recomendação", "recomendacao", "decisão", "decisao", "prescrição", "prescricao", "sugestão", "sugestao", "para onde")):
+                return (
+                    f"A recomendação prescritiva para a operação ({ncm_ctx} na rota {rota_ctx}) é: {decisao_ctx}. "
+                    f"Essa decisão proporciona uma economia calculada de {econ_ctx}, mitigando riscos no canal {canal_ctx}."
+                )
+
+            return (
+                f"Contexto operacional da sessão DataWave para a NCM {ncm_ctx} ({merc_ctx}) na rota {rota_ctx}: "
+                f"parametrização em canal {canal_ctx}, permanência projetada de {perm_ctx}, "
+                f"decisão favorável a {decisao_ctx} com economia calculada de {econ_ctx}. Divergências: {divs_ctx}."
+            )
+
         # 1. Tentar localizar fixture gravada
         if self.fixtures_dir.exists():
             # Priorizar o prompt original do usuário antes do schema JSON appended pelo ask_json
@@ -550,6 +622,48 @@ class FakeAgent(AgentClient):
                             "status_cais": "Cais: Liberação sob tarifas acumuladas",
                             "status_retro": "Retroporto: Entrega direta ao polo industrial de Cubatão/SP",
                             "detalhes": "Emissão de guia de desembaraço e envio direto para refino no polo industrial."
+                        }
+                    ]
+                })
+            else:
+                m_ncm = re.search(r"\b(\d{4}(?:\.\d{2}(?:\.\d{2})?)?|\d{8})\b", message)
+                ncm_identificado = m_ncm.group(1) if m_ncm else "8481.80.95"
+                m_ft = re.search(r"free time[^\d]*(\d+)", msg_lower)
+                ft_val = int(m_ft.group(1)) if m_ft else 7
+                m_p90 = re.search(r"p90[^\d]*(\d+(?:\.\d+)?)", msg_lower)
+                p90_val = int(round(float(m_p90.group(1)))) if m_p90 else max(ft_val + 3, 10)
+                m_canal = re.search(r"canal[^\w]*(verde|amarelo|vermelho)", msg_lower)
+                canal_val = m_canal.group(1) if m_canal else "amarelo"
+                m_dest = re.search(r"destino[^\w:]*[:\s]*([^\n,\.]+)", msg_lower)
+                dest_val = m_dest.group(1).strip() if m_dest else "Planta do Importador"
+                if not dest_val or len(dest_val) < 3:
+                    dest_val = "Planta do Importador"
+
+                return json.dumps({
+                    "ncm": ncm_identificado,
+                    "canal_esperado": canal_val,
+                    "justificativa_prazos": f"Operação para NCM {ncm_identificado} com parametrização fiscal projetada em canal {canal_val}.",
+                    "estagios": [
+                        {
+                            "faixa_dias": f"0 a {ft_val} dias",
+                            "fase": f"Free Time Contratual ({ft_val} Dias) e Instrução DUIMP",
+                            "status_cais": "Cais: Sem incidência de demurrage durante o período de franquia",
+                            "status_retro": "Retroporto: Remoção preventiva sob DTC/DTE para recinto alfandegado",
+                            "detalhes": f"Atracação no porto de descarga, conferência de documentação instrutiva e registro da declaração de importação."
+                        },
+                        {
+                            "faixa_dias": f"{ft_val} a {p90_val} dias",
+                            "fase": f"Conferência Fiscal e Desembaraço Aduaneiro ({canal_val.capitalize()})",
+                            "status_cais": "Cais: Incidência diária de demurrage e tarifas portuárias escalonadas",
+                            "status_retro": "Retroporto: Operação de desova ágil, devolução de vazio e armazenagem com custos controlados",
+                            "detalhes": f"Análise fiscal em canal {canal_val}, atendimento a eventuais exigências regulatórias e saneamento de pendências."
+                        },
+                        {
+                            "faixa_dias": f"{p90_val}+ dias",
+                            "fase": f"Desembaraço Concluído e Trânsito Rodoviário até {dest_val}",
+                            "status_cais": "Cais: Liberação da carga e expedição com custos acumulados de sobreestadia",
+                            "status_retro": f"Retroporto: Carregamento protegido e expedição direta até {dest_val}",
+                            "detalhes": f"Emissão do Comprovante de Importação (CI) pela Receita Federal, carregamento no modal rodoviário e transporte seguro até {dest_val}."
                         }
                     ]
                 })
