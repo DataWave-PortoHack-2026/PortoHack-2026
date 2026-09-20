@@ -30,7 +30,9 @@ from datawave.schemas import OperacaoExtraida, TarifasConfig
 
 HERE = Path(__file__).parent
 SCENARIOS_FILE = HERE / "mock_scenarios.json"
-HTML_FILE = HERE / "index.html"
+HTML_FILE = HERE / "datawave-6-1.html"
+if not HTML_FILE.exists():
+    HTML_FILE = HERE / "index.html"
 
 
 def carregar_cenarios_mock() -> List[Dict[str, Any]]:
@@ -203,6 +205,54 @@ def executar_simulacao_customizada(params: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def gerar_resposta_assistente(mensagem: str, cenario_idx: int = 0) -> str:
+    """Gera resposta consultiva e técnica do Agente DataWave fundamentada nos dados do cenário e cálculos."""
+    cenarios = carregar_cenarios_mock()
+    idx = max(0, min(cenario_idx, len(cenarios) - 1))
+    c_raw = cenarios[idx]
+    c = calcular_cenario_dinamico(c_raw)
+
+    q = mensagem.lower()
+    nome = c.get("cenario_nome", f"Cenário {idx+1}")
+    ncm = c.get("ncm", "N/D")
+    prob = c.get("prob_retencao", "N/D")
+    decisao = c.get("decisao_titulo", "")
+    economia = c.get("economia", "")
+    cais_tot = c.get("cais_total", "")
+    retro_tot = c.get("retro_total", "")
+
+    if any(term in q for term in ["cust", "preço", "preco", "valor", "econom", "financeir", "demurrage", "armazenag"]):
+        return (
+            f"Na análise de custos comparativos para o {nome}, o despacho no Cais está projetado em {cais_tot}, "
+            f"enquanto a remoção ao Retroporto totaliza {retro_tot}. {economia}."
+        )
+    elif any(term in q for term in ["risco", "retenç", "probabilidade", "canal", "fiscal"]):
+        return (
+            f"Para o {nome} (NCM {ncm}), nosso modelo de Monte Carlo apurou probabilidade de retenção de {prob}. "
+            f"Isso decorre do perfil cadastral e dos intervenientes regulatórios associados à operação."
+        )
+    elif any(term in q for term in ["recomend", "decis", "sugest", "prescrit", "para onde", "melhor opção", "melhor opcao", "retroporto", "cais"]):
+        return (
+            f"A recomendação prescritiva para o {nome} é: {decisao}. "
+            f"Essa estratégia maximiza a eficiência operacional e protege a carga contra custos imprevistos."
+        )
+    elif any(term in q for term in ["ncm", "produto", "mercadoria", "classific"]):
+        return (
+            f"A operação em análise refere-se à NCM {ncm} na rota {c.get('rota', 'Santos')}, "
+            f"com lote valorado em {c.get('fob_lote', 'N/D')}."
+        )
+    elif any(term in q for term in ["cenário", "cenari", "trocar", "alternar"]):
+        return (
+            f"Você está atualmente visualizando o {nome}. É possível alternar entre os cenários demonstrativos "
+            f"no seletor localizado na Tela 1."
+        )
+    else:
+        return (
+            f"Como consultor DataWave para o {nome}, posso esclarecer dúvidas sobre a probabilidade de retenção ({prob}), "
+            f"a matriz comparativa de custos ({cais_tot} no cais vs. {retro_tot} no retroporto) e a emissão de instruções DTE/DTC."
+        )
+
+
 # ---------------------------------------------------------------------------
 # Compatibilidade Dupla: FastAPI (se instalado) + Servidor HTTP Nativo
 # ---------------------------------------------------------------------------
@@ -221,6 +271,10 @@ try:
     )
 
     @app.get("/", response_class=HTMLResponse)
+    @app.get("/index.html", response_class=HTMLResponse)
+    @app.get("/datawave-6-1.html", response_class=HTMLResponse)
+    @app.get("/datawave6.1", response_class=HTMLResponse)
+    @app.get("/datawave-6.1", response_class=HTMLResponse)
     def index():
         if HTML_FILE.exists():
             return HTML_FILE.read_text(encoding="utf-8")
@@ -234,6 +288,13 @@ try:
     @app.post("/api/simular")
     def api_simular(params: Dict[str, Any]):
         return executar_simulacao_customizada(params)
+
+    @app.post("/api/chat")
+    def api_chat(payload: Dict[str, Any]):
+        msg = payload.get("mensagem", "")
+        idx = int(payload.get("cenario_idx", 0))
+        resposta = gerar_resposta_assistente(msg, idx)
+        return {"resposta": resposta}
 
 except ImportError:
     # Fallback transparente quando FastAPI não estiver no ambiente
@@ -257,7 +318,9 @@ def run_fallback_server(host: str = "127.0.0.1", port: int = 8000):
             self.end_headers()
 
         def do_GET(self):
-            if self.path == "/" or self.path == "/index.html":
+            html_routes = ["/", "/index.html", "/datawave-6-1.html", "/datawave6.1", "/datawave-6.1"]
+            req_clean = self.path.split("?")[0]
+            if req_clean in html_routes:
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
@@ -279,15 +342,24 @@ def run_fallback_server(host: str = "127.0.0.1", port: int = 8000):
                 super().do_GET()
 
         def do_POST(self):
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length).decode("utf-8")
+            payload = json.loads(body) if body else {}
+
             if self.path.startswith("/api/simular"):
-                content_length = int(self.headers.get("Content-Length", 0))
-                body = self.rfile.read(content_length).decode("utf-8")
-                params = json.loads(body) if body else {}
-                resultado = executar_simulacao_customizada(params)
+                resultado = executar_simulacao_customizada(payload)
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.end_headers()
                 self.wfile.write(json.dumps(resultado, ensure_ascii=False).encode("utf-8"))
+            elif self.path.startswith("/api/chat"):
+                msg = payload.get("mensagem", "")
+                idx = int(payload.get("cenario_idx", 0))
+                resp = gerar_resposta_assistente(msg, idx)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps({"resposta": resp}, ensure_ascii=False).encode("utf-8"))
             else:
                 self.send_response(404)
                 self.end_headers()

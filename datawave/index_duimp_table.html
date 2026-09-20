@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agente Datawave — Auditoria Cadastral Preventiva DUIMP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    box-sizing:border-box;
+    --bg:#F4F1EA; --bg-panel:#FFFFFF; --bg-sunken:#EBE7DD; --ink:#2B2621; --ink-soft:#6B645A;
+    --line:#E1DACB; --navy:#0A0E29; --accent:#1DA9CF; --accent-2:#17AD92; --accent-soft:#D8EEF3;
+    --ok-bg:#E7EFE3; --ok-ink:#3E6B3A; --ok-line:#BFD6B6;
+    --warn-bg:#FBEFD9; --warn-ink:#8A5A12; --warn-line:#EBCD8E;
+    --crit-bg:#F8E3DC; --crit-ink:#A23A22; --crit-line:#E9B7A5;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%; margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; display:flex;}
+  h1,h2,h3,.display{font-family:'Fraunces',Georgia,serif;}
+  
+  .rail{width:280px; flex-shrink:0; background:var(--bg-sunken); border-right:1px solid var(--line); padding:20px 14px; display:flex; flex-direction:column; gap:16px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .mark{width:36px; height:36px; border-radius:8px; background:var(--navy); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700;}
+  .brand-text{font-family:'Fraunces',serif; font-weight:600; font-size:15px; line-height:1.1;}
+  .brand-text span{display:block; font-family:'Inter',sans-serif; font-weight:500; font-size:10.5px; color:var(--ink-soft); margin-top:2px;}
+  
+  .status-pill{display:flex; align-items:center; gap:7px; background:var(--bg-panel); border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-size:11.5px; color:var(--ink-soft);}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--ok-ink); box-shadow:0 0 0 3px var(--ok-bg);}
+  
+  .scenario-picker{display:flex; flex-direction:column; gap:6px; border:1px solid var(--line); border-radius:10px; padding:10px; background:var(--bg-panel);}
+  .scenario-picker label{font-size:11px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.03em;}
+  .scenario-picker select{font-size:12px; padding:7px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--ink); font-weight:600; cursor:pointer;}
+  
+  nav{display:flex; flex-direction:column; gap:5px;}
+  .nav-label{font-size:11px; color:var(--ink-soft); padding:0 8px; margin-bottom:2px;}
+  .nav-btn{all:unset; cursor:pointer; display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:10px; font-size:13px; color:var(--ink-soft);}
+  .nav-btn:hover{background:var(--bg-panel);}
+  .nav-btn.active{background:var(--bg-panel); color:var(--ink); box-shadow:0 0 0 1px var(--line);}
+  .nav-btn .num{font-family:'Fraunces',serif; font-weight:600; font-size:13px; color:var(--accent); width:18px;}
+  .nav-btn strong{display:block; font-weight:600;}
+  .nav-btn small{display:block; color:var(--ink-soft); font-size:11px; margin-top:2px;}
+  
+  .rail-foot{margin-top:auto; font-size:11px; color:var(--ink-soft); padding:0 6px;}
+
+  main{flex:1; min-width:0; overflow-y:auto;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:16px 28px; border-bottom:1px solid var(--line); position:sticky; top:0; background:rgba(244,241,234,0.95); backdrop-filter:blur(6px); z-index:5;}
+  .topbar h1{font-size:19px; margin:0; font-weight:500;}
+  .topbar .sub{font-size:12.5px; color:var(--ink-soft); margin-top:2px;}
+  .screen-tag{font-size:11.5px; color:var(--ink-soft); border:1px solid var(--line); padding:5px 10px; border-radius:999px; background:var(--bg-panel);}
+  
+  .stage{padding:26px 28px 60px; max-width:960px; margin:0 auto;}
+  .screen{display:none; animation:rise .3s ease;}
+  .screen.active{display:block;}
+  @keyframes rise{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  .panel{background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; margin-bottom:16px;}
+  .panel h2{font-size:15px; font-weight:600; margin:0 0 14px;}
+  .panel h2 .eyebrow{display:block; font-family:'Inter',sans-serif; font-weight:700; font-size:11px; color:var(--accent); margin-bottom:3px; text-transform:uppercase; letter-spacing:.04em;}
+  
+  .kv-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px 20px;}
+  .kv{border-left:2px solid var(--line); padding-left:12px;}
+  .kv .k{font-size:11.5px; color:var(--ink-soft); margin-bottom:3px;}
+  .kv .v{font-size:14.5px; font-weight:600;}
+  .kv .v small{font-weight:400; color:var(--ink-soft); font-size:12px; display:block; margin-top:2px;}
+
+  /* TABELA DE AUDITORIA DE ATRIBUTOS */
+  .audit-table{width:100%; border-collapse:collapse; margin-top:8px; font-size:13px;}
+  .audit-table th{text-align:left; padding:8px 10px; font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; border-bottom:1px solid var(--line); background:var(--bg-sunken);}
+  .audit-table td{padding:10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  .audit-table tr:last-child td{border-bottom:none;}
+  .audit-code{font-family:monospace; font-weight:700; background:var(--bg-sunken); padding:2px 6px; border-radius:4px; font-size:12px;}
+  
+  /* REGUAS DE COMPOSIÇÃO DE RISCO (XAI) */
+  .risk-bar-wrap{display:flex; flex-direction:column; gap:8px; margin-top:12px;}
+  .risk-bar-item{display:flex; flex-direction:column; gap:3px;}
+  .risk-bar-labels{display:flex; justify-content:space-between; font-size:12px;}
+  .risk-bar-labels .desc{font-weight:500; color:var(--ink);}
+  .risk-bar-labels .weight{font-weight:700; color:var(--accent);}
+  .bar-bg{height:7px; background:var(--bg-sunken); border-radius:999px; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:999px; background:var(--accent);}
+  .bar-fill.crit{background:var(--crit-ink);}
+  .bar-fill.warn{background:var(--warn-ink);}
+  .bar-fill.ok{background:var(--ok-ink);}
+
+  .alert{display:flex; gap:12px; align-items:flex-start; background:var(--crit-bg); border:1px solid var(--crit-line); color:var(--crit-ink); border-radius:var(--radius); padding:16px 18px; margin-bottom:18px;}
+  .alert.ok{background:var(--ok-bg); border-color:var(--ok-line); color:var(--ok-ink);}
+  .alert.warn{background:var(--warn-bg); border-color:var(--warn-line); color:var(--warn-ink);}
+  .alert .t{font-size:11.5px; font-weight:700; margin-bottom:3px; text-transform:uppercase; letter-spacing:.02em;}
+  .alert p{margin:0; font-size:14px; line-height:1.5;}
+
+  .badge{display:inline-flex; align-items:center; font-size:11.5px; font-weight:600; padding:3px 8px; border-radius:999px; background:var(--ok-bg); color:var(--ok-ink); border:1px solid var(--ok-line);}
+  .badge.missing{background:var(--crit-bg); color:var(--crit-ink); border-color:var(--crit-line);}
+  .badge.warn{background:var(--warn-bg); color:var(--warn-ink); border-color:var(--warn-line);}
+
+  /* TELA 2: COMPARAÇÃO */
+  .compare{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .scenario{border-radius:var(--radius); padding:20px; border:1px solid var(--line); background:var(--bg-panel); display:flex; flex-direction:column; gap:14px;}
+  .scenario.risk-crit{border-color:var(--crit-line);}
+  .scenario.risk-ok{border-color:var(--ok-line);}
+  .scenario-head{display:flex; justify-content:space-between; align-items:flex-start;}
+  .scenario-head .label{font-size:11px; color:var(--ink-soft); margin-bottom:2px;}
+  .scenario-head h3{margin:0; font-size:16px; font-weight:600;}
+  .risk-tag{font-size:11px; font-weight:700; padding:4px 8px; border-radius:999px;}
+  .risk-tag.crit{background:var(--crit-bg); color:var(--crit-ink); border:1px solid var(--crit-line);}
+  .risk-tag.ok{background:var(--ok-bg); color:var(--ok-ink); border:1px solid var(--ok-line);}
+
+  .line-item{display:flex; justify-content:space-between; font-size:13.5px; padding:10px 0; border-top:1px solid var(--line);}
+  .line-item .l{color:var(--ink-soft);}
+  .line-item .r{font-weight:600;}
+  .total{display:flex; justify-content:space-between; align-items:baseline; padding-top:14px; border-top:1px solid var(--line);}
+  .total .l{font-size:12.5px; color:var(--ink-soft);}
+  .total .r{font-family:'Fraunces',serif; font-size:22px; font-weight:700;}
+
+  .savings-strip{display:flex; align-items:center; justify-content:center; gap:8px; margin:20px 0; font-size:14px; color:var(--ink-soft); background:var(--bg-panel); padding:10px; border-radius:10px; border:1px solid var(--line);}
+  .savings-strip .amt{font-family:'Fraunces',serif; font-weight:700; color:var(--ok-ink); font-size:17px;}
+
+  /* TELA 3: DECISÃO */
+  .decision-card{border-radius:18px; padding:2px; background:linear-gradient(155deg, var(--accent), var(--accent-2));}
+  .decision-inner{border-radius:16px; background:var(--bg-panel); padding:28px 30px;}
+  .decision-inner .eyebrow{font-size:11.5px; font-weight:700; color:var(--accent); margin-bottom:8px; text-transform:uppercase;}
+  .decision-inner h2{font-size:22px; margin:0 0 14px; font-weight:600;}
+  .decision-inner p{font-size:14.5px; line-height:1.65; margin:0 0 20px;}
+  
+  .impact-row{display:flex; gap:22px; flex-wrap:wrap; margin-bottom:22px;}
+  .impact .num{font-family:'Fraunces',serif; font-size:26px; font-weight:700; color:var(--ok-ink);}
+  .impact .lbl{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+
+  .cta-row{display:flex; gap:12px; align-items:center; flex-wrap:wrap;}
+  .cta{all:unset; cursor:pointer; background:var(--accent); color:#fff; padding:12px 20px; border-radius:10px; font-size:13.5px; font-weight:600;}
+  .cta:hover{filter:brightness(1.08);}
+  .cta-secondary{all:unset; cursor:pointer; color:var(--ink-soft); font-size:13px; padding:10px;}
+  .cta-secondary:hover{color:var(--ink);}
+</style>
+</head>
+<body>
+
+<aside class="rail">
+  <div class="brand">
+    <div class="mark">DW</div>
+    <div class="brand-text">Datawave<span>Auditoria Cadastral Preventiva</span></div>
+  </div>
+
+  <div class="status-pill">
+    <span class="dot"></span><span id="apiStatus">Auditoria DUIMP Conectada</span>
+  </div>
+
+  <div class="scenario-picker">
+    <label for="cenarioSelect">Alternar Operação:</label>
+    <select id="cenarioSelect" onchange="mudarCenario(this.value)">
+      <option value="0">1: Defensivos (Anápolis/GO)</option>
+      <option value="1">2: Autopeças (Sorocaba/SP)</option>
+      <option value="2">3: Reefer Farma (Paulínia/SP)</option>
+      <option value="3">4: Polímeros (Piracicaba/SP)</option>
+      <option value="4" selected>5: Vinhos Finos DOC Tejo (Portugal)</option>
+    </select>
+  </div>
+
+  <nav>
+    <div class="nav-label">Etapas da Auditoria</div>
+    <button class="nav-btn active" data-screen="1" onclick="showScreen(1)">
+      <span class="num">01</span><span><strong>Auditoria & Atributos</strong><small>Portal Único & LPCO</small></span>
+    </button>
+    <button class="nav-btn" data-screen="2" onclick="showScreen(2)">
+      <span class="num">02</span><span><strong>Matriz de Custos</strong><small>Cais vs. Retroporto</small></span>
+    </button>
+    <button class="nav-btn" data-screen="3" onclick="showScreen(3)">
+      <span class="num">03</span><span><strong>Decisão Prescritiva</strong><small>Instrução de Trânsito</small></span>
+    </button>
+  </nav>
+
+  <div class="rail-foot" id="railFoot">NCM 2204.21.00 · São Paulo/SP</div>
+</aside>
+
+<main>
+  <div class="topbar">
+    <div>
+      <h1 id="topTitle">Auditoria Cadastral & Atributos DUIMP</h1>
+      <div class="sub" id="topSub">Varredura preditiva de catálogo, órgãos anuentes (LPCO) e perfil de risco</div>
+    </div>
+    <div class="screen-tag" id="topTag">Tela 1 de 3</div>
+  </div>
+
+  <div class="stage">
+    <!-- TELA 1: AUDITORIA COMPLETA -->
+    <section class="screen active" id="screen-1">
+      
+      <!-- 1. PAINEL ADUANEIRO GERAL -->
+      <div class="panel">
+        <h2><span class="eyebrow">Declaração Única de Importação (DUIMP)</span>Dados da Operação Aduaneira</h2>
+        <div class="kv-grid">
+          <div class="kv"><div class="k">Número DUIMP / Lote</div><div class="v" id="f_duimp">-</div></div>
+          <div class="kv"><div class="k">NCM & Classificação Fiscal</div><div class="v" id="f_ncm">-</div></div>
+          <div class="kv"><div class="k">Valor FOB do Lote</div><div class="v" id="f_fob">-</div></div>
+          <div class="kv"><div class="k">Rota Declarada</div><div class="v" id="f_rota">- <small id="f_rota_det"></small></div></div>
+        </div>
+      </div>
+
+      <!-- 2. AUDITORIA ITEM A ITEM DE ATRIBUTOS SISCOMEX -->
+      <div class="panel">
+        <h2><span class="eyebrow">Auditoria do Catálogo de Produtos</span>Varredura de Atributos Obrigatórios da NCM</h2>
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th style="width: 140px;">Atributo Siscomex</th>
+              <th>Campo Regulatório</th>
+              <th>Valor Declarado</th>
+              <th style="width: 130px;">Status da Validação</th>
+            </tr>
+          </thead>
+          <tbody id="f_atributos_corpo">
+            <!-- Renderizado dinamicamente -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 3. MÓDULO LPCO & PERFIL DO OPERADOR -->
+      <div class="panel">
+        <h2><span class="eyebrow">Conformidade & Órgãos Anuentes</span>Módulo LPCO & Perfil OEA</h2>
+        <div class="kv-grid">
+          <div class="kv"><div class="k">Importador</div><div class="v" id="f_importador">-</div></div>
+          <div class="kv"><div class="k">Certificação OEA / Conformidade</div><div class="v" id="f_oea_score">-</div></div>
+          <div class="kv"><div class="k">Módulo LPCO Requerido</div><div class="v" id="f_lpco_mod">-</div></div>
+          <div class="kv"><div class="k">Status da Licença / Exigência</div><div class="v"><span id="f_lpco_status" class="badge">-</span></div></div>
+        </div>
+      </div>
+
+      <!-- 4. ALERTA PREDITIVO E COMPOSIÇÃO DO SCORE (XAI) -->
+      <div class="alert" id="f_alert_box">
+        <div class="icon" id="f_alert_icon">⚠️</div>
+        <div style="flex:1;">
+          <div class="t" id="f_alert_tipo">Diagnóstico Preditivo da IA</div>
+          <p id="f_alerta_texto">-</p>
+          
+          <!-- Composição explicável do risco -->
+          <div class="risk-bar-wrap" id="f_risk_factors">
+            <!-- Renderizado dinamicamente -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TELA 2: MATRIZ DE CUSTOS -->
+    <section class="screen" id="screen-2">
+      <div class="compare">
+        <div class="scenario risk-crit" id="card_cais">
+          <div class="scenario-head">
+            <div><div class="label">Cenário A</div><h3>Despacho sobre Águas (Cais)</h3></div>
+            <span class="risk-tag crit" id="tag_cais">Zona Primária</span>
+          </div>
+          <div>
+            <div class="line-item"><span class="l">Dwell Time previsto no cais</span><span class="r" id="f_cais_tempo">-</span></div>
+            <div class="line-item"><span class="l">Sobreestadia (Demurrage Armador)</span><span class="r" id="f_cais_demurrage">-</span></div>
+            <div class="line-item"><span class="l">Armazenagem básica cais</span><span class="r" id="f_cais_armazenagem">-</span></div>
+          </div>
+          <div class="total"><span class="l">Custo Total Previsto</span><span class="r" id="f_cais_total">-</span></div>
+        </div>
+
+        <div class="scenario risk-ok" id="card_retro">
+          <div class="scenario-head">
+            <div><div class="label">Cenário C</div><h3>Retroporto (Porto Seco)</h3></div>
+            <span class="risk-tag ok" id="tag_retro">Zona Secundária</span>
+          </div>
+          <div>
+            <div class="line-item"><span class="l">Tempo de desova / devolução</span><span class="r" id="f_retro_tempo">-</span></div>
+            <div class="line-item"><span class="l">Remoção DTC + Pacote 15d</span><span class="r" id="f_retro_transf">-</span></div>
+            <div class="line-item"><span class="l">Demurrage no Retroporto</span><span class="r" id="f_retro_demurrage">-</span></div>
+          </div>
+          <div class="total"><span class="l">Custo Total Previsto</span><span class="r" id="f_retro_total">-</span></div>
+        </div>
+      </div>
+      <div class="savings-strip">
+        Impacto Financeiro Estimado: <span class="amt" id="f_economia">-</span>
+      </div>
+    </section>
+
+    <!-- TELA 3: DECISÃO PRESCRITIVA -->
+    <section class="screen" id="screen-3">
+      <div class="decision-card">
+        <div class="decision-inner">
+          <div class="eyebrow">Recomendação Prescritiva da IA Datawave</div>
+          <h2 id="f_decisao_titulo">-</h2>
+          <p id="f_decisao_texto">-</p>
+          <div class="impact-row">
+            <div class="impact"><div class="num" id="f_imp_econ">-</div><div class="lbl">impacto financeiro por contêiner</div></div>
+            <div class="impact"><div class="num" id="f_imp_risco">-</div><div class="lbl">probabilidade de retenção evitada</div></div>
+            <div class="impact"><div class="num" id="f_imp_demurrage">-</div><div class="lbl">dias de demurrage gerados</div></div>
+          </div>
+          <div class="cta-row">
+            <button class="cta" id="f_cta_btn" onclick="alert('Instrução emitida com sucesso no protótipo!')">-</button>
+            <button class="cta-secondary" onclick="showScreen(2)">Revisar matriz comparativa</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  const CENARIOS_DATABASE = [
+    {
+      "duimp": "26BR000192834-1",
+      "ncm": "38089329",
+      "fob_lote": "US$ 128.500,00",
+      "rota": "China → Santos → Anápolis/GO",
+      "detalhe_rota": "46.194 TEUs no histórico",
+      "importador": "AgroQuímica do Brasil Defensivos Ltda",
+      "oea_score": "Não-OEA (Comum) · Score 58/100",
+      "lpco_mod": "MAPA + ANVISA (Agrotóxicos)",
+      "lpco_status": "Pendente · Exigência Documental",
+      "lpco_status_class": "badge missing",
+      "alert_tipo": "Risco Crítico de Retenção (82%)",
+      "alert_class": "alert",
+      "alert_icon": "⚠️",
+      "alerta_texto": "Inconsistência cadastral crítica: atributo de registro agronômico ausente. Fila conjunta de anuência MAPA e ANVISA estimada em 10 dias de cais, estourando o free time de 5 dias.",
+      "atributos": [
+        { "code": "A01", "nome": "Registro de Aptidão / Eficácia", "valor": "[VAZIO]", "status": "missing", "status_text": "FALHA · Vazio" },
+        { "code": "ATT_001", "nome": "Ingrediente Ativo (Glifosato)", "valor": "Glifosato Técnico 95%", "status": "ok", "status_text": "OK · Válido" },
+        { "code": "ATT_002", "nome": "Fabricante / Planta de Síntese", "valor": "Hubei Sanonda Chemical Ltd", "status": "ok", "status_text": "OK · Válido" },
+        { "code": "ATT_003", "nome": "Classe Toxicológica", "valor": "Categoria 4 (Pouco Tóxico)", "status": "ok", "status_text": "OK · Válido" }
+      ],
+      "fatores_risco": [
+        { "desc": "Exigência de Licença de Importação LPCO (MAPA + ANVISA)", "pct": 40, "class": "crit" },
+        { "desc": "Atributo Crítico A01 ausente no catálogo do Portal Único", "pct": 25, "class": "crit" },
+        { "desc": "Importador Não-OEA com histórico em canal Amarelo", "pct": 17, "class": "warn" }
+      ],
+      "cais_tempo": "10 dias (estouro de 5)",
+      "cais_demurrage": "US$ 750,00 (R$ 4.125,00)",
+      "cais_armazenagem": "R$ 4.500,00",
+      "cais_total": "R$ 8.625,00",
+      "retro_tempo": "2º dia (desova rápida)",
+      "retro_transf": "R$ 2.200,00 (DTC + 15d)",
+      "retro_demurrage": "R$ 0,00",
+      "retro_total": "R$ 2.200,00",
+      "economia": "Economia de R$ 6.425,00 no Retroporto (Cenário C)",
+      "decisao_titulo": "Direcionar para a Zona Secundária — Cenário C",
+      "decisao_texto": "A análise da NCM 38089329 indica alta probabilidade de retenção sanitária. O direcionamento sob DTC estanca o demurrage em dólar do armador MSC.",
+      "impacto_economia": "R$ 6.425",
+      "impacto_risco": "82%",
+      "impacto_demurrage": "0 dias",
+      "cta_principal": "Emitir Instrução DTE/DTC (Porto Seco)"
+    },
+    {
+      "duimp": "26BR000284719-5",
+      "ncm": "87084080",
+      "fob_lote": "US$ 85.400,00",
+      "rota": "Alemanha → Santos → Sorocaba/SP",
+      "detalhe_rota": "18.200 kg · 20' Dry",
+      "importador": "AutoPeças Paulínia Indústria e Comércio S/A",
+      "oea_score": "Não-OEA (Recorrente) · Score 72/100",
+      "lpco_mod": "INMETRO + Vigiagro (Madeira)",
+      "lpco_status": "Em Análise Fitossanitária",
+      "lpco_status_class": "badge warn",
+      "alert_tipo": "Risco Alto Fitossanitário (65%)",
+      "alert_class": "alert warn",
+      "alert_icon": "📦",
+      "alerta_texto": "Suporte de madeira das caixas de câmbio sem declaração de tratamento térmico NIMF-15. Vistoria presencial obrigatória antes do desembaraço.",
+      "atributos": [
+        { "code": "ATT_NIMF15", "nome": "Certificação Fitossanitária Madeira", "valor": "[NÃO DECLARADO]", "status": "missing", "status_text": "FALHA · Pendente" },
+        { "code": "ATT_PARTNUM", "nome": "Código Part Number Fabricante", "valor": "ZF-8HP75-AUTOMATIC", "status": "ok", "status_text": "OK · Válido" },
+        { "code": "ATT_HOMOL", "nome": "Registro de Homologação INMETRO", "valor": "REG-INM-00892/2025", "status": "ok", "status_text": "OK · Válido" }
+      ],
+      "fatores_risco": [
+        { "desc": "Suspeita de suporte em madeira sem selo NIMF-15 (Vigiagro)", "pct": 35, "class": "warn" },
+        { "desc": "Homologação técnica de componente automotivo (INMETRO)", "pct": 18, "class": "warn" },
+        { "desc": "Free time curto negociado com Hapag-Lloyd (7 dias)", "pct": 12, "class": "ok" }
+      ],
+      "cais_tempo": "9 dias (estouro de 2)",
+      "cais_demurrage": "US$ 360,00 (R$ 1.980,00)",
+      "cais_armazenagem": "R$ 4.500,00",
+      "cais_total": "R$ 6.480,00",
+      "retro_tempo": "3º dia (devolução vazio)",
+      "retro_transf": "R$ 2.400,00 (Remoção + Pacote)",
+      "retro_demurrage": "R$ 0,00",
+      "retro_total": "R$ 2.400,00",
+      "economia": "Economia de R$ 4.080,00 no Retroporto (Cenário C)",
+      "decisao_titulo": "Remoção Preventiva para Retroporto — Cenário C",
+      "decisao_texto": "A falta do tratamento de madeira causa vistoria presencial no cais. O envio ao retroporto evita diárias acumuladas de demurrage.",
+      "impacto_economia": "R$ 4.080",
+      "impacto_risco": "65%",
+      "impacto_demurrage": "0 dias",
+      "cta_principal": "Emitir Instrução DTE/DTC (Retroporto)"
+    },
+    {
+      "duimp": "26BR000391823-9",
+      "ncm": "29331990",
+      "fob_lote": "US$ 420.000,00",
+      "rota": "Índia → Santos → Paulínia/SP",
+      "detalhe_rota": "Cadeia de frio (2°C a 8°C) · 40' Reefer",
+      "importador": "PharmaLife Biotecnologia Brasil Ltda",
+      "oea_score": "Não-OEA (Esporádico) · Score 64/100",
+      "lpco_mod": "ANVISA (Insumos Farmacêuticos Ativos)",
+      "lpco_status": "Pendente de Inspeção Termossensível",
+      "lpco_status_class": "badge missing",
+      "alert_tipo": "Risco Crítico Carga Reefer (78%)",
+      "alert_class": "alert",
+      "alert_icon": "❄️",
+      "alerta_texto": "Carga frigorificada com fila de fiscalização presencial ANVISA de 12 dias. Sobretaxa reefer de US$ 350/dia após o 5º dia gerará explosão de custos na zona primária.",
+      "atributos": [
+        { "code": "ATT_TEMP", "nome": "Faixa de Conservação Térmica", "valor": "+2°C a +8°C (Reefer Monitorado)", "status": "ok", "status_text": "OK · Válido" },
+        { "code": "ATT_DCB", "nome": "Denominação Comum Brasileira (DCB)", "valor": "DCB-04891 (Princípio Ativo)", "status": "ok", "status_text": "OK · Válido" },
+        { "code": "ATT_AFE", "nome": "Autorização de Funcionamento (AFE)", "valor": "AFE-ANVISA-3.08912-1", "status": "warn", "status_text": "AUDIT · Em Verificação" }
+      ],
+      "fatores_risco": [
+        { "desc": "Fila de inspeção física de medicamentos e IFA (ANVISA)", "pct": 45, "class": "crit" },
+        { "desc": "Penalidade financeira crítica: demurrage reefer de US$ 350/dia", "pct": 23, "class": "crit" },
+        { "desc": "Importador com importações esporádicas no recinto", "pct": 10, "class": "ok" }
+      ],
+      "cais_tempo": "12 dias (estouro de 7)",
+      "cais_demurrage": "US$ 2.450,00 (R$ 13.475,00)",
+      "cais_armazenagem": "R$ 4.475,00 (Plug/Energia)",
+      "cais_total": "R$ 17.950,00",
+      "retro_tempo": "2º dia (desova câmara fria)",
+      "retro_transf": "R$ 4.800,00 (DTC Reefer)",
+      "retro_demurrage": "R$ 0,00",
+      "retro_total": "R$ 4.800,00",
+      "economia": "Economia de R$ 13.150,00 no Retroporto (Cenário C)",
+      "decisao_titulo": "Transferência e Desova em Câmara Fria — Cenário C",
+      "decisao_texto": "Diárias reefer geram hemorragia financeira. A transferência sob DTC permite desovar a carga em câmara fria e devolver o cofre vazio rapidamente.",
+      "impacto_economia": "R$ 13.150",
+      "impacto_risco": "78%",
+      "impacto_demurrage": "0 dias",
+      "cta_principal": "Emitir DTC Especial Reefer"
+    },
+    {
+      "duimp": "26BR000419283-0",
+      "ncm": "39011010",
+      "fob_lote": "US$ 63.000,00",
+      "rota": "EUA → Santos → Piracicaba/SP",
+      "detalhe_rota": "44.000 kg · 2x 40' HC",
+      "importador": "BraskPolímeros do Brasil S/A",
+      "oea_score": "OEA-C Nível 2 · Score 98/100 (Excelente)",
+      "lpco_mod": "Dispensado de LPCO (Sem Anuência)",
+      "lpco_status": "Desembaraço Automático sobre Águas",
+      "lpco_status_class": "badge ok",
+      "alert_tipo": "Operação de Baixo Risco (Canal Verde)",
+      "alert_class": "alert ok",
+      "alert_icon": "✅",
+      "alerta_texto": "Importador certificado OEA Nível 2 sem anuência de órgãos externos. Desembaraço sobre águas imediato com saída estimada em até 36 horas.",
+      "atributos": [
+        { "code": "ATT_DENSIDADE", "nome": "Densidade Linear do Polímero", "valor": "< 0,94 g/cm³ (Polietileno)", "status": "ok", "status_text": "OK · Válido" },
+        { "code": "ATT_FORMA", "nome": "Forma de Apresentação", "valor": "Pellets / Grânulos Industriais", "status": "ok", "status_text": "OK · Válido" }
+      ],
+      "fatores_risco": [
+        { "desc": "Conformidade máxima OEA Nível 2 (Filtro Verde)", "pct": 2, "class": "ok" },
+        { "desc": "NCM sem exigência de órgãos anuentes ou LPCO", "pct": 3, "class": "ok" }
+      ],
+      "cais_tempo": "1.5 dias (Dentro do Free Time)",
+      "cais_demurrage": "R$ 0,00",
+      "cais_armazenagem": "R$ 1.200,00",
+      "cais_total": "R$ 1.200,00",
+      "retro_tempo": "Não aplicável",
+      "retro_transf": "R$ 2.100,00 (Remoção + Pacote)",
+      "retro_demurrage": "R$ 0,00",
+      "retro_total": "R$ 2.100,00",
+      "economia": "Cais é R$ 900,00 mais vantajoso que o Retroporto!",
+      "decisao_titulo": "Despacho Direto Sobre Águas no Cais — Cenário A",
+      "decisao_texto": "Canal verde com importador OEA. O custo de permanência no cais (R$ 1.200) é inferior aos custos de remoção para retroporto (R$ 2.100).",
+      "impacto_economia": "R$ 900",
+      "impacto_risco": "5%",
+      "impacto_demurrage": "0 dias",
+      "cta_principal": "Confirmar Saída Direta Cais (Canal Verde)"
+    },
+    {
+      "duimp": "26BR000582910-8",
+      "ncm": "2204.21.00",
+      "fob_lote": "US$ 54.200,00",
+      "rota": "Portugal (Lisboa) → Santos → São Paulo/SP",
+      "detalhe_rota": "12.000 garrafas · Quinta do Casal Branco DOC Tejo",
+      "importador": "Adega & Empório Tejo Brasil Ltda",
+      "oea_score": "Não-OEA (Comum) · Score 68/100",
+      "lpco_mod": "MAPA / Vigiagro (Bebidas & Vinhos)",
+      "lpco_status": "Pendente de Retificação Cadastral",
+      "lpco_status_class": "badge missing",
+      "alert_tipo": "Inconsistência Cadastral MAPA / Vigiagro (74%)",
+      "alert_class": "alert warn",
+      "alert_icon": "🍷",
+      "alerta_texto": "Auditoria de atributos Siscomex: ATT_10076 (Casal Branco) e ATT_14249 (DOC do Tejo) preenchidos, mas ATT_14240 está VAZIO. Amostragem laboratorial MAPA estimada em 11 dias de cais, estourando o free time de 7 dias da CMA CGM.",
+      "atributos": [
+        { "code": "ATT_10076", "nome": "Produtor / Vinícola Estrangeira", "valor": "CASAL BRANCO - SOCIEDADE DE VINHOS S.A", "status": "ok", "status_text": "OK · Válido" },
+        { "code": "ATT_14249", "nome": "Denominação de Origem / Região", "valor": "DOC DO TEJO", "status": "ok", "status_text": "OK · Válido" },
+        { "code": "ATT_14262", "nome": "Código GTIN / EAN de Barras", "valor": "5602424800010", "status": "ok", "status_text": "OK · Válido" },
+        { "code": "ATT_14251", "nome": "Tipo de Recipiente / Envasamento", "valor": "02 (Garrafa Vidro 750ml)", "status": "ok", "status_text": "OK · Válido" },
+        { "code": "ATT_14240", "nome": "Certificado Enológico / Safra MAPA", "valor": "[CAMPO VAZIO NO CATÁLOGO]", "status": "missing", "status_text": "FALHA · Vazio" }
+      ],
+      "fatores_risco": [
+        { "desc": "Anuência obrigatória de Bebidas pelo Vigiagro (MAPA)", "pct": 35, "class": "warn" },
+        { "desc": "Atributo ATT_14240 ausente no Catálogo do Portal Único", "pct": 25, "class": "crit" },
+        { "desc": "Importador Não-OEA com free time padrão de 7 dias", "pct": 14, "class": "warn" }
+      ],
+      "cais_tempo": "11 dias (estouro de 4)",
+      "cais_demurrage": "US$ 640,00 (R$ 3.520,00)",
+      "cais_armazenagem": "R$ 4.500,00",
+      "cais_total": "R$ 8.020,00",
+      "retro_tempo": "3º dia (desova climatizada)",
+      "retro_transf": "R$ 2.300,00 (Remoção DTC + 15d)",
+      "retro_demurrage": "R$ 0,00",
+      "retro_total": "R$ 2.300,00",
+      "economia": "Economia de R$ 5.720,00 no Retroporto (Cenário C)",
+      "decisao_titulo": "Remoção sob DTC para Armazém Climatizado — Cenário C",
+      "decisao_texto": "A conferência e análise enológica pelo MAPA (Vigiagro) exigem tempo de amostragem. Direcionar para a zona secundária sob DTC protege o lote em armazém climatizado, estanca a sobreestadia em dólar e economiza R$ 5.720,00.",
+      "impacto_economia": "R$ 5.720",
+      "impacto_risco": "74%",
+      "impacto_demurrage": "0 dias",
+      "cta_principal": "Emitir DTC Climatizado (Porto Seco)"
+    }
+  ];
+
+  const titles = {
+    1: ['Auditoria Cadastral & Atributos DUIMP', 'Varredura preventiva de catálogo, órgãos anuentes (LPCO) e perfil de risco'],
+    2: ['Matriz de Custos Preditiva', 'Cais vs. Retroporto — impacto financeiro e sobreestadia'],
+    3: ['Card de Decisão Prescritiva', 'Recomendação operacional e emissão de instrução de trânsito']
+  };
+
+  function mudarCenario(idx){
+    renderCenario(parseInt(idx, 10));
+  }
+
+  function renderCenario(idx){
+    const c = CENARIOS_DATABASE[idx];
+    if(!c) return;
+
+    // Tela 1: Gerais
+    document.getElementById('f_duimp').textContent = c.duimp;
+    document.getElementById('f_ncm').textContent = c.ncm;
+    document.getElementById('f_fob').textContent = c.fob_lote;
+    document.getElementById('f_rota').innerHTML = `${c.rota} <small>${c.detalhe_rota}</small>`;
+    document.getElementById('f_importador').textContent = c.importador;
+    document.getElementById('f_oea_score').textContent = c.oea_score;
+    document.getElementById('f_lpco_mod').textContent = c.lpco_mod;
+    
+    const lpcoStatusBadge = document.getElementById('f_lpco_status');
+    lpcoStatusBadge.textContent = c.lpco_status;
+    lpcoStatusBadge.className = c.lpco_status_class;
+
+    // Tela 1: Renderiza Atributos Siscomex (Item a Item)
+    const tbody = document.getElementById('f_atributos_corpo');
+    tbody.innerHTML = '';
+    c.atributos.forEach(att => {
+      const tr = document.createElement('tr');
+      const badgeCls = att.status === 'ok' ? 'badge' : (att.status === 'warn' ? 'badge warn' : 'badge missing');
+      tr.innerHTML = `
+        <td><span class="audit-code">${att.code}</span></td>
+        <td><strong>${att.nome}</strong></td>
+        <td>${att.valor}</td>
+        <td><span class="${badgeCls}">${att.status_text}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Tela 1: Alerta e Explicabilidade (XAI)
+    const alertBox = document.getElementById('f_alert_box');
+    alertBox.className = c.alert_class;
+    document.getElementById('f_alert_icon').textContent = c.alert_icon;
+    document.getElementById('f_alert_tipo').textContent = c.alert_tipo;
+    document.getElementById('f_alerta_texto').textContent = c.alerta_texto;
+
+    // Fatores de Risco
+    const riskWrap = document.getElementById('f_risk_factors');
+    riskWrap.innerHTML = '<div style="font-size:11.5px; font-weight:700; text-transform:uppercase; margin-top:8px; opacity:0.85;">Composição da Probabilidade de Retenção:</div>';
+    c.fatores_risco.forEach(f => {
+      const item = document.createElement('div');
+      item.className = 'risk-bar-item';
+      item.innerHTML = `
+        <div class="risk-bar-labels">
+          <span class="desc">${f.desc}</span>
+          <span class="weight">+${f.pct}%</span>
+        </div>
+        <div class="bar-bg"><div class="bar-fill ${f.class}" style="width: ${f.pct * 2.2}%"></div></div>
+      `;
+      riskWrap.appendChild(item);
+    });
+
+    // Tela 2: Custos
+    document.getElementById('f_cais_tempo').textContent = c.cais_tempo;
+    document.getElementById('f_cais_demurrage').textContent = c.cais_demurrage;
+    document.getElementById('f_cais_armazenagem').textContent = c.cais_armazenagem;
+    document.getElementById('f_cais_total').textContent = c.cais_total;
+
+    document.getElementById('f_retro_tempo').textContent = c.retro_tempo;
+    document.getElementById('f_retro_transf').textContent = c.retro_transf;
+    document.getElementById('f_retro_demurrage').textContent = c.retro_demurrage;
+    document.getElementById('f_retro_total').textContent = c.retro_total;
+    document.getElementById('f_economia').textContent = c.economia;
+
+    // Tela 3: Decisão
+    document.getElementById('f_decisao_titulo').textContent = c.decisao_titulo;
+    document.getElementById('f_decisao_texto').textContent = c.decisao_texto;
+    document.getElementById('f_imp_econ').textContent = c.impacto_economia;
+    document.getElementById('f_imp_risco').textContent = c.impacto_risco;
+    document.getElementById('f_imp_demurrage').textContent = c.impacto_demurrage;
+    document.getElementById('f_cta_btn').textContent = c.cta_principal;
+    
+    document.getElementById('railFoot').textContent = `${c.ncm} · ${c.rota.split('→')[2] || ''}`;
+  }
+
+  function showScreen(n){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-'+n).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.nav-btn[data-screen="'+n+'"]').classList.add('active');
+    document.getElementById('topTitle').textContent = titles[n][0];
+    document.getElementById('topSub').textContent = titles[n][1];
+    document.getElementById('topTag').textContent = 'Tela '+n+' de 3';
+    window.scrollTo(0,0);
+  }
+
+  // Renderiza o Cenário 5 (Vinhos) por padrão
+  window.addEventListener('DOMContentLoaded', () => {
+    renderCenario(4);
+  });
+  renderCenario(4);
+</script>
+</body>
+</html>

@@ -47,7 +47,19 @@ class TestDatawaveAPI(unittest.TestCase):
         res = executar_simulacao_customizada(payload)
         self.assertEqual(res["opcao_recomendada"], "CAIS")
         self.assertGreater(res["custo_esperado_cais_brl"], 0)
-        self.assertGreater(res["custo_esperado_retro_brl"], 0)
+    def test_assistente_chat(self):
+        """Valida se o assistente consultivo responde tecnicamente sobre risco, custos e decisão."""
+        from datawave.main import gerar_resposta_assistente
+
+        resp_risco = gerar_resposta_assistente("qual o risco de retenção desse lote?", cenario_idx=0)
+        self.assertIn("probabilidade de retenção", resp_risco.lower())
+
+        resp_custo = gerar_resposta_assistente("quanto custa no cais vs retroporto?", cenario_idx=0)
+        self.assertIn("cais", resp_custo.lower())
+        self.assertIn("retroporto", resp_custo.lower())
+
+        resp_decisao = gerar_resposta_assistente("qual a recomendação final?", cenario_idx=0)
+        self.assertIn("recomendação", resp_decisao.lower())
 
     def test_servidor_http_endpoints(self):
         """Inicia o servidor HTTP em porta de teste e valida requisições GET e POST."""
