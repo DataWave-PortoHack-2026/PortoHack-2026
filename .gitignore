@@ -30,6 +30,9 @@ ENV/
 .pytest_cache/
 .coverage
 htmlcov/
+logs/
+*.log
+*.jsonl
 
 # IDE & OS
 .vscode/
