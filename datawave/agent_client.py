@@ -276,7 +276,7 @@ class LogcomexMCPAgent(AgentClient):
         self,
         agent_id: str = "c2322f9c-41e2-4bf8-8fe5-3bd93f4063d4",
         mcp_caller: Optional[Any] = None,
-        timeout_seconds: int = 15,
+        timeout_seconds: int = 300,
         base_url: str = "https://mcp.logcomex.ai/"
     ):
         self.agent_id = agent_id
@@ -383,7 +383,7 @@ class LogcomexMCPAgent(AgentClient):
         attachments: Optional[List[Dict[str, Any]]] = None,
         conversation_id: Optional[str] = None,
         skill: Optional[str] = None,
-        poll_interval: float = 2.0
+        poll_interval: float = 3.0
     ) -> str:
         try:
             args = {
