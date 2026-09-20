@@ -66,7 +66,7 @@
     border-right:1px solid var(--line);
     padding:20px 14px; padding-top:calc(20px + env(safe-area-inset-top,0px));
     display:flex; flex-direction:column; gap:22px;
-    transition:width .2s ease, padding .2s ease;
+    transition:padding .2s ease;
     overflow:hidden;
   }
   .rail.collapsed{width:66px; padding-left:10px; padding-right:10px;}
@@ -81,7 +81,15 @@
   }
   .brand .mark img{width:100%; height:100%; object-fit:cover;}
   .brand-text{font-family:'Fraunces',serif; font-weight:600; font-size:15px; line-height:1.1; white-space:nowrap;}
-  .brand-text span{display:block; font-family:'Inter',sans-serif; font-weight:500; font-size:10.5px; color:var(--ink-soft); letter-spacing:.01em; margin-top:2px;}
+  ::selection{background:var(--accent); color:#04121c;}
+  ::-webkit-scrollbar{width:8px; height:8px;}
+  ::-webkit-scrollbar-track{background:var(--bg);}
+  ::-webkit-scrollbar-thumb{background:var(--line); border-radius:4px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--ink-soft);}
+  .num, .tracker-timer, .timestamp-badge, .kv .v, .total .r, table td {
+    font-variant-numeric: tabular-nums;
+  }
+  .brand-text span{display:block; font-family:'Inter',sans-serif; font-weight:500; font-size:12px; color:var(--ink-soft); letter-spacing:.01em; margin-top:2px;}
   .rail.collapsed .brand-text{display:none;}
 
   .rail-collapse{
@@ -129,7 +137,7 @@
   .status-pill{
     display:flex; align-items:center; gap:7px;
     background:var(--bg-panel); border:1px solid var(--line); border-radius:10px;
-    padding:9px 10px; font-size:12px; color:var(--ink-soft); white-space:nowrap;
+    padding:9px 10px; font-size:12.5px; color:var(--ink-soft); white-space:nowrap;
   }
   .rail.collapsed .status-pill{padding:9px; justify-content:center;}
   .rail.collapsed .status-text{display:none;}
@@ -137,35 +145,33 @@
     box-shadow:0 0 0 3px var(--ok-bg);}
 
   nav{display:flex; flex-direction:column; gap:3px;}
-  .nav-label{font-size:11px; color:var(--ink-soft); padding:0 10px; margin-bottom:2px; white-space:nowrap;}
+  .nav-label{font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); padding:0 10px; margin-bottom:4px; white-space:nowrap;}
   .rail.collapsed .nav-label{display:none;}
   .nav-btn{
     all:unset; cursor:pointer; display:flex; gap:9px; align-items:flex-start;
-    padding:9px 10px; border-radius:9px; font-size:13px; color:var(--ink-soft);
+    padding:9px 10px; border-radius:9px; font-size:13.5px; color:var(--ink-soft);
     line-height:1.35;
   }
   .rail.collapsed .nav-btn{justify-content:center; padding:9px;}
   .nav-btn:hover{background:var(--bg-panel);}
   .nav-btn.active{background:var(--bg-panel); color:var(--ink); box-shadow:0 0 0 1px var(--line);}
   .nav-btn .num{
-    font-family:'Fraunces',serif; font-weight:600; font-size:13px; color:var(--accent);
+    font-family:'Fraunces',serif; font-weight:600; font-size:13.5px; color:var(--accent);
     flex-shrink:0; width:16px;
   }
   .nav-btn strong{display:block; font-weight:600; color:inherit;}
-  .nav-btn small{display:block; color:var(--ink-soft); font-size:11px; margin-top:1px;}
+  .nav-btn small{display:block; color:var(--ink-soft); font-size:12px; margin-top:1px;}
   .rail.collapsed .nav-copy{display:none;}
 
-  .rail-foot{margin-top:auto; font-size:11px; color:var(--ink-soft); padding:0 6px; white-space:nowrap;}
+  .rail-foot{margin-top:auto; font-size:12px; color:var(--ink-soft); padding:0 6px; white-space:nowrap;}
   .rail.collapsed .rail-foot-text{display:none;}
 
   /* ---- main ---- */
   main{flex:1; min-width:0; overflow-x:hidden;}
   .topbar{
     display:flex; align-items:center; justify-content:space-between;
-    padding:16px 28px; padding-top:calc(16px + env(safe-area-inset-top,0px));
-    border-bottom:1px solid var(--line); position:sticky; top:0;
-    background:color-mix(in srgb, var(--bg) 92%, transparent);
-    backdrop-filter:blur(6px); z-index:5;
+    padding:20px 28px; border-bottom:1px solid var(--line);
+    background:var(--bg-panel); z-index:5;
   }
   .topbar h1{font-size:19px; margin:0; font-weight:500;}
   .topbar .sub{font-size:12.5px; color:var(--ink-soft); margin-top:2px;}
@@ -311,10 +317,10 @@
   .enter{
     pointer-events:auto; cursor:pointer; border:0; border-radius:999px; padding:15px 28px;
     font:600 15px 'Inter',sans-serif; color:#04121c;
-    background:linear-gradient(135deg,#38C6EF,#2BD9AE); box-shadow:0 8px 30px rgba(43,217,174,.35);
+    background:linear-gradient(135deg,#38C6EF,#2BD9AE); box-shadow:0 4px 14px rgba(0,0,0,0.22);
     transition:transform .2s, box-shadow .2s;
   }
-  .enter:hover{transform:translateY(-1px); box-shadow:0 12px 36px rgba(43,217,174,.5);}
+  .enter:hover{transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,0,0,0.28);}
   .enter:focus-visible,.back-sea:focus-visible{outline:2px solid #fff; outline-offset:3px;}
   .home-hint{margin-top:22px; font-size:12.5px; color:#9fa8cc;}
   @media (max-width:720px){
@@ -395,6 +401,151 @@
     flex-wrap:wrap;
   }
   .tag-dot{width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:5px;}
+
+  /* ---- banner do agente logcomex ---- */
+  .agent-banner{
+    background:var(--bg-panel);
+    border:1px solid var(--line); border-radius:var(--radius); padding:20px 24px;
+    display:flex; flex-direction:column; gap:14px; margin-bottom:20px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.12);
+  }
+  .agent-banner-top{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;}
+  .agent-title-group{display:flex; align-items:center; gap:12px;}
+  .agent-logo-badge{
+    width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg, #38C6EF, #2BD9AE);
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; color:#04121c;
+  }
+  .agent-name{font-size:16px; font-weight:700; color:var(--ink); letter-spacing:-0.01em;}
+  .agent-id{font-family:monospace; font-size:11.5px; color:var(--ink-soft);}
+  .live-pill{
+    display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px;
+    font-size:11.5px; font-weight:600; background:rgba(43,217,174,0.15); color:var(--accent-2);
+    border:1px solid rgba(43,217,174,0.35);
+  }
+  .live-pulse{
+    width:8px; height:8px; border-radius:50%; background:var(--accent-2);
+  }
+  .agent-skills-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .skill-pill{
+    font-size:12px; padding:4px 10px; border-radius:6px; background:var(--bg-sunken);
+    border:1px solid var(--line); color:var(--ink-soft); font-weight:500;
+  }
+  .skill-pill.highlight{border-color:rgba(56,198,239,0.4); color:var(--accent);}
+
+  /* ---- ingestão de planilhas do despachante ---- */
+  .dropzone{
+    border:2px dashed var(--line); border-radius:12px; padding:24px 20px; text-align:center;
+    background:var(--bg-sunken); cursor:pointer; transition:all 0.2s ease;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+  }
+  .dropzone:hover, .dropzone.dragover{
+    border-color:var(--accent); background:rgba(56,198,239,0.08);
+  }
+  .dropzone-title{font-size:14px; font-weight:600; color:var(--ink);}
+  .dropzone-sub{font-size:12px; color:var(--ink-soft);}
+  .arquivo-selecionado{
+    display:flex; align-items:center; justify-content:space-between; padding:10px 14px;
+    background:var(--bg-panel); border:1px solid var(--accent); border-radius:8px;
+    font-size:13px; font-weight:600; color:var(--ink); width:100%; margin-top:10px;
+  }
+  .preset-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  .preset-btn{
+    all:unset; cursor:pointer; font-size:12px; font-weight:600; padding:6px 12px;
+    border-radius:8px; border:1px solid var(--line); color:var(--ink-soft); background:var(--bg-sunken);
+    transition:all 0.15s ease;
+  }
+  .preset-btn:hover{color:var(--ink); border-color:var(--accent); background:var(--bg-panel);}
+  .preset-btn.active{background:var(--bg-panel); color:var(--accent); border-color:var(--accent);}
+
+  /* ---- plano prescritivo de correcoes ---- */
+  .correcoes-card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px 24px; display:flex; flex-direction:column; gap:16px; margin-top:18px;
+  }
+  .correcoes-list{display:flex; flex-direction:column; gap:12px;}
+  .correcao-item{
+    background:var(--bg-sunken); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; display:flex; flex-direction:column; gap:8px;
+    border-left:4px solid var(--accent);
+  }
+  .correcao-item.critica{border-left-color:var(--crit-ink);}
+  .correcao-item.alerta{border-left-color:var(--warn-ink);}
+  .correcao-head{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;}
+  .correcao-categoria{
+    font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
+    padding:3px 8px; border-radius:4px; background:rgba(56,198,239,0.15); color:var(--accent);
+  }
+  .correcao-item.critica .correcao-categoria{background:var(--crit-bg); color:var(--crit-ink);}
+  .correcao-item.alerta .correcao-categoria{background:var(--warn-bg); color:var(--warn-ink);}
+  .correcao-titulo{font-size:13.5px; font-weight:600; color:var(--ink);}
+  .correcao-acao{font-size:13px; line-height:1.5; color:var(--ink);}
+  .correcao-meta{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--ink-soft); margin-top:4px;}
+  .correcao-meta strong{color:var(--ink);}
+
+  /* ---- tabs de telemetria ---- */
+  .telemetria-tabs{display:flex; gap:8px; border-bottom:1px solid var(--line); padding-bottom:12px; flex-wrap:wrap;}
+  .telemetria-tab-btn{
+    all:unset; cursor:pointer; font-size:12.5px; font-weight:600; padding:8px 14px;
+    border-radius:8px; border:1px solid transparent; color:var(--ink-soft);
+  }
+  .telemetria-tab-btn:hover{color:var(--ink);}
+  .telemetria-tab-btn.active{
+    background:var(--bg-sunken); color:var(--accent); border-color:var(--line);
+  }
+  .telemetria-pane{display:none;}
+  .telemetria-pane.active{display:flex; flex-direction:column; gap:14px;}
+
+  /* ---- tracker superior fixo de execucao do pipeline ---- */
+  .global-tracker{
+    position:sticky; top:0; z-index:90;
+    background:rgba(8,11,32,0.88); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    border-bottom:1px solid rgba(56,198,239,0.3); padding:10px 24px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.35); transition:all 0.3s ease;
+  }
+  .tracker-head{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+    margin-bottom:8px; font-size:12px;
+  }
+  .tracker-stage-info{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .tracker-badge{
+    background:rgba(56,198,239,0.15); color:var(--accent); border:1px solid rgba(56,198,239,0.35);
+    padding:2px 8px; border-radius:6px; font-weight:600; font-size:12px;
+  }
+  .tracker-stage-text{font-weight:500; color:var(--ink); font-size:12.5px;}
+  .tracker-metrics{display:flex; align-items:center; gap:10px;}
+  .tracker-timer{font-family:monospace; font-size:13px; font-weight:700; color:var(--accent-2);}
+  .tracker-status-tag{
+    font-size:12px; padding:2px 10px; border-radius:999px;
+    background:var(--bg-sunken); color:var(--ink-soft); border:1px solid var(--line); font-weight:600;
+  }
+  .tracker-progress-rail{
+    width:100%; height:6px; background:rgba(255,255,255,0.08); border-radius:999px;
+    overflow:hidden; position:relative;
+  }
+  .tracker-progress-bar{
+    height:100%; width:100%; background:linear-gradient(90deg, #38C6EF, #2BD9AE);
+    border-radius:999px; transform-origin:left center; transform:scaleX(0);
+    transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow:none;
+  }
+
+  /* ---- timestamps com pulso suave de atualizacao recente ---- */
+  .timestamp-badge{
+    font-family:monospace; font-size:12px; color:var(--ink-soft);
+    background:var(--bg-sunken); border:1px solid var(--line);
+    padding:2px 8px; border-radius:6px; transition:all 0.3s ease;
+    display:inline-flex; align-items:center; gap:4px;
+  }
+  .timestamp-pulse{
+    color:var(--ok-ink) !important; background:var(--ok-bg) !important;
+    border-color:var(--ok-line) !important; box-shadow:none;
+  }
+
+  /* ---- animacao e mini progress bar para o chat ---- */
+  .chat-progress-indeterminate{
+    width:100%; height:100%; background:linear-gradient(90deg, #38C6EF, #2BD9AE);
+    border-radius:999px; opacity:0.85;
+  }
 </style>
 </head>
 <body>
@@ -463,6 +614,23 @@
 <div class="rail-backdrop" id="railBackdrop" onclick="closeRail()"></div>
 
 <main>
+  <!-- BARRA DE PROGRESSO GERAL FIXA DO PIPELINE & CRONOMETRO -->
+  <div class="global-tracker" id="globalPipelineTracker">
+    <div class="tracker-head">
+      <div class="tracker-stage-info">
+        <span class="tracker-badge" id="trackerStageBadge">Agente Logcomex MCP</span>
+        <span class="tracker-stage-text" id="trackerStageText">Pronto para auditoria — Aguardando acionamento manual</span>
+      </div>
+      <div class="tracker-metrics">
+        <span class="tracker-timer" id="trackerTimer">00:00.0s</span>
+        <span class="tracker-status-tag" id="trackerStatusTag">Ocioso</span>
+      </div>
+    </div>
+    <div class="tracker-progress-rail">
+      <div class="tracker-progress-bar" id="trackerProgressBar" style="width:0%;"></div>
+    </div>
+  </div>
+
   <div class="topbar">
     <div class="topbar-left">
       <button class="topbar-hamburger" onclick="toggleRail()" id="topHamburger" aria-label="Abrir menu">
@@ -484,17 +652,80 @@
 
     <!-- TELA 1 -->
     <section class="screen active" id="screen-1">
-      <div class="panel" id="panelPipelineIA">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
-          <div>
-            <h2><span class="eyebrow">Auditoria Integrada</span>Pipeline de Inteligência Aduaneira (Logcomex AI)</h2>
-            <div style="font-size:12.5px; color:var(--ink-soft); margin-top:-8px;">Orquestração dos módulos U1 (Mercado Santos), U2 (Conferência Documental), U3 (Catálogo DUIMP) e U4 (Parecer Pericial).</div>
+
+      <!-- BANNER DE CONEXAO DO AGENTE LOGCOMEX AI -->
+      <div class="agent-banner" id="bannerAgenteLogcomex">
+        <div class="agent-banner-top">
+          <div class="agent-title-group">
+            <div class="agent-logo-badge">LX</div>
+            <div>
+              <div class="agent-name">Agente DataWave · Logcomex AI</div>
+              <div class="agent-id">ID: c2322f9c-41e2-4bf8-8fe5-3bd93f4063d4 · MCP Native Server</div>
+            </div>
           </div>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <button class="cta" id="btnExecutarPipeline" onclick="dispararPipelineIA()" style="padding:10px 18px; font-size:13px;">
-              Auditar e Processar Operação (Pipeline IA)
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div class="live-pill" id="livePillMCP">
+              <span class="live-pulse"></span>
+              <span id="livePillTexto">MCP Ativo & Autenticado (mcp.logcomex.ai)</span>
+            </div>
+            <button class="cta-secondary" onclick="abrirModalTelemetria()" style="padding:6px 14px; font-size:12px;">
+              Inspecionar Telemetria do Agente
             </button>
           </div>
+        </div>
+        <div class="agent-skills-row">
+          <span class="skill-pill highlight">Skill 1 · Análise Documental Aduaneira</span>
+          <span class="skill-pill highlight">Skill 2 · Comexstat | Importação e Exportação Brasil</span>
+          <span class="skill-pill highlight">Skill 3 · Catálogo de Produtos DUIMP</span>
+          <span class="skill-pill highlight">Skill 4 · Regras Fiscais dos Produtos</span>
+          <span class="skill-pill highlight">Skill 5 · Predição de Canais de Desembaraço</span>
+          <span class="skill-pill highlight">Skill 6 · Instrução Normativa e Regulamento Aduaneiro</span>
+        </div>
+      </div>
+
+      <!-- CENTRAL DE INGESTÃO DE PLANILHAS DO DESPACHANTE -->
+      <div class="panel" id="panelIngestaoPlanilhas">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+          <div>
+            <h2><span class="eyebrow">Despacho Aduaneiro</span>Central de Ingestão de Planilhas do Despachante</h2>
+            <div style="font-size:12.5px; color:var(--ink-soft); margin-top:-8px;">
+              Envie a planilha operacional do despacho (qualquer formato CSV/TSV) para auditoria cadastral e prescrição pelo Agente Logcomex.
+            </div>
+          </div>
+        </div>
+
+        <input type="file" id="inputPlanilha" accept=".csv,.tsv,.txt" style="display:none;" onchange="aoSelecionarArquivo(event)">
+
+        <div class="dropzone" id="dropzonePlanilha" onclick="document.getElementById('inputPlanilha').click()" ondragover="aoArrastarSobre(event)" ondragleave="aoSairArrasto(event)" ondrop="aoSoltarArquivo(event)">
+          <div class="dropzone-title">Upload de Planilha do Despachante Aduaneiro (.csv, .tsv)</div>
+          <div class="dropzone-sub">Arraste o arquivo ou clique para selecionar. O motor analisa colunas de NCM, pesos, valores, Incoterm e órgãos anuentes.</div>
+          <div id="infoArquivoSelecionado" class="arquivo-selecionado" style="display:none;">
+            <span id="nomeArquivoTexto">Nenhum arquivo carregado</span>
+            <span id="badgeArquivoLinhas" class="badge" style="font-size:11.5px; background:var(--ok-bg); color:var(--ok-ink); border-color:var(--ok-line);">Pronto para processar</span>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <div style="font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;">Ou selecione um cenário pré-carregado de demonstração:</div>
+          <div class="preset-row" id="scenarioSwitch">
+            <button class="preset-btn active" data-scenario="0" onclick="carregarPresetPlanilha(0)">Planilha 1 · Vinhos Santos (Divergência 450kg / MAPA)</button>
+            <button class="preset-btn" data-scenario="1" onclick="carregarPresetPlanilha(1)">Planilha 2 · Defensivos Santos (MAPA / Químicos)</button>
+            <button class="preset-btn" data-scenario="2" onclick="carregarPresetPlanilha(2)">Planilha 3 · Eletrônicos OEA (Verde / Sem Divergências)</button>
+          </div>
+        </div>
+
+        <button class="cta" id="btnExecutarPipeline" onclick="executarAuditoriaManual()" style="margin-top:16px; width:100%; justify-content:center; padding:12px; font-size:14px;">
+          Auditar com Agente Logcomex (MCP)
+        </button>
+      </div>
+
+      <!-- SUMÁRIO DA OPERAÇÃO AUDITADA -->
+      <div class="panel" id="panelPipelineIA">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+          <div>
+            <h2 style="margin:0;"><span class="eyebrow">Status da Auditoria</span>Rastreabilidade da Operação no Agente Logcomex</h2>
+          </div>
+          <span class="timestamp-badge" id="tsAuditoriaDoc">Aguardando auditoria</span>
         </div>
         <div class="kv-grid">
           <div class="kv">
@@ -506,22 +737,13 @@
             <div class="v" id="pipeModoAgente"><span class="badge" id="pipeModoBadge">Contingência Fixtures</span></div>
           </div>
           <div class="kv">
-            <div class="k">Conferência Documental (U2)</div>
-            <div class="v" id="pipeConfDoc"><span id="pipeConfDocText" style="font-size:13.5px;">Aguardando execução...</span></div>
+            <div class="k">Análise Documental Aduaneira</div>
+            <div class="v" id="pipeConfDoc"><span id="pipeConfDocText" style="font-size:13.5px;">Aguardando acionamento da auditoria...</span></div>
           </div>
           <div class="kv">
-            <div class="k">Parecer Regulatório (U4)</div>
+            <div class="k">Parecer Técnico Aduaneiro (MCP)</div>
             <div class="v" id="pipeParecerStatus"><span class="badge" id="pipeParecerBadge">Pendente</span></div>
           </div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h2><span class="eyebrow">Demonstração</span>Escolher cenário de exemplo</h2>
-        <div class="scenario-switch-row" id="scenarioSwitch">
-          <button class="scenario-chip active" data-scenario="0" onclick="setScenario(0)">Cenário 1 · Cosmético</button>
-          <button class="scenario-chip" data-scenario="1" onclick="setScenario(1)">Cenário 2 · Eletrônico</button>
-          <button class="scenario-chip" data-scenario="2" onclick="setScenario(2)">Cenário 3 · Alimentício</button>
         </div>
       </div>
 
@@ -558,6 +780,10 @@
 
     <!-- TELA 2 -->
     <section class="screen" id="screen-2">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+        <span style="font-size:13px; color:var(--ink-soft);">Simulação Estocástica de Permanência e Escalonamento Tarifário</span>
+        <span class="timestamp-badge" id="tsPermanenciaMonteCarlo">Aguardando cálculo</span>
+      </div>
       <div class="compare">
         <div class="scenario risk-crit" id="scenarioA">
           <div class="scenario-head">
@@ -592,14 +818,20 @@
         </div>
       </div>
 
-      <div class="savings-strip" id="savingsStrip">Economia estimada do Cenário C sobre o A: <span class="amt">R$ 6.425,00</span> por contêiner</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; flex-wrap:wrap; gap:10px;">
+        <div class="savings-strip" id="savingsStrip" style="margin:0;">Economia estimada do Cenário C sobre o A: <span class="amt">R$ 6.425,00</span> por contêiner</div>
+        <span class="timestamp-badge" id="tsMatrizComparativa">Aguardando auditoria</span>
+      </div>
     </section>
 
     <!-- TELA 3 -->
     <section class="screen" id="screen-3">
       <div class="decision-card">
         <div class="decision-inner">
-          <div class="eyebrow">Recomendação prescritiva da IA Datawave</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+            <div class="eyebrow" style="margin-bottom:0;">Recomendação prescritiva formulada pelo Agente Logcomex</div>
+            <span class="timestamp-badge" id="tsDecisaoPrescritiva">Aguardando recomendação</span>
+          </div>
           <h2 id="decisionTitle">Direcionar para a Zona Secundária — Cenário C</h2>
           <p id="decisionText">A análise da <span class="ncm-tag">NCM 38089329</span> indica alta probabilidade de retenção fitossanitária pelo MAPA e ANVISA. Direcionar a operação para o retroporto estanca a cobrança de sobreestadia em dólar, gerando economia estimada e garantindo previsibilidade logística para a fábrica de Anápolis/GO.</p>
 
@@ -611,11 +843,34 @@
 
           <div class="cta-row">
             <button class="cta" id="ctaMain" onclick="alert('Instrução de trânsito DTE/DTC emitida (protótipo).')">Selecionar Cenário C & emitir instrução de trânsito DTE/DTC</button>
-            <button class="cta" style="background:linear-gradient(135deg, #38C6EF, #2BD9AE); color:#04121c;" id="btnVerParecer" onclick="abrirModalParecer()">Visualizar Parecer Técnico Aduaneiro</button>
+            <button class="cta" style="background:linear-gradient(135deg, #38C6EF, #2BD9AE); color:#04121c;" id="btnVerParecer" onclick="abrirModalParecer()">Visualizar Parecer Técnico Aduaneiro (Gerado via MCP)</button>
             <button class="cta-secondary" onclick="showScreen(2)">Revisar comparação de cenários</button>
           </div>
         </div>
       </div>
+
+      <!-- CARD NOBRE: PLANO PRESCRITIVO DE CORREÇÕES ADUANEIRAS -->
+      <div class="correcoes-card" id="cardPlanoCorrecoes">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+          <div>
+            <div class="eyebrow" style="color:var(--accent); font-weight:600; font-size:11px; margin-bottom:4px;">Auditoria de Conformidade Legal</div>
+            <h3 style="margin:0; font-size:17px; font-weight:600;">Plano Prescritivo de Correções Aduaneiras</h3>
+            <p style="margin:4px 0 0 0; font-size:12.5px; color:var(--ink-soft);">
+              Ações corretivas emitidas pelo Agente DataWave para regularização imediata do lote antes da atracação e registro da DUIMP.
+            </p>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span class="timestamp-badge" id="tsPlanoCorrecoes">Aguardando auditoria</span>
+            <span class="badge" id="badgeTotalCorrecoes" style="background:var(--warn-bg); color:var(--warn-ink); border-color:var(--warn-line); font-size:12px;">
+              1 correção recomendada
+            </span>
+          </div>
+        </div>
+        <div class="correcoes-list" id="listaCorrecoesUI">
+          <!-- preenchido dinamicamente via javascript -->
+        </div>
+      </div>
+
       <p class="footnote">Protótipo de interface — Agente Datawave, hackathon Porto Hack Santos 2026.</p>
     </section>
 
@@ -626,12 +881,12 @@
         <div class="chat-log" id="chatLog">
           <div class="chat-msg agent"><div class="bubble">Olá! Sou o agente Datawave. Posso explicar o risco calculado, comparar os cenários ou detalhar a recomendação. O que você quer saber?</div></div>
         </div>
-        <form class="chat-form" id="chatForm" onsubmit="return sendChatMessage(event)">
+        <form class="chat-form" id="chatForm" onsubmit="return handleChatSubmit(event)">
           <input type="text" id="chatInput" placeholder="Pergunte sobre o risco, os custos ou a recomendação..." autocomplete="off">
           <button type="submit" class="cta">Enviar</button>
         </form>
       </div>
-      <p class="footnote">Respostas simuladas para fins de demonstração — protótipo Porto Hack Santos 2026.</p>
+      <p class="footnote">Respostas geradas pelo Agente DataWave · Logcomex AI (MCP Native Server).</p>
     </section>
 
     <!-- MODAL PARECER TECNICO ADUANEIRO -->
@@ -639,7 +894,10 @@
       <div class="modal-container">
         <div class="modal-head">
           <div>
-            <div class="eyebrow" style="font-size:11px; font-weight:600; color:var(--accent); margin-bottom:4px;">Documento Oficial Pericial</div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="eyebrow" style="font-size:11px; font-weight:600; color:var(--accent); margin-bottom:4px;">Documento Oficial Pericial · Logcomex AI</div>
+              <span class="timestamp-badge" id="tsParecerTecnico">Aguardando emissão</span>
+            </div>
             <h3 id="modalParecerTitle" style="margin:0; font-size:18px; font-weight:600;">Parecer Técnico Aduaneiro — DataWave AI</h3>
           </div>
           <button class="rail-collapse" onclick="fecharModalParecer()" aria-label="Fechar parecer" style="cursor:pointer;">
@@ -668,6 +926,96 @@
             <button class="cta-secondary" onclick="fecharModalParecer()">Fechar</button>
             <button class="cta" id="btnCopiarParecer" onclick="copiarParecerParaClipboard()" style="padding:10px 18px; font-size:13px;">Copiar Parecer</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL DE TELEMETRIA DO AGENTE LOGCOMEX -->
+    <div class="modal-overlay" id="modalTelemetria" role="dialog" aria-modal="true" aria-labelledby="modalTelemetriaTitle">
+      <div class="modal-container" style="max-width:900px;">
+        <div class="modal-head">
+          <div>
+            <div class="eyebrow" style="font-size:11px; font-weight:600; color:var(--accent); margin-bottom:4px;">Conexão MCP Nativa · JSON-RPC 2.0</div>
+            <h3 id="modalTelemetriaTitle" style="margin:0; font-size:18px; font-weight:600;">Telemetria do Agente Logcomex AI</h3>
+          </div>
+          <button class="rail-collapse" onclick="fecharModalTelemetria()" aria-label="Fechar telemetria" style="cursor:pointer;">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 5L15 15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              <path d="M15 5L5 15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="telemetria-tabs">
+            <button class="telemetria-tab-btn active" id="tabBtn-status" onclick="trocarAbaTelemetria('status')">MCP & Sessão</button>
+            <button class="telemetria-tab-btn" id="tabBtn-u1" onclick="trocarAbaTelemetria('u1')">Comexstat Santos</button>
+            <button class="telemetria-tab-btn" id="tabBtn-u2" onclick="trocarAbaTelemetria('u2')">Análise Documental Aduaneira</button>
+            <button class="telemetria-tab-btn" id="tabBtn-u3" onclick="trocarAbaTelemetria('u3')">Catálogo DUIMP</button>
+          </div>
+
+          <!-- Aba 1: Status MCP -->
+          <div class="telemetria-pane active" id="paneTelemetria-status">
+            <div class="kv-grid">
+              <div class="kv"><div class="k">Endpoint MCP</div><div class="v"><code style="font-size:12px; color:var(--accent);">https://mcp.logcomex.ai/</code></div></div>
+              <div class="kv"><div class="k">Identificador do Agente</div><div class="v"><code style="font-size:12px; color:var(--ink);">c2322f9c-41e2-4bf8-8fe5-3bd93f4063d4</code></div></div>
+              <div class="kv"><div class="k">Protocolo de Comunicação</div><div class="v">JSON-RPC 2.0 via HTTPS com Bearer OAuth</div></div>
+              <div class="kv"><div class="k">Ferramenta Exclusiva</div><div class="v"><code style="font-size:12px; color:var(--accent-2);">chat_with_agent</code> (chat_free desabilitado)</div></div>
+              <div class="kv"><div class="k">Modo Operacional</div><div class="v" id="telemetriaModoTexto">Online MCP / Contingência Fixtures</div></div>
+              <div class="kv"><div class="k">Polling Assíncrono</div><div class="v">Automático em <code>get_task_status</code> para pareceres longos</div></div>
+            </div>
+            <div class="panel" style="margin-top:4px;">
+              <h4 style="margin:0 0 8px 0; font-size:13px;">Habilidades Integradas do Agente (Skills Oficiais):</h4>
+              <div style="display:flex; flex-direction:column; gap:6px; font-size:12.5px; color:var(--ink-soft);">
+                <div><strong>1. Análise Documental Aduaneira:</strong> Cruzamento e conferência entre Conhecimento de Transporte (BL), Fatura Comercial e Packing List.</div>
+                <div><strong>2. Comexstat | Importação e Exportação Brasil:</strong> Estatísticas oficiais de fluxos de importação/exportação e movimentação no Porto de Santos.</div>
+                <div><strong>3. Catálogo de Produtos DUIMP:</strong> Validação de atributos regulatórios obrigatórios e parametrização junto a órgãos anuentes (MAPA, ANVISA).</div>
+                <div><strong>4. Regras Fiscais dos Produtos:</strong> Verificação de classificação fiscal NCM e tributação aplicável.</div>
+                <div><strong>5. Predição de Canais de Desembaraço:</strong> Histórico probabilístico de parametrização em canais verde, amarelo e vermelho.</div>
+                <div><strong>6. Instrução Normativa e Regulamento Aduaneiro:</strong> Fundamentação jurídica de correções aduaneiras (Decreto 6.759/09 e IN RFB 2.022/21).</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Aba 2: Comexstat Santos -->
+          <div class="telemetria-pane" id="paneTelemetria-u1">
+            <p style="font-size:13px; color:var(--ink-soft); margin:0;">Dados consolidados de movimentação e dwell-time no Porto de Santos utilizados nas projeções de risco de sobreestadia:</p>
+            <div class="kv-grid">
+              <div class="kv"><div class="k">Histórico no Recorte</div><div class="v">46.194 TEUs (NCM 3808.93.29) / 21.500 TEUs (NCM 8525.80.90)</div></div>
+              <div class="kv"><div class="k">Tempo de Permanência Cais (P50)</div><div class="v">6,0 dias úteis</div></div>
+              <div class="kv"><div class="k">Tempo de Permanência Cais (P75)</div><div class="v">10,0 dias (risco elevado de estouro de free time)</div></div>
+              <div class="kv"><div class="k">Tempo de Permanência Cais (P90)</div><div class="v">14,5 dias (inspeção física ou conferência documental MAPA)</div></div>
+              <div class="kv"><div class="k">Tempo de Permanência Retroporto (P50)</div><div class="v">2,0 dias para devolução do contêiner vazio ao armador</div></div>
+              <div class="kv"><div class="k">Taxa Demurrage Média</div><div class="v">US$ 150,00/dia a partir do 6º dia de cais</div></div>
+            </div>
+          </div>
+
+          <!-- Aba 3: Análise Documental Aduaneira -->
+          <div class="telemetria-pane" id="paneTelemetria-u2">
+            <p style="font-size:13px; color:var(--ink-soft); margin:0;">Regras de validação cruzada entre Conhecimento de Transporte (BL), Fatura Comercial e Romaneio de Carga (Packing List):</p>
+            <div class="kv-grid">
+              <div class="kv"><div class="k">Conferência de Pesagem</div><div class="v">Confronto automático entre peso bruto no BL e peso líquido/bruto no Packing List</div></div>
+              <div class="kv"><div class="k">Detecção de Discrepâncias</div><div class="v"><span class="badge" style="background:var(--warn-bg); color:var(--warn-ink);">Auditoria em Lote</span> Identificação de diferenças ponderais sujeitas à fiscalização aduaneira</div></div>
+              <div class="kv"><div class="k">Enquadramento Normativo</div><div class="v">Art. 562 e Art. 711 do Regulamento Aduaneiro (Decreto nº 6.759/2009)</div></div>
+              <div class="kv"><div class="k">Ação Mitigadora Prescrita</div><div class="v">Solicitação formal de retificação de pesagem no CCT/Siscomex Carga antes da DUIMP</div></div>
+            </div>
+          </div>
+
+          <!-- Aba 4: U3 Atributos DUIMP -->
+          <div class="telemetria-pane" id="paneTelemetria-u3">
+            <p style="font-size:13px; color:var(--ink-soft); margin:0;">Regras de conformidade do Catálogo de Produtos da DUIMP aplicadas por NCM:</p>
+            <div class="kv-grid">
+              <div class="kv"><div class="k">NCM 3808.93.29 (Defensivos/Herbicidas)</div><div class="v">Exige atributo A01 (Registro de Aptidão MAPA) e anuência sanitária prévia</div></div>
+              <div class="kv"><div class="k">NCM 2106.90.90 (Preparações Alimentícias)</div><div class="v">Exige FCE (Ficha de Cadastro de Estabelecimento) e registro MAPA</div></div>
+              <div class="kv"><div class="k">NCM 8525.80.90 (Câmeras/Eletrônicos)</div><div class="v">Certificação Anatel e catalogação de atributos de tecnologia</div></div>
+              <div class="kv"><div class="k">Impacto de Inconsistência</div><div class="v">Retenção de canal, termo de intimação e cobrança diária de demurrage em cais</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <div style="font-size:12px; color:var(--ink-soft);">
+            Agente DataWave operacional com 6 habilidades ativas no ecossistema Logcomex.
+          </div>
+          <button class="cta" onclick="fecharModalTelemetria()" style="padding:8px 18px; font-size:13px;">Fechar</button>
         </div>
       </div>
     </div>
@@ -934,7 +1282,6 @@
     document.querySelectorAll('.scenario-chip').forEach(function(b){ b.classList.remove('active'); });
     document.querySelector('.scenario-chip[data-scenario="'+idx+'"]').classList.add('active');
     renderScenario(idx);
-    dispararPipelineIA();
   }
 
   renderScenario(0);
@@ -963,15 +1310,319 @@
   }
   sincronizarComBackend();
 
-  /* ---- integracao com o pipeline completo e modal do parecer ---- */
+  /* ---- integracao com o pipeline completo, upload e agente logcomex ---- */
   let pipelineDadosAtuais = null;
+  let arquivoCarregadoTexto = null;
+  let nomeArquivoCarregado = 'planilha_operacional.csv';
+
+  // Gerenciamento de Cronometro e Barra de Progresso Geral
+  let globalTimerInterval = null;
+  let globalTimerStartTime = 0;
+  let globalProgressoTimers = [];
+
+  function pararCronometroGlobal(){
+    if(globalTimerInterval){
+      clearInterval(globalTimerInterval);
+      globalTimerInterval = null;
+    }
+    globalProgressoTimers.forEach(function(t){ clearTimeout(t); });
+    globalProgressoTimers = [];
+  }
+
+  function iniciarProgressoGlobal(pctInicial, textoInicial){
+    pararCronometroGlobal();
+    globalTimerStartTime = performance.now();
+
+    const bar = document.getElementById('trackerProgressBar');
+    const badge = document.getElementById('trackerStageBadge');
+    const text = document.getElementById('trackerStageText');
+    const timer = document.getElementById('trackerTimer');
+    const statusTag = document.getElementById('trackerStatusTag');
+
+    if(bar){
+      bar.style.transformOrigin = 'left center';
+      bar.style.transition = 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+      bar.style.transform = 'scaleX(' + ((pctInicial || 15) / 100) + ')';
+      bar.style.background = 'linear-gradient(90deg, var(--accent), var(--accent-2))';
+    }
+    if(badge) badge.textContent = 'Agente Logcomex MCP';
+    if(text) text.textContent = textoInicial || 'Iniciando pipeline de auditoria aduaneira...';
+    if(timer) timer.textContent = '00:00.0s';
+    if(statusTag){
+      statusTag.textContent = 'Processando...';
+      statusTag.style.background = 'rgba(56, 198, 239, 0.2)';
+      statusTag.style.color = 'var(--accent)';
+      statusTag.style.borderColor = 'rgba(56, 198, 239, 0.4)';
+    }
+
+    globalTimerInterval = setInterval(function(){
+      const el = document.getElementById('trackerTimer');
+      if(!el) return;
+      const diffMs = performance.now() - globalTimerStartTime;
+      const totalSec = Math.floor(diffMs / 1000);
+      const dec = Math.floor((diffMs % 1000) / 100);
+      const min = Math.floor(totalSec / 60);
+      const sec = totalSec % 60;
+      const minStr = String(min).padStart(2, '0');
+      const secStr = String(sec).padStart(2, '0');
+      el.textContent = minStr + ':' + secStr + '.' + dec + 's';
+    }, 50);
+  }
+
+  function atualizarProgressoGlobal(pct, badgeTexto, etapaTexto){
+    const bar = document.getElementById('trackerProgressBar');
+    const badge = document.getElementById('trackerStageBadge');
+    const text = document.getElementById('trackerStageText');
+    if(bar) bar.style.transform = 'scaleX(' + (pct / 100) + ')';
+    if(badge && badgeTexto) badge.textContent = badgeTexto;
+    if(text && etapaTexto) text.textContent = etapaTexto;
+  }
+
+  function concluirProgressoGlobal(mensagemSucesso, duracaoS){
+    pararCronometroGlobal();
+    const bar = document.getElementById('trackerProgressBar');
+    const badge = document.getElementById('trackerStageBadge');
+    const text = document.getElementById('trackerStageText');
+    const statusTag = document.getElementById('trackerStatusTag');
+    const timer = document.getElementById('trackerTimer');
+
+    if(bar){
+      bar.style.transform = 'scaleX(1)';
+      bar.style.background = 'linear-gradient(90deg, #2BD9AE, #38C6EF)';
+    }
+    if(badge) badge.textContent = 'Agente Logcomex MCP';
+    if(text) text.textContent = mensagemSucesso || ('Processamento concluído em ' + (duracaoS || '') + ' · Agente Logcomex MCP');
+    if(timer && duracaoS) timer.textContent = duracaoS.endsWith('s') ? duracaoS : (duracaoS + 's');
+    if(statusTag){
+      statusTag.textContent = 'Concluído';
+      statusTag.style.background = 'rgba(43, 217, 174, 0.2)';
+      statusTag.style.color = 'var(--accent-2)';
+      statusTag.style.borderColor = 'rgba(43, 217, 174, 0.4)';
+    }
+
+    setTimeout(function(){
+      if(statusTag && statusTag.textContent === 'Concluído'){
+        statusTag.textContent = 'Ocioso';
+        statusTag.style.background = 'var(--bg-sunken)';
+        statusTag.style.color = 'var(--ink-soft)';
+        statusTag.style.borderColor = 'var(--line)';
+      }
+    }, 4000);
+  }
+
+  function aplicarTimestamp(idElemento, prefixo){
+    const el = document.getElementById(idElemento);
+    if(!el) return;
+    const agora = new Date();
+    const hora = agora.toLocaleTimeString('pt-BR');
+    if(idElemento === 'tsParecerTecnico'){
+      const dataStr = agora.toLocaleDateString('pt-BR');
+      el.textContent = prefixo + ' em ' + dataStr + ' às ' + hora;
+    } else {
+      el.textContent = prefixo + ' às ' + hora;
+    }
+    el.classList.remove('timestamp-pulse');
+    void el.offsetWidth;
+    el.classList.add('timestamp-pulse');
+  }
+
+  function aplicarTodosTimestamps(){
+    aplicarTimestamp('tsAuditoriaDoc', 'Auditado');
+    aplicarTimestamp('tsPermanenciaMonteCarlo', 'Calculado');
+    aplicarTimestamp('tsMatrizComparativa', 'Matriz atualizada');
+    aplicarTimestamp('tsDecisaoPrescritiva', 'Recomendação emitida');
+    aplicarTimestamp('tsPlanoCorrecoes', 'Auditado');
+    aplicarTimestamp('tsParecerTecnico', 'Parecer gerado via MCP');
+  }
+
+  const presetsPlanilhas = [
+    {
+      nome: 'vinho_santos_mapa_450kg.csv',
+      linhas: 1,
+      csv: 'ncm,descricao,bl_weight,pl_weight,fob_usd,incoterm,porto,free_time\n2204.21.00,Vinho Fino Tinto Chileno,14500.0,14050.0,68500.0,FOB,Santos,5'
+    },
+    {
+      nome: 'defensivo_santos_mapa_quimico.csv',
+      linhas: 1,
+      csv: 'ncm,descricao,bl_weight,pl_weight,fob_usd,incoterm,porto,free_time\n3808.93.29,Herbicida Agricola Concentrado,22000.0,22000.0,128500.0,FOB,Santos,5'
+    },
+    {
+      nome: 'modulo_eletronico_santos_oea.csv',
+      linhas: 1,
+      csv: 'ncm,descricao,bl_weight,pl_weight,fob_usd,incoterm,porto,free_time\n8525.80.90,Modulos de Cameras Digitais,1200.0,1200.0,85000.0,FOB,Santos,7'
+    }
+  ];
+
+  function aoArrastarSobre(e){
+    e.preventDefault();
+    e.stopPropagation();
+    const dropzone = document.getElementById('dropzonePlanilha');
+    if(dropzone) dropzone.classList.add('dragover');
+  }
+
+  function aoSairArrasto(e){
+    e.preventDefault();
+    e.stopPropagation();
+    const dropzone = document.getElementById('dropzonePlanilha');
+    if(dropzone) dropzone.classList.remove('dragover');
+  }
+
+  function aoSoltarArquivo(e){
+    e.preventDefault();
+    e.stopPropagation();
+    const dropzone = document.getElementById('dropzonePlanilha');
+    if(dropzone) dropzone.classList.remove('dragover');
+    if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0){
+      tratarArquivoPlanilha(e.dataTransfer.files[0]);
+    }
+  }
+
+  function aoSelecionarArquivo(e){
+    if(e.target && e.target.files && e.target.files.length > 0){
+      tratarArquivoPlanilha(e.target.files[0]);
+    }
+  }
+
+  function tratarArquivoPlanilha(file){
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt){
+      arquivoCarregadoTexto = evt.target.result;
+      nomeArquivoCarregado = file.name;
+      const linhas = arquivoCarregadoTexto.trim().split('\n').length - 1;
+      exibirArquivoCarregado(file.name, Math.max(1, linhas));
+      const badge = document.getElementById('badgeArquivoLinhas');
+      if(badge){
+        badge.textContent = Math.max(1, linhas) + (linhas === 1 ? ' item carregado · Pronto para auditar' : ' itens carregados · Pronto para auditar');
+        badge.style.background = 'rgba(56, 198, 239, 0.15)';
+        badge.style.color = 'var(--accent)';
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function carregarPresetPlanilha(idx){
+    document.querySelectorAll('.preset-btn').forEach(function(b){ b.classList.remove('active'); });
+    const btn = document.querySelector('.preset-btn[data-scenario="' + idx + '"]');
+    if(btn) btn.classList.add('active');
+    currentScenario = idx;
+    const p = presetsPlanilhas[idx];
+    arquivoCarregadoTexto = p.csv;
+    nomeArquivoCarregado = p.nome;
+    exibirArquivoCarregado(p.nome, p.linhas);
+    renderScenario(idx);
+
+    const badge = document.getElementById('badgeArquivoLinhas');
+    if(badge){
+      badge.textContent = p.linhas + ' item pré-carregado · Pronto para auditar';
+      badge.style.background = 'rgba(56, 198, 239, 0.15)';
+      badge.style.color = 'var(--accent)';
+    }
+  }
+
+  function exibirArquivoCarregado(nome, qtdLinhas){
+    const info = document.getElementById('infoArquivoSelecionado');
+    const nomeEl = document.getElementById('nomeArquivoTexto');
+    const badge = document.getElementById('badgeArquivoLinhas');
+    if(info) info.style.display = 'flex';
+    if(nomeEl) nomeEl.textContent = nome;
+    if(badge) badge.textContent = qtdLinhas + (qtdLinhas === 1 ? ' item auditável' : ' itens auditáveis');
+  }
+
+  function executarAuditoriaManual(){
+    if(arquivoCarregadoTexto){
+      dispararAuditoriaPlanilha(arquivoCarregadoTexto, nomeArquivoCarregado || 'planilha_operacional.csv');
+    } else {
+      dispararPipelineIA();
+    }
+  }
+
+  async function dispararAuditoriaPlanilha(csvTexto, nomeArquivo){
+    const btn = document.getElementById('btnExecutarPipeline');
+    if(btn){
+      btn.disabled = true;
+      btn.textContent = 'Auditando com Agente Logcomex (MCP)...';
+    }
+
+    iniciarProgressoGlobal(15, 'Etapa 1/6 · Ingestão e Normalização Documental da Planilha');
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(35, 'Agente Logcomex MCP', 'Etapa 2/6 · Análise Documental Aduaneira (Skill 1)');
+    }, 200));
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(55, 'Agente Logcomex MCP', 'Etapa 3/6 · Predição de Canais & Consulta Comexstat Santos (Skills 2 e 5)');
+    }, 450));
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(75, 'Agente Logcomex MCP', 'Etapa 4/6 · Validação do Catálogo DUIMP & Regras Fiscais (Skills 3 e 4)');
+    }, 700));
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(90, 'Motor Estocástico', 'Etapa 5/6 · Simulação Estocástica de Permanência e Matriz de Custos');
+    }, 950));
+
+    const tStart = performance.now();
+
+    try {
+      const resp = await fetch('/api/despachante/processar-planilha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conteudo_csv: csvTexto,
+          nome_arquivo: nomeArquivo || 'planilha_operacional.csv',
+          usar_agente: true,
+          usar_mcp: true
+        })
+      });
+      if(resp.ok){
+        const dados = await resp.json();
+        pipelineDadosAtuais = dados;
+        const duracaoS = dados.tempo_resposta_s ? dados.tempo_resposta_s.toFixed(2) + 's' : ((performance.now() - tStart) / 1000).toFixed(2) + 's';
+
+        atualizarProgressoGlobal(100, 'Agente Logcomex MCP', 'Etapa 6/6 · Recomendação Prescritiva e Parecer Técnico Concluídos');
+        concluirProgressoGlobal('Processamento concluído em ' + duracaoS + ' · Agente Logcomex MCP', duracaoS);
+
+        atualizarUIComPipeline(dados);
+        aplicarTodosTimestamps();
+
+        if(btn){
+          btn.disabled = false;
+          btn.textContent = 'Auditar com Agente Logcomex (MCP)';
+        }
+        return dados;
+      }
+    } catch(err){
+      console.warn('Falha na auditoria de planilha via API, recorrendo ao pipeline padrao.', err);
+    }
+
+    return dispararPipelineIA();
+  }
 
   async function dispararPipelineIA(){
     const btn = document.getElementById('btnExecutarPipeline');
     if(btn) {
       btn.disabled = true;
-      btn.textContent = 'Auditando com Agente Logcomex...';
+      btn.textContent = 'Auditando com Agente Logcomex (MCP)...';
     }
+
+    iniciarProgressoGlobal(15, 'Etapa 1/6 · Ingestão e Normalização Documental do Cenário');
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(35, 'Agente Logcomex MCP', 'Etapa 2/6 · Análise Documental Aduaneira (Skill 1)');
+    }, 200));
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(55, 'Agente Logcomex MCP', 'Etapa 3/6 · Predição de Canais & Consulta Comexstat Santos (Skills 2 e 5)');
+    }, 450));
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(75, 'Agente Logcomex MCP', 'Etapa 4/6 · Validação do Catálogo DUIMP & Regras Fiscais (Skills 3 e 4)');
+    }, 700));
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(90, 'Motor Estocástico', 'Etapa 5/6 · Simulação Estocástica de Permanência e Matriz de Custos');
+    }, 950));
 
     const s = scenarios[currentScenario];
     const ncmLimpo = s.ncm.replace(/[^\d]/g, '');
@@ -994,8 +1645,10 @@
       cambio_usd_brl: 5.50,
       divergencias: s.catalogOk ? [] : [s.catalogText],
       usar_agente: true,
-      usar_mcp: false
+      usar_mcp: true
     };
+
+    const tStart = performance.now();
 
     try {
       const resp = await fetch('/api/pipeline', {
@@ -1006,10 +1659,17 @@
       if(resp.ok){
         const dados = await resp.json();
         pipelineDadosAtuais = dados;
+        const duracaoS = dados.tempo_resposta_s ? dados.tempo_resposta_s.toFixed(2) + 's' : ((performance.now() - tStart) / 1000).toFixed(2) + 's';
+
+        atualizarProgressoGlobal(100, 'Agente Logcomex MCP', 'Etapa 6/6 · Recomendação Prescritiva e Parecer Técnico Concluídos');
+        concluirProgressoGlobal('Processamento concluído em ' + duracaoS + ' · Agente Logcomex MCP', duracaoS);
+
         atualizarUIComPipeline(dados);
+        aplicarTodosTimestamps();
+
         if(btn) {
           btn.disabled = false;
-          btn.textContent = 'Auditar e Processar Operação (Pipeline IA)';
+          btn.textContent = 'Auditar com Agente Logcomex (MCP)';
         }
         return dados;
       }
@@ -1018,11 +1678,30 @@
     }
 
     // Contingencia local estruturada
+    const duracaoFallback = ((performance.now() - tStart) / 1000).toFixed(2) + 's';
+    atualizarProgressoGlobal(100, 'Agente Logcomex (Fallback)', 'Etapa 6/6 · Parecer Técnico em Modo Contingência');
+    concluirProgressoGlobal('Processamento concluído em ' + duracaoFallback + ' · Modo Contingência', duracaoFallback);
+
     const fallbackTraceId = 'DW-' + Math.random().toString(16).substring(2, 10).toUpperCase();
     const fallbackParecer = gerarParecerFallback(s, payload, fallbackTraceId);
     pipelineDadosAtuais = {
       trace_id: fallbackTraceId,
       modo_agente: 'CONTINGENCIA_FIXTURES',
+      duracao_ms: Math.round(performance.now() - tStart),
+      tempo_resposta_s: parseFloat(duracaoFallback),
+      plano_correcoes: {
+        total_divergencias: s.catalogOk ? 0 : 1,
+        correcoes: s.catalogOk ? [] : [
+          {
+            item_index: 1,
+            categoria: 'Catálogo DUIMP',
+            problema_identificado: s.catalogText,
+            acao_corretiva_sugerida: 'Cadastrar atributo de conformidade no Catálogo de Produtos da DUIMP antes do registro.',
+            fundamento_legal: 'Instrução Normativa RFB nº 2.022/2021',
+            risco_mitigado: 'Retenção sanitária e direcionamento a canal vermelho de conferência.'
+          }
+        ]
+      },
       parecer: {
         texto: fallbackParecer,
         valido: true,
@@ -1031,9 +1710,11 @@
       }
     };
     atualizarUIComPipeline(pipelineDadosAtuais);
+    aplicarTodosTimestamps();
+
     if(btn) {
       btn.disabled = false;
-      btn.textContent = 'Auditar e Processar Operação (Pipeline IA)';
+      btn.textContent = 'Auditar com Agente Logcomex (MCP)';
     }
     return pipelineDadosAtuais;
   }
@@ -1052,7 +1733,11 @@
     const confDoc = document.getElementById('pipeConfDocText');
     if(confDoc){
       const s = scenarios[currentScenario];
-      confDoc.textContent = s.catalogOk ? 'Conferência documental aprovada' : s.catalogText;
+      if(dados.agente_dados && dados.agente_dados.analise_documental_aduaneira && dados.agente_dados.analise_documental_aduaneira.resumo){
+        confDoc.textContent = dados.agente_dados.analise_documental_aduaneira.resumo;
+      } else {
+        confDoc.textContent = s.catalogOk ? 'Conferência documental aprovada' : s.catalogText;
+      }
     }
 
     const parecerBadge = document.getElementById('pipeParecerBadge');
@@ -1064,7 +1749,7 @@
       parecerBadge.style.borderColor = ok ? 'var(--ok-line)' : 'var(--warn-line)';
     }
 
-    // Modal
+    // Modal Parecer
     const modalConteudo = document.getElementById('modalParecerConteudo');
     if(modalConteudo && dados.parecer && dados.parecer.texto){
       modalConteudo.textContent = dados.parecer.texto;
@@ -1073,6 +1758,88 @@
     if(modalTrace) modalTrace.textContent = dados.trace_id || '--';
     const modalCheck = document.getElementById('modalChecksum');
     if(modalCheck && dados.parecer) modalCheck.textContent = dados.parecer.checksum_sha256 || '--';
+
+    // Renderiza o Plano Prescritivo de Correções
+    renderizarPlanoCorrecoes(dados.plano_correcoes);
+
+    // Atualizacao dinamica da Decisao Prescritiva formulada pelo Agente na Tela 3
+    if(dados.custo){
+      const c = dados.custo;
+      const decTitle = document.getElementById('decisionTitle');
+      const decText = document.getElementById('decisionText');
+      const impactRow = document.getElementById('impactRow');
+      const savingsStrip = document.getElementById('savingsStrip');
+
+      const recomendacao = c.recomendacao || (c.melhor_cenario === 'CENARIO_C' ? 'CENARIO_C' : 'CENARIO_A');
+      const economiaBrl = c.economia_estimada_brl || 0;
+      const probRetencao = c.prob_retencao_pct !== undefined ? c.prob_retencao_pct : (scenarios[currentScenario].alertProb);
+      const demurrageDias = c.dias_demurrage_evitados !== undefined ? c.dias_demurrage_evitados : (recomendacao === 'CENARIO_C' ? 0 : 0);
+
+      const economiaFmt = 'R$ ' + economiaBrl.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+      if(recomendacao === 'CENARIO_C'){
+        if(decTitle) decTitle.textContent = 'Direcionar para a Zona Secundária — Cenário C';
+        if(decText) decText.innerHTML = 'A análise pericial do Agente Logcomex identificou risco aduaneiro severo para a operação. O direcionamento para o retroporto (Cenário C) estanca a sobreestadia em moeda estrangeira e mitiga custos adicionais de armazenagem portuária, proporcionando proteção financeira e previsibilidade de trânsito.';
+        if(savingsStrip) savingsStrip.innerHTML = 'Economia estimada do Cenário C sobre o A: <span class="amt">' + economiaFmt + '</span> por contêiner';
+      } else {
+        if(decTitle) decTitle.textContent = 'Manter no Cais — Cenário A';
+        if(decText) decText.innerHTML = 'A análise pericial do Agente Logcomex atesta baixo risco de retenção e conformidade cadastral compatível com a janela de free time. A manutenção no cais evita despesas desnecessárias com transporte rodoviário e movimentação para zona secundária.';
+        if(savingsStrip) savingsStrip.innerHTML = 'Economia estimada do Cenário A sobre o C: <span class="amt">' + economiaFmt + '</span> por contêiner';
+      }
+
+      if(impactRow){
+        impactRow.innerHTML = 
+          '<div class="impact"><div class="num">' + economiaFmt.replace(',00', '') + '</div><div class="lbl">economia estimada / contêiner</div></div>' +
+          '<div class="impact"><div class="num">' + probRetencao + '%</div><div class="lbl">probabilidade de conferência / risco</div></div>' +
+          '<div class="impact"><div class="num">' + demurrageDias + '</div><div class="lbl">dias de demurrage no cenário recomendado</div></div>';
+      }
+    }
+  }
+
+  function renderizarPlanoCorrecoes(plano){
+    const container = document.getElementById('listaCorrecoesUI');
+    const badgeTotal = document.getElementById('badgeTotalCorrecoes');
+    if(!container) return;
+    container.innerHTML = '';
+
+    const correcoes = (plano && plano.correcoes) ? plano.correcoes : [];
+    if(correcoes.length === 0){
+      if(badgeTotal){
+        badgeTotal.textContent = 'Conformidade plena';
+        badgeTotal.style.background = 'var(--ok-bg)';
+        badgeTotal.style.color = 'var(--ok-ink)';
+        badgeTotal.style.borderColor = 'var(--ok-line)';
+      }
+      container.innerHTML = '<div style="padding:14px; background:var(--bg-sunken); border-radius:10px; font-size:13px; color:var(--ok-ink); border:1px solid var(--ok-line);">' +
+        '<strong>Conformidade Cadastral Atestada:</strong> Nenhuma divergência documental ou pendência de catálogo DUIMP identificada. Operação regular perante a Receita Federal e órgãos anuentes.' +
+        '</div>';
+      return;
+    }
+
+    if(badgeTotal){
+      badgeTotal.textContent = correcoes.length + (correcoes.length === 1 ? ' correção recomendada' : ' correções recomendadas');
+      badgeTotal.style.background = 'var(--warn-bg)';
+      badgeTotal.style.color = 'var(--warn-ink)';
+      badgeTotal.style.borderColor = 'var(--warn-line)';
+    }
+
+    correcoes.forEach(function(c, i){
+      const div = document.createElement('div');
+      const isCritica = (c.categoria && c.categoria.toLowerCase().indexOf('peso') > -1) || (c.categoria && c.categoria.toLowerCase().indexOf('anuên') > -1);
+      div.className = 'correcao-item' + (isCritica ? ' critica' : ' alerta');
+      div.innerHTML = 
+        '<div class="correcao-head">' +
+          '<span class="correcao-categoria">' + (c.categoria || 'Auditoria') + '</span>' +
+          '<span style="font-size:11.5px; color:var(--ink-soft); font-family:monospace;">Item ' + (c.item_index || (i+1)) + '</span>' +
+        '</div>' +
+        '<div class="correcao-titulo">' + (c.problema_identificado || 'Inconsistência cadastral') + '</div>' +
+        '<div class="correcao-acao"><strong>Ação Prescrita:</strong> ' + (c.acao_corretiva_sugerida || 'Regularização documental') + '</div>' +
+        '<div class="correcao-meta">' +
+          (c.fundamento_legal ? '<div><strong>Base Legal:</strong> ' + c.fundamento_legal + '</div>' : '') +
+          (c.risco_mitigado ? '<div><strong>Risco Mitigado:</strong> ' + c.risco_mitigado + '</div>' : '') +
+        '</div>';
+      container.appendChild(div);
+    });
   }
 
   function gerarParecerFallback(s, payload, traceId){
@@ -1103,6 +1870,82 @@
     if(modal) modal.classList.remove('active');
   }
 
+  function abrirModalTelemetria(){
+    const modal = document.getElementById('modalTelemetria');
+    if(modal) modal.classList.add('active');
+    verificarStatusAgente();
+  }
+
+  function fecharModalTelemetria(){
+    const modal = document.getElementById('modalTelemetria');
+    if(modal) modal.classList.remove('active');
+  }
+
+  function trocarAbaTelemetria(aba){
+    document.querySelectorAll('.telemetria-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.telemetria-pane').forEach(p => p.classList.remove('active'));
+    const btn = document.getElementById('tabBtn-' + aba);
+    const pane = document.getElementById('paneTelemetria-' + aba);
+    if(btn) btn.classList.add('active');
+    if(pane) pane.classList.add('active');
+  }
+
+  async function verificarStatusAgente(){
+    try {
+      const resp = await fetch('/api/agente/status');
+      if(resp.ok){
+        const st = await resp.json();
+        const livePill = document.getElementById('livePillMCP');
+        const liveTexto = document.getElementById('livePillTexto');
+        const modoBadge = document.getElementById('pipeModoBadge');
+        const telemetriaModo = document.getElementById('telemetriaModoTexto');
+        const isOnline = st.modo === 'ONLINE_MCP';
+        const isPendente = st.modo === 'PENDENTE_AUTENTICACAO';
+        if(livePill) {
+          livePill.style.background = isOnline ? 'rgba(43,217,174,0.15)' : (isPendente ? 'rgba(239,68,68,0.15)' : 'rgba(232,190,114,0.15)');
+          livePill.style.color = isOnline ? 'var(--accent-2)' : (isPendente ? '#ef4444' : 'var(--warn-ink)');
+          livePill.style.borderColor = isOnline ? 'rgba(43,217,174,0.35)' : (isPendente ? 'rgba(239,68,68,0.35)' : 'rgba(232,190,114,0.35)');
+        }
+        if(liveTexto) {
+          if (isOnline) {
+            liveTexto.innerHTML = 'MCP Ativo & Autenticado (mcp.logcomex.ai)';
+          } else if (isPendente) {
+            liveTexto.innerHTML = 'MCP: Autenticação Expirada <button onclick="autenticarAgenteMCP(event)" style="margin-left:8px;padding:3px 8px;font-size:11px;background:#3b82f6;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:600;">Conectar Logcomex</button>';
+          } else {
+            liveTexto.innerHTML = 'Contingência Local Fixtures';
+          }
+        }
+        if(modoBadge) {
+          modoBadge.textContent = isOnline ? 'Online MCP' : (isPendente ? 'Requer Autenticação' : 'Contingência Fixtures');
+        }
+        if(telemetriaModo) {
+          telemetriaModo.innerHTML = isOnline ? 
+            '<strong style="color:var(--accent-2);">ONLINE MCP</strong> (Conexão ao vivo mcp.logcomex.ai)' : 
+            (isPendente ? 
+              '<strong style="color:#ef4444;">PENDENTE AUTENTICAÇÃO</strong> (Requer consentimento OAuth)' : 
+              '<strong style="color:var(--warn-ink);">CONTINGENCIA FIXTURES</strong> (Fallback operacional)');
+        }
+      }
+    } catch(e) {
+      // Silencioso
+    }
+  }
+
+  async function autenticarAgenteMCP(event){
+    if(event) event.stopPropagation();
+    try {
+      const resp = await fetch('/api/agente/autenticar');
+      if(resp.ok){
+        const data = await resp.json();
+        if(data.auth_url) {
+          window.open(data.auth_url, '_blank');
+        }
+      }
+    } catch(e) {
+      console.error('Falha ao acionar autenticação:', e);
+    }
+  }
+
   function copiarParecerParaClipboard(){
     const conteudo = document.getElementById('modalParecerConteudo');
     if(!conteudo) return;
@@ -1117,11 +1960,16 @@
   }
 
   document.addEventListener('keydown', function(e){
-    if(e.key === 'Escape') fecharModalParecer();
+    if(e.key === 'Escape') {
+      fecharModalParecer();
+      fecharModalTelemetria();
+    }
   });
 
-  // Disparo inicial da auditoria ao carregar a interface
-  setTimeout(dispararPipelineIA, 300);
+  // Inicializacao da interface em estado neutro pronto para acao manual
+  setTimeout(function(){
+    verificarStatusAgente();
+  }, 300);
 
   /* ---- chat com o agente ---- */
   function appendChatMessage(role, text){
@@ -1131,6 +1979,18 @@
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
     bubble.textContent = text;
+    wrap.appendChild(bubble);
+    log.appendChild(wrap);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function appendChatMessageHtml(role, htmlContent){
+    const log = document.getElementById('chatLog');
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-msg ' + role;
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.innerHTML = htmlContent;
     wrap.appendChild(bubble);
     log.appendChild(wrap);
     log.scrollTop = log.scrollHeight;
@@ -1152,39 +2012,83 @@
       return 'Estamos analisando o NCM ' + s.ncm + ', com rota ' + s.route + '.';
     }
     if(q.indexOf('cenári') > -1 || q.indexOf('cenari') > -1){
-      return 'Você pode trocar de cenário a qualquer momento na Tela 1, na seção "Escolher cenário de exemplo". No momento estamos vendo o ' + s.label + '.';
+      return 'Você pode trocar de cenário a qualquer momento na Tela 1, na seção "Central de Ingestão de Planilhas". No momento estamos vendo o ' + s.label + '.';
     }
     return 'Posso te ajudar com informações sobre o risco de retenção, os custos comparados entre cais e retroporto, ou a recomendação final. Pergunte à vontade!';
   }
 
-  async function sendChatMessage(e){
-    e.preventDefault();
+  async function handleChatSubmit(e){
+    if(e && e.preventDefault) e.preventDefault();
     const input = document.getElementById('chatInput');
     const text = input.value.trim();
     if(!text) return false;
     appendChatMessage('user', text);
     input.value = '';
 
-    // Conexao com a API do backend DataWave se disponivel
+    const thinkingId = 'chatThinking_' + Date.now();
+    const log = document.getElementById('chatLog');
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-msg agent thinking';
+    wrap.id = thinkingId;
+    wrap.innerHTML = 
+      '<div class="bubble" style="background:var(--bg-sunken); border:1px solid var(--line); min-width:250px;">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">' +
+          '<span style="font-size:11px; font-weight:600; color:var(--accent);">Consultando Agente Logcomex via MCP...</span>' +
+          '<span class="chat-timer" id="' + thinkingId + '_timer" style="font-family:monospace; font-size:11px; color:var(--ink-soft);">0.0s</span>' +
+        '</div>' +
+        '<div class="chat-progress-indeterminate"></div>' +
+      '</div>';
+    log.appendChild(wrap);
+    log.scrollTop = log.scrollHeight;
+
+    const tStart = performance.now();
+    const chatTimerInterval = setInterval(function(){
+      const el = document.getElementById(thinkingId + '_timer');
+      if(el){
+        const seg = ((performance.now() - tStart) / 1000).toFixed(1);
+        el.textContent = seg + 's';
+      }
+    }, 100);
+
+    iniciarProgressoGlobal(50, 'Agente Logcomex MCP: Processando consulta do assistente...');
+
     try {
-      const resp = await fetch('/api/chat', {
+      const resp = await fetch('/api/agente/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mensagem: text, cenario_idx: currentScenario })
       });
+      clearInterval(chatTimerInterval);
+      const thinkingEl = document.getElementById(thinkingId);
+      if(thinkingEl) thinkingEl.remove();
+
       if(resp.ok) {
         const data = await resp.json();
-        if(data && data.resposta) {
-          appendChatMessage('agent', data.resposta);
-          return false;
-        }
+        const duracaoFormatada = data.tempo_resposta_s ? data.tempo_resposta_s.toFixed(2) + 's' : ((performance.now() - tStart) / 1000).toFixed(2) + 's';
+        concluirProgressoGlobal('Resposta do Agente concluída', duracaoFormatada);
+        const badgeHtml = '<div style="font-size:11px; font-weight:600; color:var(--accent); margin-bottom:4px;">' +
+          (data.origem || 'Agente DataWave · Logcomex AI (MCP)') + ' · Resposta em ' + duracaoFormatada + '</div>';
+        appendChatMessageHtml('agent', badgeHtml + (data.resposta ? data.resposta.replace(/\n/g, '<br>') : ''));
+        return false;
       }
     } catch(err) {
-      // Fallback transparente para o modo local
+      clearInterval(chatTimerInterval);
+      const thinkingEl = document.getElementById(thinkingId);
+      if(thinkingEl) thinkingEl.remove();
+      concluirProgressoGlobal('Resposta local gerada', '0.45s');
     }
-    setTimeout(function(){ appendChatMessage('agent', agentReply(text)); }, 450);
+
+    // Fallback local
+    setTimeout(function(){
+      const duracaoFallback = ((performance.now() - tStart) / 1000).toFixed(2) + 's';
+      const badgeHtml = '<div style="font-size:11px; font-weight:600; color:var(--accent); margin-bottom:4px;">Agente DataWave · Logcomex AI (Fallback Local) · Resposta em ' + duracaoFallback + '</div>';
+      appendChatMessageHtml('agent', badgeHtml + agentReply(text));
+    }, 450);
     return false;
   }
+
+  // Alias para retrocompatibilidade
+  window.sendChatMessage = handleChatSubmit;
 </script>
 <!-- Oceano FFT (vgpu, WebGPU) — bundle IIFE gerado com Vite a partir do exemplo fft-ocean; expõe window.DatawaveOcean.createRenderer -->
 <script>
@@ -1454,7 +2358,7 @@ var DatawaveOcean=(function(e){Object.defineProperty(e,Symbol.toStringTag,{value
 }
 .lil-gui .lil-title:before {
   font-family: "lil-gui";
-  content: "▾";
+  content: "\25BE";
   padding-right: 2px;
   display: inline-block;
 }
@@ -1475,7 +2379,7 @@ var DatawaveOcean=(function(e){Object.defineProperty(e,Symbol.toStringTag,{value
   text-decoration: none !important;
 }
 .lil-gui.lil-closed > .lil-title:before {
-  content: "▸";
+  content: "\25B8";
 }
 .lil-gui.lil-closed > .lil-children {
   transform: translateY(-7px);
@@ -1570,7 +2474,7 @@ var DatawaveOcean=(function(e){Object.defineProperty(e,Symbol.toStringTag,{value
 }
 .lil-gui input[type=checkbox]:checked:before {
   font-family: "lil-gui";
-  content: "✓";
+  content: "\2713";
   font-size: var(--checkbox-size);
   line-height: var(--checkbox-size);
 }

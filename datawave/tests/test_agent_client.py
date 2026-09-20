@@ -124,6 +124,42 @@ def test_fake_agent_resolucao_fixture_u4_justificativa_executiva():
     assert "6.425" in str(resp_json)
 
 
+def test_logcomex_mcp_agent_com_caller():
+    """Valida invocação síncrona com mcp_caller customizado."""
+    from datawave.agent_client import LogcomexMCPAgent
+
+    def mock_mcp(tool_name, arguments, timeout):
+        assert tool_name == "chat_with_agent"
+        assert arguments["agent_id"] == "c2322f9c-41e2-4bf8-8fe5-3bd93f4063d4"
+        return "Resposta mockada do agente via MCP."
+
+    client = LogcomexMCPAgent(mcp_caller=mock_mcp)
+    resp = client.ask_agent("Olá agente")
+    assert resp == "Resposta mockada do agente via MCP."
+
+
+def test_logcomex_mcp_agent_async_polling():
+    """Valida resolução de resposta assíncrona com task_id e get_task_status."""
+    from datawave.agent_client import LogcomexMCPAgent
+
+    chamadas = []
+
+    def mock_mcp_async(tool_name, arguments, timeout):
+        chamadas.append(tool_name)
+        if tool_name == "chat_with_agent":
+            return 'A resposta está demorando mais do que o limite síncrono (18s). Use a tool get_task_status com task_id="task-12345" para obter o resultado.'
+        elif tool_name == "get_task_status":
+            assert arguments["task_id"] == "task-12345"
+            return "Parecer técnico finalizado com sucesso."
+        return ""
+
+    client = LogcomexMCPAgent(mcp_caller=mock_mcp_async, timeout_seconds=10)
+    resp = client.ask_agent("Gere parecer longo", poll_interval=0.01)
+    assert resp == "Parecer técnico finalizado com sucesso."
+    assert "chat_with_agent" in chamadas
+    assert "get_task_status" in chamadas
+
+
 if __name__ == "__main__":
     test_fake_agent_ask_operacao()
     test_fake_agent_ask_mercado()
@@ -135,4 +171,7 @@ if __name__ == "__main__":
     test_fake_agent_resolucao_fixture_u2_conferencia_documental()
     test_fake_agent_resolucao_fixture_u3_atributos_duimp()
     test_fake_agent_resolucao_fixture_u4_justificativa_executiva()
+    test_logcomex_mcp_agent_com_caller()
+    test_logcomex_mcp_agent_async_polling()
     print("test_agent_client: todos os testes passaram com sucesso.")
+

@@ -96,11 +96,10 @@ def calcular_cenario_dinamico(cenario_base: Dict[str, Any], cambio_usd_brl: floa
         divergencias=divergencias
     )
 
-    tarifas = TarifasConfig(
-        cambio_usd_brl=cambio_usd_brl,
-        free_time_demurrage_dias=free_time,
-        demurrage_diaria_usd=dem_usd
-    )
+    tarifas = carregar_tarifas()
+    tarifas.cambio_usd_brl = cambio_usd_brl
+    tarifas.free_time_demurrage_dias = free_time
+    tarifas.demurrage_diaria_usd = dem_usd
 
     # 1. Simulação determinística de Monte Carlo (Módulo B)
     risco = simular_permanencia_monte_carlo(
@@ -176,11 +175,10 @@ def executar_simulacao_customizada(params: Dict[str, Any]) -> Dict[str, Any]:
         qtd_conteineres=qtd_cont,
         divergencias=divergencias
     )
-    tarifas = TarifasConfig(
-        cambio_usd_brl=cambio,
-        free_time_demurrage_dias=free_time,
-        demurrage_diaria_usd=dem_usd
-    )
+    tarifas = carregar_tarifas()
+    tarifas.cambio_usd_brl = cambio
+    tarifas.free_time_demurrage_dias = free_time
+    tarifas.demurrage_diaria_usd = dem_usd
 
     risco = simular_permanencia_monte_carlo(
         operacao=op,
@@ -221,36 +219,85 @@ def gerar_resposta_assistente(mensagem: str, cenario_idx: int = 0) -> str:
     cais_tot = c.get("cais_total", "")
     retro_tot = c.get("retro_total", "")
 
-    if any(term in q for term in ["cust", "preço", "preco", "valor", "econom", "financeir", "demurrage", "armazenag"]):
-        return (
-            f"Na análise de custos comparativos para o {nome}, o despacho no Cais está projetado em {cais_tot}, "
-            f"enquanto a remoção ao Retroporto totaliza {retro_tot}. {economia}."
-        )
-    elif any(term in q for term in ["risco", "retenç", "probabilidade", "canal", "fiscal"]):
-        return (
-            f"Para o {nome} (NCM {ncm}), nosso modelo de Monte Carlo apurou probabilidade de retenção de {prob}. "
-            f"Isso decorre do perfil cadastral e dos intervenientes regulatórios associados à operação."
-        )
-    elif any(term in q for term in ["recomend", "decis", "sugest", "prescrit", "para onde", "melhor opção", "melhor opcao", "retroporto", "cais"]):
-        return (
-            f"A recomendação prescritiva para o {nome} é: {decisao}. "
-            f"Essa estratégia maximiza a eficiência operacional e protege a carga contra custos imprevistos."
-        )
-    elif any(term in q for term in ["ncm", "produto", "mercadoria", "classific"]):
-        return (
-            f"A operação em análise refere-se à NCM {ncm} na rota {c.get('rota', 'Santos')}, "
-            f"com lote valorado em {c.get('fob_lote', 'N/D')}."
-        )
-    elif any(term in q for term in ["cenário", "cenari", "trocar", "alternar"]):
-        return (
-            f"Você está atualmente visualizando o {nome}. É possível alternar entre os cenários demonstrativos "
-            f"no seletor localizado na Tela 1."
-        )
-    else:
-        return (
-            f"Como consultor DataWave para o {nome}, posso esclarecer dúvidas sobre a probabilidade de retenção ({prob}), "
-            f"a matriz comparativa de custos ({cais_tot} no cais vs. {retro_tot} no retroporto) e a emissão de instruções DTE/DTC."
-        )
+    if any(k in q for k in ("mcp", "conexão", "conexao", "autentic", "online", "status")):
+        from datawave.auth_manager import carregar_dados_tokens, token_esta_expirado
+        dados = carregar_dados_tokens()
+        if not dados.get("access_token") or token_esta_expirado(dados):
+            return (
+                "O Agente Logcomex MCP requer autenticação OAuth ativa. "
+                "Para conectar o agente ao vivo, utilize o botão de conexão ou acesse /api/agente/autenticar."
+            )
+        return "O Agente Logcomex MCP está com credenciais registradas e pronto para executar consultas em tempo real."
+
+    respostas_intencao = [
+        (("quem é você", "quem e voce", "o que você faz", "o que voce faz", "funciona", "papel", "ajuda", "capacidade", "skills"),
+         "Atuo como Agente Aduaneiro da DataWave conectado ao ecossistema Logcomex AI. "
+         "Executo a auditoria preventiva de DUIMP e catálogos de produtos, predição probabilística de retenção fiscal "
+         "em Santos (Monte Carlo P50/P90), matriz comparativa de custos entre Cais e Retroporto e redação formal de parecer técnico com prescrição de DTC/DTE."),
+        (("cust", "preço", "preco", "valor", "econom", "financeir", "demurrage", "armazenag"),
+         f"Na análise de custos comparativos para o {nome}, o despacho no Cais está projetado em {cais_tot}, "
+         f"enquanto a remoção ao Retroporto totaliza {retro_tot}. {economia}."),
+        (("risco", "retenç", "probabilidade", "canal", "fiscal"),
+         f"Para o {nome} (NCM {ncm}), nosso modelo estocástico apurou probabilidade de retenção de {prob}. "
+         f"Isso decorre do histórico amostral da NCM e dos intervenientes regulatórios associados à operação."),
+        (("recomend", "decis", "sugest", "prescrit", "para onde", "melhor opção", "melhor opcao", "retroporto", "cais"),
+         f"A recomendação prescritiva para o {nome} é: {decisao}. "
+         f"Essa estratégia maximiza a eficiência operacional e protege a carga contra custos imprevistos."),
+        (("ncm", "produto", "mercadoria", "classific"),
+         f"A operação em análise refere-se à NCM {ncm} na rota {c.get('rota', 'Santos')}, "
+         f"com lote valorado em {c.get('fob_lote', 'N/D')}."),
+        (("cenário", "cenari", "trocar", "alternar"),
+         f"Você está atualmente visualizando o {nome}. É possível alternar entre os cenários demonstrativos "
+         f"no seletor localizado na Tela 1."),
+    ]
+
+    for palavras_chave, texto in respostas_intencao:
+        if any(p in q for p in palavras_chave):
+            return texto
+
+    return (
+        f"Como consultor DataWave para o {nome} (NCM {ncm}), posso esclarecer qualquer detalhe da operação: "
+        f"o risco de conferência aduaneira ({prob}), a composição da matriz financeira ({cais_tot} no cais vs. {retro_tot} no retroporto) "
+        f"ou orientações normativas para regularização documental."
+    )
+
+
+def iniciar_autenticacao_agente_api() -> Dict[str, Any]:
+    """Dispara a abertura do navegador para autenticação OAuth com callback em 16951."""
+    import threading
+    from datawave.auth_manager import gerar_url_autorizacao, CALLBACK_PORT, DEFAULT_CLIENT_ID
+    from datawave.autenticar_mcp import OAuthCallbackHandler
+    from http.server import HTTPServer
+    import webbrowser
+
+    auth_url, code_verifier, state = gerar_url_autorizacao(DEFAULT_CLIENT_ID)
+    OAuthCallbackHandler.code_verifier = code_verifier
+    OAuthCallbackHandler.expected_state = state
+    OAuthCallbackHandler.client_id = DEFAULT_CLIENT_ID
+
+    def _escutar_callback():
+        try:
+            srv = HTTPServer(("127.0.0.1", CALLBACK_PORT), OAuthCallbackHandler)
+            srv.timeout = 180
+            srv.handle_request()
+            srv.server_close()
+        except Exception as exc:
+            logger.debug(f"Servidor de callback finalizado: {exc}")
+
+    t = threading.Thread(target=_escutar_callback, daemon=True)
+    t.start()
+
+    try:
+        webbrowser.open(auth_url)
+    except Exception:
+        pass
+
+    return {
+        "status": "AGUARDANDO_AUTORIZACAO",
+        "auth_url": auth_url,
+        "callback_porta": CALLBACK_PORT,
+        "mensagem": "Navegador iniciado para consentimento OAuth com Logcomex AI. O token será renovado automaticamente."
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -303,9 +350,115 @@ try:
         usar_mcp = payload.get("usar_mcp", False)
         return executar_pipeline_datawave(payload, usar_agente=usar_ag, usar_mcp=usar_mcp)
 
+    @app.get("/api/agente/status")
+    def api_agente_status():
+        return obter_status_agente_logcomex()
+
+    @app.get("/api/agente/autenticar")
+    @app.post("/api/agente/autenticar")
+    def api_agente_autenticar():
+        return iniciar_autenticacao_agente_api()
+
+    @app.post("/api/agente/chat")
+    def api_agente_chat(payload: Dict[str, Any]):
+        return responder_chat_agente(payload)
+
+    @app.post("/api/despachante/processar-planilha")
+    def api_despachante_processar(payload: Dict[str, Any]):
+        return processar_planilha_despachante_api(payload)
+
 except ImportError:
     # Fallback transparente quando FastAPI não estiver no ambiente
     app = None
+
+
+def obter_status_agente_logcomex() -> Dict[str, Any]:
+    from datawave.agent_client import LogcomexMCPAgent
+    from datawave.auth_manager import carregar_dados_tokens, token_esta_expirado
+    agent = LogcomexMCPAgent()
+    dados_token = carregar_dados_tokens()
+    tem_token = bool(dados_token.get("access_token"))
+    expirado = token_esta_expirado(dados_token)
+    is_online = agent.check_health()
+
+    if is_online:
+        modo = "ONLINE_MCP"
+        status = "ONLINE"
+    elif tem_token and expirado:
+        modo = "PENDENTE_AUTENTICACAO"
+        status = "EXPIRADO"
+    else:
+        modo = "CONTINGENCIA_FIXTURES"
+        status = "CONTINGENCIA_LOCAL"
+
+    return {
+        "status": status,
+        "modo": modo,
+        "agente_id": agent.agent_id,
+        "agente_nome": "Agente DataWave",
+        "empresa": "Data Wave",
+        "mcp_endpoint": agent.base_url,
+        "ferramenta": "chat_with_agent",
+        "token_expirado": expirado,
+        "saude_mcp": is_online,
+        "skills": [
+            "Análise Documental Aduaneira",
+            "Comexstat | Importação e Exportação Brasil",
+            "Catálogo de Produtos DUIMP",
+            "Regras Fiscais dos Produtos",
+            "Predição de Canais de Desembaraço",
+            "Instrução Normativa e Regulamento Aduaneiro"
+        ]
+    }
+
+
+def processar_planilha_despachante_api(payload: Dict[str, Any]) -> Dict[str, Any]:
+    from datawave.pipeline import executar_pipeline_datawave
+    csv_conteudo = payload.get("conteudo_csv", "")
+    usar_ag = payload.get("usar_agente", True)
+    usar_mcp = payload.get("usar_mcp", True)
+    return executar_pipeline_datawave(
+        dados_input=payload,
+        usar_agente=usar_ag,
+        usar_mcp=usar_mcp,
+        planilha_csv=csv_conteudo if csv_conteudo else None
+    )
+
+
+def responder_chat_agente(payload: Any, cenario_idx: int = 0) -> Dict[str, Any]:
+    import time
+    t_start = time.perf_counter()
+    from datawave.agent_client import LogcomexMCPAgent
+    if isinstance(payload, str):
+        msg = payload
+        idx = cenario_idx
+    else:
+        msg = payload.get("mensagem", "") if isinstance(payload, dict) else str(payload or "")
+        idx = int(payload.get("cenario_idx", cenario_idx)) if isinstance(payload, dict) else cenario_idx
+    agent = LogcomexMCPAgent()
+    if agent.check_health():
+        try:
+            resposta_agente = agent.ask_agent(msg, skill="auditoria_aduaneira")
+            if resposta_agente and not resposta_agente.startswith("[Contingência"):
+                duracao_s = round(time.perf_counter() - t_start, 3)
+                return {
+                    "resposta": resposta_agente,
+                    "origem": "Agente DataWave · Logcomex AI (MCP)",
+                    "modo": "ONLINE_MCP",
+                    "tempo_resposta_s": duracao_s,
+                    "duracao_ms": int(duracao_s * 1000)
+                }
+        except Exception as exc:
+            logger.warning(f"Exceção no chat com Agente Logcomex: {exc}")
+    fallback = gerar_resposta_assistente(msg, idx)
+    duracao_s = round(time.perf_counter() - t_start, 3)
+    return {
+        "resposta": fallback,
+        "origem": "Agente DataWave · Logcomex AI",
+        "modo": "CONTINGENCIA_FIXTURES",
+        "tempo_resposta_s": duracao_s,
+        "duracao_ms": int(duracao_s * 1000)
+    }
 
 
 def run_fallback_server(host: str = "127.0.0.1", port: int = 8000):
@@ -345,6 +498,18 @@ def run_fallback_server(host: str = "127.0.0.1", port: int = 8000):
                 cenarios_raw = carregar_cenarios_mock()
                 calculados = [calcular_cenario_dinamico(c) for c in cenarios_raw]
                 self.wfile.write(json.dumps(calculados, ensure_ascii=False).encode("utf-8"))
+            elif self.path.startswith("/api/agente/status"):
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                st = obter_status_agente_logcomex()
+                self.wfile.write(json.dumps(st, ensure_ascii=False).encode("utf-8"))
+            elif self.path.startswith("/api/agente/autenticar"):
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                res = iniciar_autenticacao_agente_api()
+                self.wfile.write(json.dumps(res, ensure_ascii=False).encode("utf-8"))
             else:
                 super().do_GET()
 
@@ -367,6 +532,24 @@ def run_fallback_server(host: str = "127.0.0.1", port: int = 8000):
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.end_headers()
                 self.wfile.write(json.dumps({"resposta": resp}, ensure_ascii=False).encode("utf-8"))
+            elif self.path.startswith("/api/agente/chat"):
+                resp = responder_chat_agente(payload)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps(resp, ensure_ascii=False).encode("utf-8"))
+            elif self.path.startswith("/api/agente/autenticar"):
+                res = iniciar_autenticacao_agente_api()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps(res, ensure_ascii=False).encode("utf-8"))
+            elif self.path.startswith("/api/despachante/processar-planilha"):
+                resultado = processar_planilha_despachante_api(payload)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps(resultado, ensure_ascii=False).encode("utf-8"))
             elif self.path.startswith("/api/pipeline"):
                 from datawave.pipeline import executar_pipeline_datawave
                 usar_ag = payload.get("usar_agente", True)

@@ -61,6 +61,13 @@ class TestDatawaveAPI(unittest.TestCase):
         resp_decisao = gerar_resposta_assistente("qual a recomendação final?", cenario_idx=0)
         self.assertIn("recomendação", resp_decisao.lower())
 
+        from datawave.main import responder_chat_agente
+        chat_dict = responder_chat_agente("qual o risco?", cenario_idx=0)
+        self.assertIn("duracao_ms", chat_dict)
+        self.assertIn("tempo_resposta_s", chat_dict)
+        self.assertIn("origem", chat_dict)
+        self.assertGreaterEqual(chat_dict["duracao_ms"], 0)
+
     def test_execucao_pipeline_endpoint(self):
         """Valida se o pipeline pode ser disparado via endpoint com integração de agente."""
         from datawave.pipeline import executar_pipeline_datawave
@@ -77,6 +84,35 @@ class TestDatawaveAPI(unittest.TestCase):
         self.assertIn("modo_agente", res)
         self.assertIn("parecer", res)
         self.assertTrue(res["parecer"]["valido"])
+        self.assertIn("duracao_ms", res)
+        self.assertIn("tempo_resposta_s", res)
+        self.assertGreaterEqual(res["duracao_ms"], 0)
+
+    def test_endpoint_processar_planilha(self):
+        """Valida se o endpoint do despachante processa a planilha com o Agente Logcomex."""
+        from datawave.pipeline import executar_pipeline_datawave
+
+        csv_planilha = """ncm,descricao,quantidade,valor_total_usd,peso_bruto_bl_kg,peso_bruto_packing_kg,incoterm,porto_descarga
+2204.21.00,Vinho Tinto Casal Branco,1200,68500.0,14500.0,14050.0,FOB,Santos
+"""
+        payload = {"planilha_csv": csv_planilha, "usar_agente": True}
+        res = executar_pipeline_datawave(payload, planilha_csv=csv_planilha, usar_agente=True)
+        self.assertEqual(res["operacao"]["ncm"], "2204.21.00")
+        self.assertEqual(res["operacao"]["valor_lote_usd"], 68500.0)
+        self.assertIn("plano_correcoes", res)
+        self.assertGreaterEqual(res["plano_correcoes"]["total_pendencias"], 1)
+
+    def test_agente_status_endpoint(self):
+        """Valida se as informações de conexão do Agente Logcomex DataWave estão corretas."""
+        from datawave import main
+        if main.app is not None:
+            status = main.api_agente_status()
+            self.assertEqual(status["status"], "ONLINE")
+            self.assertEqual(status["agente_id"], "c2322f9c-41e2-4bf8-8fe5-3bd93f4063d4")
+            self.assertEqual(status["agente_nome"], "Agente DataWave")
+            self.assertEqual(status["empresa"], "Data Wave")
+            self.assertIn("Comexstat | Importação e Exportação Brasil", status["skills"])
+
 
     def test_servidor_http_endpoints(self):
         """Inicia o servidor HTTP em porta de teste e valida requisições GET e POST."""

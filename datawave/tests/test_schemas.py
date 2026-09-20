@@ -71,10 +71,34 @@ def test_tarifas_config_defaults():
     assert cfg.demurrage_diaria_usd == 150.0
 
 
+def test_plano_correcoes_aduaneiras():
+    from datawave.schemas import CorrecaoAduaneira, PlanoCorrecoesAduaneiras
+
+    corr = CorrecaoAduaneira(
+        id="CORR-01",
+        categoria="Documental",
+        problema_detectado="Divergência de peso de 450 kg entre BL e Packing List",
+        acao_prescrita="Solicitar retificação formal ao armador antes do registro da DUIMP",
+        prazo_limite="Antes do registro da DUIMP",
+        fundamento_legal="Art. 711 do Regulamento Aduaneiro",
+        risco_mitigado="Multa de 1% do valor aduaneiro e parametrização em canal vermelho"
+    )
+    plano = PlanoCorrecoesAduaneiras(
+        total_pendencias=1,
+        bloqueia_duimp=True,
+        correcoes=[corr]
+    )
+    assert plano.total_pendencias == 1
+    assert plano.bloqueia_duimp is True
+    assert plano.correcoes[0].id == "CORR-01"
+
+
 if __name__ == "__main__":
     test_operacao_extraida_valida()
     test_operacao_extraida_valor_negativo_erro()
     test_mercado_ncm_com_tempos_canal()
     test_sugestao_atributos()
     test_tarifas_config_defaults()
+    test_plano_correcoes_aduaneiras()
     print("test_schemas: todos os testes passaram com sucesso.")
+

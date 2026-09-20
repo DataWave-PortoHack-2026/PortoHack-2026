@@ -135,7 +135,26 @@ class TestReportAndPipeline(unittest.TestCase):
         self.assertIn("mercado", resultado["agente_dados"])
         self.assertIn("atributos", resultado["agente_dados"])
         self.assertTrue(resultado["parecer"]["valido"])
+        self.assertIn("plano_correcoes", resultado)
+        self.assertGreaterEqual(resultado["plano_correcoes"]["total_pendencias"], 1)
+
+    def test_pipeline_com_planilha_csv(self):
+        """Valida se o pipeline processa uma planilha CSV completa com auditoria documental."""
+        from datawave.pipeline import executar_pipeline_datawave
+
+        csv_data = """ncm,descricao,quantidade,valor_total_usd,peso_bruto_bl_kg,peso_bruto_packing_kg,incoterm,porto_descarga
+2204.21.00,Vinho Casal Branco,1200,68500.0,14500.0,14050.0,FOB,Santos
+"""
+        payload = {}
+        resultado = executar_pipeline_datawave(payload, planilha_csv=csv_data, usar_agente=True)
+        self.assertEqual(resultado["operacao"]["ncm"], "2204.21.00")
+        self.assertEqual(resultado["operacao"]["valor_lote_usd"], 68500.0)
+        self.assertTrue(any("450" in d for d in resultado["operacao"]["divergencias"]))
+        self.assertIn("plano_correcoes", resultado)
+        correcoes = resultado["plano_correcoes"]["correcoes"]
+        self.assertTrue(any(c["categoria"] == "Documental" for c in correcoes))
 
 
 if __name__ == "__main__":
     unittest.main()
+
