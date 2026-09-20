@@ -701,6 +701,9 @@
               <span class="live-pulse"></span>
               <span id="livePillTexto">MCP Ativo & Autenticado (mcp.logcomex.ai)</span>
             </div>
+            <button class="cta-secondary" id="btnConectarMCP" onclick="conectarOuReconectarMCP(event)" style="padding:6px 14px; font-size:12px; border-color:rgba(56,198,239,0.4); color:var(--accent);">
+              Conectar Agente MCP
+            </button>
             <button class="cta-secondary" onclick="abrirModalTelemetria()" style="padding:6px 14px; font-size:12px;">
               Inspecionar Telemetria do Agente
             </button>
@@ -995,6 +998,22 @@
               <div class="kv"><div class="k">Ferramenta Exclusiva</div><div class="v"><code style="font-size:12px; color:var(--accent-2);">chat_with_agent</code> (chat_free desabilitado)</div></div>
               <div class="kv"><div class="k">Modo Operacional</div><div class="v" id="telemetriaModoTexto">Online MCP / Contingência Fixtures</div></div>
               <div class="kv"><div class="k">Polling Assíncrono</div><div class="v">Automático em <code>get_task_status</code> para pareceres longos</div></div>
+            </div>
+            <div class="panel" style="margin-top:10px; margin-bottom:12px; background:var(--bg-sunken); border:1px solid var(--line); border-radius:8px; padding:12px 14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div>
+                  <div style="font-size:13px; font-weight:600; color:var(--ink);">Conexão e Autenticação do Servidor MCP</div>
+                  <div style="font-size:12px; color:var(--ink-soft); margin-top:2px;">Se o MCP cair ou retornar erro, inicie a autorização OAuth no navegador ou cadastre o token manualmente.</div>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <button class="cta" onclick="conectarOuReconectarMCP(event)" style="padding:6px 14px; font-size:12px;">
+                    Autenticar / Reconectar OAuth
+                  </button>
+                  <button class="cta-secondary" onclick="abrirPromptTokenManual()" style="padding:6px 14px; font-size:12px;">
+                    Configurar Token Manual
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="panel" style="margin-top:4px;">
               <h4 style="margin:0 0 8px 0; font-size:13px;">Habilidades Integradas do Agente (Skills Oficiais):</h4>
@@ -2048,6 +2067,7 @@
         const liveTexto = document.getElementById('livePillTexto');
         const modoBadge = document.getElementById('pipeModoBadge');
         const telemetriaModo = document.getElementById('telemetriaModoTexto');
+        const btnConectar = document.getElementById('btnConectarMCP');
         const isOnline = st.modo === 'ONLINE_MCP';
         if(livePill) {
           livePill.style.background = isOnline ? 'rgba(43,217,174,0.15)' : 'rgba(56,198,239,0.15)';
@@ -2067,25 +2087,100 @@
             '<strong style="color:var(--accent-2);">ONLINE MCP</strong> (Conexão ao vivo mcp.logcomex.ai)' : 
             '<strong style="color:var(--accent);">MOTOR HÍBRIDO AUTÔNOMO</strong> (Execução Universal 100%)';
         }
+        if(btnConectar) {
+          if(isOnline) {
+            btnConectar.textContent = 'Reconectar MCP';
+            btnConectar.style.borderColor = 'rgba(43,217,174,0.4)';
+            btnConectar.style.color = 'var(--accent-2)';
+            btnConectar.title = 'Servidor MCP conectado. Clique para renovar autorização OAuth ou reconectar.';
+          } else {
+            btnConectar.textContent = 'Conectar Agente MCP';
+            btnConectar.style.borderColor = 'rgba(56,198,239,0.5)';
+            btnConectar.style.color = 'var(--accent)';
+            btnConectar.title = 'Clique para conectar ou autorizar o MCP da Logcomex via OAuth.';
+          }
+          btnConectar.disabled = false;
+        }
+        return st;
       }
     } catch(e) {
       // Silencioso
     }
+    return null;
   }
 
-  async function autenticarAgenteMCP(event){
+  async function conectarOuReconectarMCP(event){
     if(event) event.stopPropagation();
+    const btn = document.getElementById('btnConectarMCP');
+    const origText = btn ? btn.textContent : 'Conectar Agente MCP';
+    if(btn){
+      btn.textContent = 'Conectando ao MCP...';
+      btn.disabled = true;
+    }
     try {
       const resp = await fetch('/api/agente/autenticar');
       if(resp.ok){
         const data = await resp.json();
         if(data.auth_url) {
-          window.open(data.auth_url, '_blank');
+          const popup = window.open(data.auth_url, '_blank');
+          if(!popup){
+            alert('Aviso: O navegador bloqueou a janela pop-up de autorização. Por favor, permita pop-ups ou use a URL de login:\n' + data.auth_url);
+          }
+          // Polling suave para sincronizar o status assim que o usuário autorizar
+          let tentativas = 0;
+          const pollInterval = setInterval(async function(){
+            tentativas++;
+            const st = await verificarStatusAgente();
+            if(st && st.modo === 'ONLINE_MCP'){
+              clearInterval(pollInterval);
+            } else if(tentativas >= 12){
+              clearInterval(pollInterval);
+              if(btn && !btn.disabled) return;
+              verificarStatusAgente();
+            }
+          }, 2500);
+        } else {
+          await verificarStatusAgente();
+        }
+      } else {
+        alert('Não foi possível iniciar a conexão OAuth com o servidor MCP.');
+        if(btn){
+          btn.textContent = origText;
+          btn.disabled = false;
         }
       }
     } catch(e) {
-      console.error('Falha ao acionar autenticação:', e);
+      console.error('Falha ao acionar conexão MCP:', e);
+      if(btn){
+        btn.textContent = origText;
+        btn.disabled = false;
+      }
     }
+  }
+
+  async function abrirPromptTokenManual(){
+    const token = prompt('Insira o Bearer Access Token do MCP Logcomex:');
+    if(!token || !token.trim()) return;
+    try {
+      const resp = await fetch('/api/agente/configurar-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ access_token: token.trim() })
+      });
+      const data = await resp.json();
+      if(resp.ok && data.status === 'ok'){
+        alert('Token MCP configurado e salvo com sucesso! A conexão foi restabelecida.');
+        await verificarStatusAgente();
+      } else {
+        alert('Falha ao salvar token: ' + (data.error || 'Erro desconhecido'));
+      }
+    } catch(e) {
+      alert('Erro ao enviar token para o backend: ' + e.message);
+    }
+  }
+
+  async function autenticarAgenteMCP(event){
+    await conectarOuReconectarMCP(event);
   }
 
   function copiarParecerParaClipboard(){
