@@ -54,7 +54,8 @@ def validar_conformidade_relatorio(texto: str, valores_esperados: Dict[str, str]
             inconsistencias.append(f"Valor esperado ausente ou divergente para '{chave}': esperado '{valor_str}'")
 
     # 2. Inspeciona todos os valores monetários em R$ citados no texto
-    valores_brl_texto = re.findall(r"R\$\s*[\d\.\,]+", texto)
+    valores_brl_raw = re.findall(r"R\$\s*[\d\.\,]+", texto)
+    valores_brl_texto = [v.rstrip(".,;: ") for v in valores_brl_raw]
     valores_brl_esperados_norm = [
         re.sub(r"\s+", "", v) for v in valores_esperados.values() if "R$" in v
     ]
@@ -131,6 +132,7 @@ def gerar_parecer_executivo(
 - **Volume da Carga:** {operacao.qtd_conteineres} contêiner(es)
 - **Valor FOB Declarado:** {fob_str}
 - **Taxa de Câmbio PTAX de Referência:** {cambio_str}
+- **Diária de Demurrage de Referência:** {dem_usd_str}/dia
 
 ---
 

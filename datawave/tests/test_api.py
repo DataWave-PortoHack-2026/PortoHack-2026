@@ -61,6 +61,23 @@ class TestDatawaveAPI(unittest.TestCase):
         resp_decisao = gerar_resposta_assistente("qual a recomendação final?", cenario_idx=0)
         self.assertIn("recomendação", resp_decisao.lower())
 
+    def test_execucao_pipeline_endpoint(self):
+        """Valida se o pipeline pode ser disparado via endpoint com integração de agente."""
+        from datawave.pipeline import executar_pipeline_datawave
+
+        payload = {
+            "ncm": "8481.80.95",
+            "descricao": "Válvulas industriais",
+            "valor_lote_usd": 50000.0,
+            "qtd_conteineres": 1,
+            "usar_agente": True
+        }
+        res = executar_pipeline_datawave(payload, usar_agente=True)
+        self.assertTrue(res["trace_id"].startswith("DW-"))
+        self.assertIn("modo_agente", res)
+        self.assertIn("parecer", res)
+        self.assertTrue(res["parecer"]["valido"])
+
     def test_servidor_http_endpoints(self):
         """Inicia o servidor HTTP em porta de teste e valida requisições GET e POST."""
         import http.server

@@ -299,7 +299,9 @@ try:
     @app.post("/api/pipeline")
     def api_pipeline(payload: Dict[str, Any]):
         from datawave.pipeline import executar_pipeline_datawave
-        return executar_pipeline_datawave(payload)
+        usar_ag = payload.get("usar_agente", True)
+        usar_mcp = payload.get("usar_mcp", False)
+        return executar_pipeline_datawave(payload, usar_agente=usar_ag, usar_mcp=usar_mcp)
 
 except ImportError:
     # Fallback transparente quando FastAPI não estiver no ambiente
@@ -367,7 +369,9 @@ def run_fallback_server(host: str = "127.0.0.1", port: int = 8000):
                 self.wfile.write(json.dumps({"resposta": resp}, ensure_ascii=False).encode("utf-8"))
             elif self.path.startswith("/api/pipeline"):
                 from datawave.pipeline import executar_pipeline_datawave
-                resultado = executar_pipeline_datawave(payload)
+                usar_ag = payload.get("usar_agente", True)
+                usar_mcp = payload.get("usar_mcp", False)
+                resultado = executar_pipeline_datawave(payload, usar_agente=usar_ag, usar_mcp=usar_mcp)
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.end_headers()

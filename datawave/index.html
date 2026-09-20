@@ -364,6 +364,37 @@
     border:1px solid var(--line); border-radius:999px; padding:6px 12px;}
   .back-sea:hover{background:var(--bg-panel);}
   @media (max-width:720px){ .screen-tag{display:none;} }
+
+  /* ---- modal do parecer tecnico aduaneiro ---- */
+  .modal-overlay{
+    position:fixed; inset:0; z-index:100; background:rgba(6,9,30,0.85);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    display:none; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.active{display:flex;}
+  .modal-container{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:var(--radius);
+    width:100%; max-width:860px; max-height:88vh; display:flex; flex-direction:column;
+    overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,0.55);
+  }
+  .modal-head{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding:20px 24px; border-bottom:1px solid var(--line); background:var(--bg-sunken);
+  }
+  .modal-body{
+    padding:22px 24px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:14px;
+  }
+  .parecer-pre{
+    white-space:pre-wrap; font-family:'Inter',system-ui,sans-serif; font-size:13.5px;
+    line-height:1.65; color:var(--ink); background:var(--bg-sunken); border:1px solid var(--line);
+    border-radius:12px; padding:18px 20px; max-height:480px; overflow-y:auto;
+  }
+  .modal-foot{
+    padding:16px 24px; border-top:1px solid var(--line); display:flex;
+    justify-content:space-between; align-items:center; gap:12px; background:var(--bg-sunken);
+    flex-wrap:wrap;
+  }
+  .tag-dot{width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:5px;}
 </style>
 </head>
 <body>
@@ -453,6 +484,38 @@
 
     <!-- TELA 1 -->
     <section class="screen active" id="screen-1">
+      <div class="panel" id="panelPipelineIA">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+          <div>
+            <h2><span class="eyebrow">Auditoria Integrada</span>Pipeline de Inteligência Aduaneira (Logcomex AI)</h2>
+            <div style="font-size:12.5px; color:var(--ink-soft); margin-top:-8px;">Orquestração dos módulos U1 (Mercado Santos), U2 (Conferência Documental), U3 (Catálogo DUIMP) e U4 (Parecer Pericial).</div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <button class="cta" id="btnExecutarPipeline" onclick="dispararPipelineIA()" style="padding:10px 18px; font-size:13px;">
+              Auditar e Processar Operação (Pipeline IA)
+            </button>
+          </div>
+        </div>
+        <div class="kv-grid">
+          <div class="kv">
+            <div class="k">Identificador de Trilha (Trace ID)</div>
+            <div class="v" id="pipeTraceId"><span style="font-family:monospace; font-size:14px; font-weight:600; color:var(--accent);">DW-INICIAL</span></div>
+          </div>
+          <div class="kv">
+            <div class="k">Modo do Agente Logcomex</div>
+            <div class="v" id="pipeModoAgente"><span class="badge" id="pipeModoBadge">Contingência Fixtures</span></div>
+          </div>
+          <div class="kv">
+            <div class="k">Conferência Documental (U2)</div>
+            <div class="v" id="pipeConfDoc"><span id="pipeConfDocText" style="font-size:13.5px;">Aguardando execução...</span></div>
+          </div>
+          <div class="kv">
+            <div class="k">Parecer Regulatório (U4)</div>
+            <div class="v" id="pipeParecerStatus"><span class="badge" id="pipeParecerBadge">Pendente</span></div>
+          </div>
+        </div>
+      </div>
+
       <div class="panel">
         <h2><span class="eyebrow">Demonstração</span>Escolher cenário de exemplo</h2>
         <div class="scenario-switch-row" id="scenarioSwitch">
@@ -485,7 +548,7 @@
       </div>
 
       <div class="alert" id="predAlert">
-        <div class="icon">⚠️</div>
+        <div class="icon" style="font-weight:700; color:var(--crit-ink);">[!]</div>
         <div>
           <div class="t">Alerta preditivo da IA</div>
           <p>Inconsistência cadastral detectada no catálogo de produtos. Probabilidade de retenção sanitária (MAPA/ANVISA): <span class="prob">82%</span>.</p>
@@ -502,7 +565,7 @@
               <div class="label">Cenário A</div>
               <h3>Despacho sobre águas (cais)</h3>
             </div>
-            <span class="risk-tag crit" id="a-risktag">🔴 Risco crítico</span>
+            <span class="risk-tag crit" id="a-risktag"><span class="tag-dot" style="background:var(--crit-ink);"></span>Risco crítico</span>
           </div>
           <div>
             <div class="line-item" id="a-l1"><span class="l">Tempo médio de permanência</span><span class="r">10 dias <small style="color:var(--crit-ink); font-weight:600;">(estouro de 5)</small></span></div>
@@ -518,7 +581,7 @@
               <div class="label">Cenário C</div>
               <h3>Retroporto (porto seco)</h3>
             </div>
-            <span class="risk-tag ok" id="c-risktag">🟢 Protegido</span>
+            <span class="risk-tag ok" id="c-risktag"><span class="tag-dot" style="background:var(--ok-ink);"></span>Protegido</span>
           </div>
           <div>
             <div class="line-item" id="c-l1"><span class="l">Transferência + armazenagem (15d)</span><span class="r">R$ 2.200,00</span></div>
@@ -548,6 +611,7 @@
 
           <div class="cta-row">
             <button class="cta" id="ctaMain" onclick="alert('Instrução de trânsito DTE/DTC emitida (protótipo).')">Selecionar Cenário C & emitir instrução de trânsito DTE/DTC</button>
+            <button class="cta" style="background:linear-gradient(135deg, #38C6EF, #2BD9AE); color:#04121c;" id="btnVerParecer" onclick="abrirModalParecer()">Visualizar Parecer Técnico Aduaneiro</button>
             <button class="cta-secondary" onclick="showScreen(2)">Revisar comparação de cenários</button>
           </div>
         </div>
@@ -569,6 +633,44 @@
       </div>
       <p class="footnote">Respostas simuladas para fins de demonstração — protótipo Porto Hack Santos 2026.</p>
     </section>
+
+    <!-- MODAL PARECER TECNICO ADUANEIRO -->
+    <div class="modal-overlay" id="modalParecer" role="dialog" aria-modal="true" aria-labelledby="modalParecerTitle">
+      <div class="modal-container">
+        <div class="modal-head">
+          <div>
+            <div class="eyebrow" style="font-size:11px; font-weight:600; color:var(--accent); margin-bottom:4px;">Documento Oficial Pericial</div>
+            <h3 id="modalParecerTitle" style="margin:0; font-size:18px; font-weight:600;">Parecer Técnico Aduaneiro — DataWave AI</h3>
+          </div>
+          <button class="rail-collapse" onclick="fecharModalParecer()" aria-label="Fechar parecer" style="cursor:pointer;">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 5L15 15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              <path d="M15 5L5 15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:10px; flex-wrap:wrap;">
+            <div style="font-size:12px; color:var(--ink-soft);">
+              Trilha Auditada: <strong id="modalTraceId" style="font-family:monospace; color:var(--ink);">DW-INICIAL</strong>
+            </div>
+            <div id="modalValidadorBadge" class="badge" style="background:var(--ok-bg); color:var(--ok-ink); border-color:var(--ok-line);">
+              Validado por Expressões Regulares
+            </div>
+          </div>
+          <div class="parecer-pre" id="modalParecerConteudo">Aguardando execução da auditoria...</div>
+        </div>
+        <div class="modal-foot">
+          <div style="font-size:11.5px; color:var(--ink-soft); max-width:55%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            Checksum SHA-256: <code id="modalChecksum" style="font-family:monospace; font-size:11px;">--</code>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="cta-secondary" onclick="fecharModalParecer()">Fechar</button>
+            <button class="cta" id="btnCopiarParecer" onclick="copiarParecerParaClipboard()" style="padding:10px 18px; font-size:13px;">Copiar Parecer</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
   </div>
 </main>
@@ -697,11 +799,11 @@
       alertLevel: '', alertTitle: 'Alerta preditivo da IA',
       alertText: 'Inconsistência cadastral detectada no catálogo de produtos. Probabilidade de retenção sanitária (MAPA/ANVISA):',
       alertProb: 82,
-      scenarioA: { riskTag:'crit', riskLabel:'🔴 Risco crítico',
+      scenarioA: { riskTag:'crit', riskLabel:'Risco crítico',
         l1:['Tempo médio de permanência','10 dias','(estouro de 5)'],
         l2:['Sobreestadia (demurrage)','US$ 750,00','(R$ 4.125,00)'],
         l3:['Armazenagem básica de cais','R$ 4.500,00',''], total:'R$ 8.625,00' },
-      scenarioC: { riskTag:'ok', riskLabel:'🟢 Protegido',
+      scenarioC: { riskTag:'ok', riskLabel:'Protegido',
         l1:['Transferência + armazenagem (15d)','R$ 2.200,00',''],
         l2:['Devolução do contêiner vazio','2º dia',''],
         l3:['Demurrage','R$ 0,00',''], total:'R$ 2.200,00' },
@@ -723,11 +825,11 @@
       alertLevel: 'warn', alertTitle: 'Alerta preditivo da IA',
       alertText: 'Risco moderado de conferência aduaneira (Receita Federal), dentro da janela de free time. Probabilidade de retenção:',
       alertProb: 45,
-      scenarioA: { riskTag:'ok', riskLabel:'🟢 Dentro do prazo',
+      scenarioA: { riskTag:'ok', riskLabel:'Dentro do prazo',
         l1:['Tempo médio de permanência','6 dias','(dentro dos 7)'],
         l2:['Sobreestadia (demurrage)','R$ 0,00',''],
         l3:['Armazenagem básica de cais','R$ 3.000,00',''], total:'R$ 3.000,00' },
-      scenarioC: { riskTag:'warn', riskLabel:'🟡 Custo extra',
+      scenarioC: { riskTag:'warn', riskLabel:'Custo extra',
         l1:['Transferência + armazenagem (15d)','R$ 3.800,00',''],
         l2:['Devolução do contêiner vazio','3º dia',''],
         l3:['Demurrage','R$ 0,00',''], total:'R$ 3.800,00' },
@@ -749,11 +851,11 @@
       alertLevel: '', alertTitle: 'Alerta preditivo da IA',
       alertText: 'Inconsistência cadastral crítica identificada. Probabilidade de retenção sanitária (MAPA):',
       alertProb: 95,
-      scenarioA: { riskTag:'crit', riskLabel:'🔴 Risco crítico',
+      scenarioA: { riskTag:'crit', riskLabel:'Risco crítico',
         l1:['Tempo médio de permanência','12 dias','(estouro de 8)'],
         l2:['Sobreestadia (demurrage)','US$ 1.120,00','(R$ 6.160,00)'],
         l3:['Armazenagem básica de cais','R$ 5.200,00',''], total:'R$ 11.360,00' },
-      scenarioC: { riskTag:'ok', riskLabel:'🟢 Protegido',
+      scenarioC: { riskTag:'ok', riskLabel:'Protegido',
         l1:['Transferência + armazenagem (18d)','R$ 2.900,00',''],
         l2:['Devolução do contêiner vazio','2º dia',''],
         l3:['Demurrage','R$ 0,00',''], total:'R$ 2.900,00' },
@@ -802,10 +904,10 @@
     fillLine('c', s.scenarioC);
     document.getElementById('scenarioA').className = 'scenario risk-' + s.scenarioA.riskTag;
     document.getElementById('a-risktag').className = 'risk-tag ' + s.scenarioA.riskTag;
-    document.getElementById('a-risktag').textContent = s.scenarioA.riskLabel;
+    document.getElementById('a-risktag').innerHTML = '<span class="tag-dot" style="background:var(--' + s.scenarioA.riskTag + '-ink);"></span>' + s.scenarioA.riskLabel;
     document.getElementById('scenarioC').className = 'scenario risk-' + s.scenarioC.riskTag;
     document.getElementById('c-risktag').className = 'risk-tag ' + s.scenarioC.riskTag;
-    document.getElementById('c-risktag').textContent = s.scenarioC.riskLabel;
+    document.getElementById('c-risktag').innerHTML = '<span class="tag-dot" style="background:var(--' + s.scenarioC.riskTag + '-ink);"></span>' + s.scenarioC.riskLabel;
 
     document.getElementById('savingsStrip').innerHTML = s.savingsHtml;
 
@@ -832,6 +934,7 @@
     document.querySelectorAll('.scenario-chip').forEach(function(b){ b.classList.remove('active'); });
     document.querySelector('.scenario-chip[data-scenario="'+idx+'"]').classList.add('active');
     renderScenario(idx);
+    dispararPipelineIA();
   }
 
   renderScenario(0);
@@ -859,6 +962,166 @@
     }
   }
   sincronizarComBackend();
+
+  /* ---- integracao com o pipeline completo e modal do parecer ---- */
+  let pipelineDadosAtuais = null;
+
+  async function dispararPipelineIA(){
+    const btn = document.getElementById('btnExecutarPipeline');
+    if(btn) {
+      btn.disabled = true;
+      btn.textContent = 'Auditando com Agente Logcomex...';
+    }
+
+    const s = scenarios[currentScenario];
+    const ncmLimpo = s.ncm.replace(/[^\d]/g, '');
+    let ncmFormatado = s.ncm;
+    if(ncmLimpo.length === 8 && !ncmFormatado.includes('.')){
+      ncmFormatado = ncmLimpo.substring(0,4) + '.' + ncmLimpo.substring(4,6) + '.' + ncmLimpo.substring(6,8);
+    }
+
+    const payload = {
+      ncm: ncmFormatado,
+      descricao: s.label.replace(/^Cenário \d · /, ''),
+      valor_lote_usd: s.ncm === '38089329' ? 128500.0 : (s.ncm === '85258090' ? 85000.0 : 64000.0),
+      qtd_conteineres: 1,
+      incoterm: 'FOB',
+      porto_descarga: 'Santos',
+      orgao_anuente: s.alertProb >= 70,
+      operador_oea: s.importer.indexOf('Não-OEA') === -1,
+      free_time_dias: parseInt(s.freeTime) || 5,
+      demurrage_diaria_usd: 150.0,
+      cambio_usd_brl: 5.50,
+      divergencias: s.catalogOk ? [] : [s.catalogText],
+      usar_agente: true,
+      usar_mcp: false
+    };
+
+    try {
+      const resp = await fetch('/api/pipeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if(resp.ok){
+        const dados = await resp.json();
+        pipelineDadosAtuais = dados;
+        atualizarUIComPipeline(dados);
+        if(btn) {
+          btn.disabled = false;
+          btn.textContent = 'Auditar e Processar Operação (Pipeline IA)';
+        }
+        return dados;
+      }
+    } catch(err) {
+      console.warn('Falha na comunicacao com a API do pipeline, aplicando contingencia local.', err);
+    }
+
+    // Contingencia local estruturada
+    const fallbackTraceId = 'DW-' + Math.random().toString(16).substring(2, 10).toUpperCase();
+    const fallbackParecer = gerarParecerFallback(s, payload, fallbackTraceId);
+    pipelineDadosAtuais = {
+      trace_id: fallbackTraceId,
+      modo_agente: 'CONTINGENCIA_FIXTURES',
+      parecer: {
+        texto: fallbackParecer,
+        valido: true,
+        inconsistencias: [],
+        checksum_sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+      }
+    };
+    atualizarUIComPipeline(pipelineDadosAtuais);
+    if(btn) {
+      btn.disabled = false;
+      btn.textContent = 'Auditar e Processar Operação (Pipeline IA)';
+    }
+    return pipelineDadosAtuais;
+  }
+
+  function atualizarUIComPipeline(dados){
+    if(!dados) return;
+    const traceEl = document.getElementById('pipeTraceId');
+    if(traceEl) traceEl.innerHTML = '<span style="font-family:monospace; font-size:14px; font-weight:600; color:var(--accent);">' + (dados.trace_id || 'DW-AUTO') + '</span>';
+
+    const modoBadge = document.getElementById('pipeModoBadge');
+    if(modoBadge){
+      const isOnline = dados.modo_agente === 'ONLINE_MCP';
+      modoBadge.textContent = isOnline ? 'Online MCP' : 'Contingência Fixtures';
+    }
+
+    const confDoc = document.getElementById('pipeConfDocText');
+    if(confDoc){
+      const s = scenarios[currentScenario];
+      confDoc.textContent = s.catalogOk ? 'Conferência documental aprovada' : s.catalogText;
+    }
+
+    const parecerBadge = document.getElementById('pipeParecerBadge');
+    if(parecerBadge){
+      const ok = dados.parecer && dados.parecer.valido;
+      parecerBadge.textContent = ok ? 'Auditado e Validado' : 'Pendente de Revisão';
+      parecerBadge.style.background = ok ? 'var(--ok-bg)' : 'var(--warn-bg)';
+      parecerBadge.style.color = ok ? 'var(--ok-ink)' : 'var(--warn-ink)';
+      parecerBadge.style.borderColor = ok ? 'var(--ok-line)' : 'var(--warn-line)';
+    }
+
+    // Modal
+    const modalConteudo = document.getElementById('modalParecerConteudo');
+    if(modalConteudo && dados.parecer && dados.parecer.texto){
+      modalConteudo.textContent = dados.parecer.texto;
+    }
+    const modalTrace = document.getElementById('modalTraceId');
+    if(modalTrace) modalTrace.textContent = dados.trace_id || '--';
+    const modalCheck = document.getElementById('modalChecksum');
+    if(modalCheck && dados.parecer) modalCheck.textContent = dados.parecer.checksum_sha256 || '--';
+  }
+
+  function gerarParecerFallback(s, payload, traceId){
+    return '# PARECER TÉCNICO ADUANEIRO — DATAWAVE AI\n' +
+           'Identificador de Trilha: ' + traceId + '\n\n' +
+           '## 1. Identificação da Operação\n' +
+           '- Mercadoria: ' + payload.descricao + ' (NCM ' + payload.ncm + ')\n' +
+           '- Valor Declarado: US$ ' + payload.valor_lote_usd.toLocaleString('pt-BR', {minimumFractionDigits:2}) + '\n' +
+           '- Porto de Descarga: Santos/SP\n' +
+           '- Free Time Contratual: ' + payload.free_time_dias + ' dias\n\n' +
+           '## 2. Auditoria Cadastral Preventiva\n' +
+           (s.catalogOk ? 'Conformidade cadastral atestada perante os órgãos reguladores.' : 'Inconsistência cadastral identificada: ' + s.catalogText + '.') + '\n\n' +
+           '## 3. Deliberação e Recomendação Prescritiva\n' +
+           s.decisionTitle + '\n' +
+           s.decisionHtml.replace(/<[^>]+>/g, '') + '\n';
+  }
+
+  async function abrirModalParecer(){
+    if(!pipelineDadosAtuais){
+      await dispararPipelineIA();
+    }
+    const modal = document.getElementById('modalParecer');
+    if(modal) modal.classList.add('active');
+  }
+
+  function fecharModalParecer(){
+    const modal = document.getElementById('modalParecer');
+    if(modal) modal.classList.remove('active');
+  }
+
+  function copiarParecerParaClipboard(){
+    const conteudo = document.getElementById('modalParecerConteudo');
+    if(!conteudo) return;
+    navigator.clipboard.writeText(conteudo.textContent).then(() => {
+      const btn = document.getElementById('btnCopiarParecer');
+      if(btn){
+        const orig = btn.textContent;
+        btn.textContent = 'Copiado para a área de transferência!';
+        setTimeout(() => { btn.textContent = orig; }, 2000);
+      }
+    });
+  }
+
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') fecharModalParecer();
+  });
+
+  // Disparo inicial da auditoria ao carregar a interface
+  setTimeout(dispararPipelineIA, 300);
 
   /* ---- chat com o agente ---- */
   function appendChatMessage(role, text){

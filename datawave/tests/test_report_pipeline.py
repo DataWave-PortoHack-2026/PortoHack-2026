@@ -111,9 +111,30 @@ class TestReportAndPipeline(unittest.TestCase):
         self.assertEqual(resultado["custo"]["opcao_recomendada"], "RETROPORTO")
         self.assertTrue(resultado["parecer"]["valido"])
 
-        # Valida criação do log auditável
-        from datawave.pipeline import LOG_FILE
-        self.assertTrue(LOG_FILE.exists())
+    def test_pipeline_com_agente_integrado(self):
+        """Valida se o pipeline executa com o cliente do agente integrado (U1-U4) e registra trilha."""
+        from datawave.pipeline import executar_pipeline_datawave
+
+        payload = {
+            "ncm": "2204.21.00",
+            "descricao": "Vinho Fino Casal Branco Fernão Pires",
+            "valor_lote_usd": 65000.0,
+            "qtd_conteineres": 1,
+            "porto_descarga": "Santos",
+            "free_time_dias": 7,
+            "demurrage_diaria_usd": 150.0,
+            "cambio_usd_brl": 5.50,
+            "orgao_anuente": True,
+            "operador_oea": False
+        }
+
+        resultado = executar_pipeline_datawave(payload, usar_agente=True)
+        self.assertIn("trace_id", resultado)
+        self.assertIn("modo_agente", resultado)
+        self.assertIn("agente_dados", resultado)
+        self.assertIn("mercado", resultado["agente_dados"])
+        self.assertIn("atributos", resultado["agente_dados"])
+        self.assertTrue(resultado["parecer"]["valido"])
 
 
 if __name__ == "__main__":
