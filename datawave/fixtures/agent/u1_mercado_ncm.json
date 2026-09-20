@@ -1,0 +1,57 @@
+{
+  "match_keyword": "2204.21.00",
+  "match_keywords": [
+    "2204.21.00",
+    "mercado de vinhos",
+    "mercado do vinho",
+    "mercado para vinhos",
+    "estatísticas de vinho"
+  ],
+  "ncm": "2204.21.00",
+  "descricao": "Vinhos de uvas frescas em recipientes de até 2L - Porto de Santos",
+  "response": {
+    "ncm": "2204.21.00",
+    "periodo": "Últimos 12 meses",
+    "volume_mensal": {
+      "2025-04": 32150000.0,
+      "2025-05": 35400000.0,
+      "2025-06": 38900000.0,
+      "2025-07": 41200000.0,
+      "2025-08": 48300000.0,
+      "2025-09": 54200000.0,
+      "2025-10": 58900000.0,
+      "2025-11": 51400000.0,
+      "2025-12": 39800000.0,
+      "2026-01": 22400000.0,
+      "2026-02": 26800000.0,
+      "2026-03": 33700000.0
+    },
+    "origens_top": [
+      "Chile",
+      "Argentina",
+      "Portugal",
+      "Itália",
+      "França",
+      "Espanha"
+    ],
+    "importadores_top": [
+      "Grand Cru Importadora Ltda",
+      "World Wine Comercial",
+      "Mistral Importadora",
+      "Vinci Vinhos Finos",
+      "Adega Alentejana"
+    ],
+    "dias_chegada_desembaraco": {
+      "canal_verde": 2.8,
+      "canal_amarelo": 5.4,
+      "canal_vermelho": 14.2
+    }
+  },
+  "metadata": {
+    "fonte": "Logcomex AI Platform",
+    "registros_analisados": 70983,
+    "fob_total_usd": 483200000.0,
+    "porto": "Santos/SP",
+    "observacao_sazonal": "Pico de importações concentrado entre agosto e novembro para abastecimento de fim de ano."
+  }
+}

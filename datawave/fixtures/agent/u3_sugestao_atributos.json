@@ -1,0 +1,30 @@
+{
+  "match_keyword": "atributo",
+  "match_keywords": [
+    "atributo",
+    "atributos",
+    "sugestaoatributos",
+    "catálogo duimp",
+    "catálogo de produtos",
+    "casal branco"
+  ],
+  "ncm": "2204.21.00",
+  "descricao": "Sugestão de atributos do Catálogo DUIMP para Vinho Fino Casal Branco Fernão Pires 750ml",
+  "response": {
+    "sugestoes": {
+      "ATT_14200": "07",
+      "ATT_14245": "01",
+      "ATT_14211": "01",
+      "ATT_14209": "01",
+      "ATT_14201": "01",
+      "ATT_14212": "0750"
+    },
+    "incertos": [
+      "ATT_14186"
+    ]
+  },
+  "metadata": {
+    "fonte": "Logcomex AI Platform - Skill Catálogo de Produtos DUIMP / MAPA",
+    "justificativa_incerteza": "Fernão Pires é uva branca típica de Portugal, porém a descrição comercial informava vinho tinto. Necessária revisão documental da ficha técnica ou rótulo antes do registro da DUIMP."
+  }
+}

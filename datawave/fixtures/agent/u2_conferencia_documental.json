@@ -1,5 +1,11 @@
 {
   "match_keyword": "conferência técnica de documentos",
+  "match_keywords": [
+    "conferência técnica de documentos",
+    "2905.11.00",
+    "romaneio",
+    "divergência de peso"
+  ],
   "response": {
     "ncm": "2905.11.00",
     "descricao": "Produtos químicos em tambores metálicos",

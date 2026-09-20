@@ -1,0 +1,33 @@
+{
+  "match_keyword": "justificativa",
+  "match_keywords": [
+    "justificativa",
+    "justificativa técnica",
+    "parecer executivo",
+    "relatório executivo",
+    "despachante aduaneiro"
+  ],
+  "response": {
+    "titulo": "Parecer Técnico Aduaneiro — Direcionamento para Zona Secundária (CLIA)",
+    "ncm": "3808.93.29",
+    "operacao": "2 contêineres 40HC de Defensivos Químicos no Porto de Santos",
+    "fob_usd": 128500.0,
+    "decisao_recomendada": "RETROPORTO",
+    "resumo_executivo": "Recomenda-se o direcionamento da carga para Zona Secundária (CLIA), em virtude do canal vermelho com anuência do MAPA e probabilidade de retenção de 72% acima do free time de 7 dias (P90 de 14 dias). A operação reduz o custo projetado de R$ 22.850,00 para R$ 16.425,00, proporcionando economia líquida de R$ 6.425,00 e eliminação integral do risco de demurrage mediante devolução dos vazios no 5º dia.",
+    "comparativo_financeiro": {
+      "cais_demurrage_brl": 13500.0,
+      "cais_armazenagem_brl": 9350.0,
+      "cais_total_brl": 22850.0,
+      "retro_total_brl": 16425.0,
+      "economia_liquida_brl": 6425.0,
+      "reducao_percentual": "28,1%"
+    },
+    "fundamentacao_tecnica": "A classificação em canal vermelho combinada à anuência técnica do MAPA para defensivos agrícolas acarreta conferência documental e inspeção física amostral. A manutenção em cais primário geraria custos progressivos de armazenagem e diárias de sobre-estadia em moeda estrangeira. A transferência para recinto secundário sob DTE/DTC confere previsibilidade e desvincula os contêineres do prazo de demurrage.",
+    "conclusao": "A transferência para CLIA é a decisão economicamente racional e operacionalmente segura para esta operação no Porto de Santos."
+  },
+  "metadata": {
+    "fonte": "Logcomex AI Platform",
+    "perfil": "Especialista Consultivo Aduaneiro",
+    "conformidade_matematica": "100% aderente ao motor determinístico DataWave"
+  }
+}

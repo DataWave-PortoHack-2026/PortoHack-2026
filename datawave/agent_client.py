@@ -124,11 +124,28 @@ class FakeAgent(AgentClient):
 
         # 1. Tentar localizar fixture gravada
         if self.fixtures_dir.exists():
-            for fix_file in self.fixtures_dir.glob("*.json"):
+            # Priorizar o prompt original do usuário antes do schema JSON appended pelo ask_json
+            prompt_user = message.split("\n\nResponda EXCLUSIVAMENTE")[0].strip()
+            alvo_busca = prompt_user if prompt_user else message
+
+            for fix_file in sorted(self.fixtures_dir.glob("*.json")):
                 try:
                     fix_data = json.loads(fix_file.read_text(encoding="utf-8"))
-                    if fix_data.get("match_keyword") and fix_data["match_keyword"].lower() in message.lower():
-                        return json.dumps(fix_data["response"], ensure_ascii=False)
+                    kw = fix_data.get("match_keyword")
+                    keywords = fix_data.get("match_keywords", [kw] if kw else [])
+                    
+                    matched = False
+                    for k in keywords:
+                        if not k:
+                            continue
+                        pattern = rf"(?:\b|_){re.escape(k.lower())}(?:\b|_)"
+                        if re.search(pattern, alvo_busca.lower()):
+                            matched = True
+                            break
+
+                    if matched:
+                        resp = fix_data["response"]
+                        return json.dumps(resp, ensure_ascii=False) if not isinstance(resp, str) else resp
                 except Exception:
                     continue
 

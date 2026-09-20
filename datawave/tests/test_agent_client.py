@@ -88,6 +88,42 @@ def test_retry_com_correcao():
     assert op.descricao == "Corrigido no retry"
 
 
+def test_fake_agent_resolucao_fixture_u1_mercado_vinho():
+    """Valida se o FakeAgent resolve a fixture gravada de mercado para vinhos (NCM 2204.21.00)."""
+    client = FakeAgent()
+    mercado = client.ask_json("Consulta de mercado para vinhos NCM 2204.21.00 no Porto de Santos", MercadoNCM)
+    assert mercado.ncm == "2204.21.00"
+    assert "Portugal" in mercado.origens_top
+    assert "Chile" in mercado.origens_top
+    assert mercado.dias_chegada_desembaraco["canal_verde"] == 2.8
+
+
+def test_fake_agent_resolucao_fixture_u2_conferencia_documental():
+    """Valida se o FakeAgent resolve a fixture de conferência técnica documental (NCM 2905.11.00)."""
+    client = FakeAgent()
+    op = client.ask_json("Executar conferência técnica de documentos para importação", OperacaoExtraida)
+    assert op.ncm == "2905.11.00"
+    assert op.qtd_conteineres == 1
+    assert any("22.400 kg" in d for d in op.divergencias)
+
+
+def test_fake_agent_resolucao_fixture_u3_atributos_duimp():
+    """Valida se o FakeAgent resolve a fixture de sugestão de atributos normativos do Catálogo DUIMP."""
+    client = FakeAgent()
+    sugestao = client.ask_json("Sugestão de atributos normativos do Catálogo DUIMP para Vinho Casal Branco", SugestaoAtributos)
+    assert sugestao.sugestoes.get("ATT_14200") == "07"
+    assert "ATT_14186" in sugestao.incertos
+
+
+def test_fake_agent_resolucao_fixture_u4_justificativa_executiva():
+    """Valida se o FakeAgent resolve a fixture de parecer executivo formal do despachante."""
+    client = FakeAgent()
+    resp_text = client.ask_agent("Apresente a justificativa técnica para o despachante aduaneiro")
+    resp_json = json.loads(resp_text)
+    assert resp_json.get("decisao_recomendada") == "RETROPORTO"
+    assert "6.425" in str(resp_json)
+
+
 if __name__ == "__main__":
     test_fake_agent_ask_operacao()
     test_fake_agent_ask_mercado()
@@ -95,4 +131,8 @@ if __name__ == "__main__":
     test_limpeza_markdown_fences()
     test_tratamento_recusa_guardrail()
     test_retry_com_correcao()
+    test_fake_agent_resolucao_fixture_u1_mercado_vinho()
+    test_fake_agent_resolucao_fixture_u2_conferencia_documental()
+    test_fake_agent_resolucao_fixture_u3_atributos_duimp()
+    test_fake_agent_resolucao_fixture_u4_justificativa_executiva()
     print("test_agent_client: todos os testes passaram com sucesso.")
