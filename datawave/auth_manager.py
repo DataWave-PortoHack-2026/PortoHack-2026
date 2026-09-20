@@ -27,9 +27,10 @@ import webbrowser
 
 logger = logging.getLogger(__name__)
 
-ARQUIVO_GEMINI_TOKENS = Path(r"C:\Users\Arthur\.gemini\antigravity\mcp_oauth_tokens.json")
-ARQUIVO_MCP_REMOTE_TOKENS = Path(r"C:\Users\Arthur\.mcp-auth\mcp-remote-v1\e82823be8b87682c8077bc598edc9e4c_tokens.json")
-ARQUIVO_CLIENT_INFO = Path(r"C:\Users\Arthur\.mcp-auth\mcp-remote-v1\e82823be8b87682c8077bc598edc9e4c_client_info.json")
+_HOME = Path.home()
+ARQUIVO_GEMINI_TOKENS = Path(os.getenv("DATAWAVE_GEMINI_TOKENS_PATH", str(_HOME / ".gemini" / "antigravity" / "mcp_oauth_tokens.json")))
+ARQUIVO_MCP_REMOTE_TOKENS = Path(os.getenv("DATAWAVE_MCP_TOKENS_PATH", str(_HOME / ".mcp-auth" / "mcp-remote-v1" / "e82823be8b87682c8077bc598edc9e4c_tokens.json")))
+ARQUIVO_CLIENT_INFO = Path(os.getenv("DATAWAVE_MCP_CLIENT_INFO_PATH", str(_HOME / ".mcp-auth" / "mcp-remote-v1" / "e82823be8b87682c8077bc598edc9e4c_client_info.json")))
 
 MCP_TOKEN_ENDPOINT = "https://mcp.logcomex.ai/token"
 MCP_AUTHORIZE_ENDPOINT = "https://mcp.logcomex.ai/authorize"
