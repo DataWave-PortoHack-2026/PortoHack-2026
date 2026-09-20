@@ -1,0 +1,65 @@
+# Tarifário Operacional Paramétrico — Complexo Portuário de Santos
+# Todas as premissas possuem rotulagem explícita de procedência para garantir transparência.
+
+cambio_usd_brl: 5.20
+fonte_cambio: "premissa"
+
+# Free Times padrão de contratação com o armador
+free_time_demurrage_dias: 7
+fonte_free_time_demurrage: "armador_contrato_padrao"
+
+free_time_detention_dias: 7
+fonte_free_time_detention: "armador_contrato_padrao"
+
+# Diárias de sobre-estadia cobradas pelo armador em dólares americanos
+demurrage_diaria_usd: 150.0
+fonte_demurrage_diaria: "tabela_media_armadores_santos"
+
+detention_diaria_usd: 130.0
+fonte_detention_diaria: "tabela_media_armadores_santos"
+
+# Tabela progressiva de armazenagem em zona primária (cais / terminal portuário)
+# Aplica-se percentual sobre o valor CIF do lote a cada período ultrapassado.
+faixas_armazenagem_cais:
+  - dia_inicio: 1
+    dia_fim: 7
+    percentual_cif: 0.0055
+    tarifa_minima_brl: 950.0
+    fonte: "tabela_publica_terminais_santos"
+  - dia_inicio: 8
+    dia_fim: 14
+    percentual_cif: 0.0120
+    tarifa_minima_brl: 1800.0
+    fonte: "tabela_publica_terminais_santos"
+  - dia_inicio: 15
+    dia_fim: 21
+    percentual_cif: 0.0210
+    tarifa_minima_brl: 3200.0
+    fonte: "tabela_publica_terminais_santos"
+  - dia_inicio: 22
+    dia_fim: 30
+    percentual_cif: 0.0350
+    tarifa_minima_brl: 5000.0
+    fonte: "tabela_publica_terminais_santos"
+  - dia_inicio: 31
+    dia_fim: 90
+    percentual_cif: 0.0550
+    tarifa_minima_brl: 8500.0
+    fonte: "tabela_publica_terminais_santos"
+
+# Armazenagem em zona secundária (recintos alfandegados / retroporto / CLIAs)
+retro_diaria_brl_por_conteiner: 95.0
+fonte_retro_diaria: "media_mercado_clias_santos"
+
+retro_seguro_percentual_cif: 0.0015
+fonte_retro_seguro: "premissa_apolice_aduaneira"
+
+# Custos fixos operacionais de transferência (cais -> retroporto)
+frete_transferencia_dta_brl: 1300.0
+fonte_frete_transferencia: "tabela_sindisan_rodoviario"
+
+movimentacao_terminal_brl: 900.0
+fonte_movimentacao_terminal: "thc_saida_terminal_cais"
+
+movimentacao_retro_brl: 500.0
+fonte_movimentacao_retro: "tarifa_recepcao_recinto_alfandegado"
