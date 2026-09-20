@@ -12,7 +12,7 @@ import re
 import time
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, TypeVar
+from typing import Any, Dict, List, Optional, Type, TypeVar, get_origin
 from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
@@ -73,6 +73,27 @@ def _desempacotar_dados(data: Any, model_cls: Type[T]) -> Any:
     return data
 
 
+def _gerar_exemplo_sintetico(model_cls: Type[BaseModel]) -> str:
+    """Gera estrutura JSON de exemplo minimalista com base nos campos tipados do Pydantic."""
+    exemplo: Dict[str, Any] = {}
+    for name, field in model_cls.model_fields.items():
+        ann = getattr(field, "annotation", None)
+        origin = get_origin(ann)
+        if origin in (list, tuple, set) or "list" in str(ann).lower():
+            exemplo[name] = ["item_1", "item_2"]
+        elif origin is dict or "dict" in str(ann).lower():
+            exemplo[name] = {"chave": 100.0}
+        elif ann is int or "int" in str(ann).lower():
+            exemplo[name] = 0
+        elif ann is float or "float" in str(ann).lower():
+            exemplo[name] = 0.0
+        elif ann is bool or "bool" in str(ann).lower():
+            exemplo[name] = True
+        else:
+            exemplo[name] = "exemplo"
+    return json.dumps(exemplo, ensure_ascii=False, indent=2)
+
+
 class AgentClient(ABC):
     """Interface abstrata para comunicação com o Agente DataWave."""
 
@@ -98,12 +119,13 @@ class AgentClient(ABC):
 
         Aplica limpeza de eventuais delimitadores markdown e executa retentativas informando o erro.
         """
-        schema_json = json.dumps(model_cls.model_json_schema(), ensure_ascii=False)
+        exemplo_json = _gerar_exemplo_sintetico(model_cls)
         formatted_prompt = (
             f"{prompt}\n\n"
-            f"Responda EXCLUSIVAMENTE com o objeto JSON correspondente ao esquema abaixo, "
-            f"sem blocos markdown (sem ```json), sem texto introdutório ou saudações:\n"
-            f"{schema_json}"
+            f"REQUISITO OBRIGATÓRIO DE RESPOSTA:\n"
+            f"Responda EXCLUSIVAMENTE com o objeto JSON correspondente ao formato do exemplo abaixo.\n"
+            f"Sua resposta DEVE começar com '{{' e terminar com '}}'. Sem markdown, sem preâmbulo, sem saudações ou explicações:\n"
+            f"{exemplo_json}"
         )
 
         current_message = formatted_prompt
@@ -143,8 +165,8 @@ class AgentClient(ABC):
                 current_message = (
                     f"Sua resposta anterior continha o seguinte erro de validação JSON/esquema:\n"
                     f"{str(last_error)}\n\n"
-                    f"Por favor, retorne EXCLUSIVAMENTE o bloco JSON válido correspondente ao modelo {model_cls.__name__}:\n"
-                    f"{json.dumps(model_cls.model_json_schema(), ensure_ascii=False)}"
+                    f"Por favor, retorne EXCLUSIVAMENTE o bloco JSON válido iniciando com '{{' e finalizando com '}}' no formato:\n"
+                    f"{exemplo_json}"
                 )
 
         # Fallback seguro de contingência com fixtures gravadas quando o agente remoto não emitir JSON estruturado
@@ -254,7 +276,7 @@ class LogcomexMCPAgent(AgentClient):
         self,
         agent_id: str = "c2322f9c-41e2-4bf8-8fe5-3bd93f4063d4",
         mcp_caller: Optional[Any] = None,
-        timeout_seconds: int = 120,
+        timeout_seconds: int = 300,
         base_url: str = "https://mcp.logcomex.ai/"
     ):
         self.agent_id = agent_id

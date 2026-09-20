@@ -1451,24 +1451,6 @@
     aplicarTimestamp('tsParecerTecnico', 'Parecer gerado via MCP');
   }
 
-  const presetsPlanilhas = [
-    {
-      nome: 'vinho_santos_mapa_450kg.csv',
-      linhas: 1,
-      csv: 'ncm,descricao,bl_weight,pl_weight,fob_usd,incoterm,porto,free_time\n2204.21.00,Vinho Fino Tinto Chileno,14500.0,14050.0,68500.0,FOB,Santos,5'
-    },
-    {
-      nome: 'defensivo_santos_mapa_quimico.csv',
-      linhas: 1,
-      csv: 'ncm,descricao,bl_weight,pl_weight,fob_usd,incoterm,porto,free_time\n3808.93.29,Herbicida Agricola Concentrado,22000.0,22000.0,128500.0,FOB,Santos,5'
-    },
-    {
-      nome: 'modulo_eletronico_santos_oea.csv',
-      linhas: 1,
-      csv: 'ncm,descricao,bl_weight,pl_weight,fob_usd,incoterm,porto,free_time\n8525.80.90,Modulos de Cameras Digitais,1200.0,1200.0,85000.0,FOB,Santos,7'
-    }
-  ];
-
   function aoArrastarSobre(e){
     e.preventDefault();
     e.stopPropagation();
@@ -1556,7 +1538,7 @@
 
     const badge = document.getElementById('badgeArquivoLinhas');
     if(badge){
-      badge.textContent = p.linhas + ' item pré-carregado · Pronto para auditar';
+      badge.textContent = p.linhas + (p.linhas === 1 ? ' item pré-carregado · Pronto para auditar' : ' itens pré-carregados · Pronto para auditar');
       badge.style.background = 'rgba(56, 198, 239, 0.15)';
       badge.style.color = 'var(--accent)';
     }
@@ -2400,7 +2382,7 @@ var DatawaveOcean=(function(e){Object.defineProperty(e,Symbol.toStringTag,{value
 }
 .lil-gui .lil-title:before {
   font-family: "lil-gui";
-  content: "\25BE";
+  content: "\\25BE";
   padding-right: 2px;
   display: inline-block;
 }
@@ -2421,7 +2403,7 @@ var DatawaveOcean=(function(e){Object.defineProperty(e,Symbol.toStringTag,{value
   text-decoration: none !important;
 }
 .lil-gui.lil-closed > .lil-title:before {
-  content: "\25B8";
+  content: "\\25B8";
 }
 .lil-gui.lil-closed > .lil-children {
   transform: translateY(-7px);
@@ -2516,7 +2498,7 @@ var DatawaveOcean=(function(e){Object.defineProperty(e,Symbol.toStringTag,{value
 }
 .lil-gui input[type=checkbox]:checked:before {
   font-family: "lil-gui";
-  content: "\2713";
+  content: "\\2713";
   font-size: var(--checkbox-size);
   line-height: var(--checkbox-size);
 }

@@ -89,43 +89,66 @@ def executar_pipeline_datawave(
         else:
             modo_agente = "ONLINE_MCP" if isinstance(client, LogcomexMCPAgent) else "CONTINGENCIA_FIXTURES"
 
-        # U2 - Conferência Documental
-        try:
-            op_agente = client.ask_json(
-                f"Executar conferência técnica de documentos para importação NCM {ncm}: {descricao}",
-                OperacaoExtraida
-            )
-            for div in op_agente.divergencias:
-                if div not in divergencias:
-                    divergencias.append(div)
-            agente_dados["analise_documental_aduaneira"] = op_agente.model_dump()
-            agente_dados["conferencia_documental"] = op_agente.model_dump()
-        except Exception as exc:
-            logger.debug(f"Agente U2 fallback: {exc}")
+        # U2, U1, U3 - Execução concorrente das habilidades auxiliares via threads (Ponytail / stdlib)
+        from concurrent.futures import ThreadPoolExecutor
 
-        # U1 - Inteligência de Mercado (Santos)
-        try:
-            mercado = client.ask_json(
-                f"Consulta de mercado para vinhos NCM {ncm} no Porto de Santos" if "2204" in ncm else f"Consulte os dados de MercadoNCM para NCM {ncm} Santos",
-                MercadoNCM
-            )
-            agente_dados["mercado"] = mercado.model_dump()
-        except Exception as exc:
-            logger.debug(f"Agente U1 fallback: {exc}")
-
-        # U3 - Sugestão de Atributos DUIMP / MAPA
-        try:
-            atributos = client.ask_json(
-                f"Sugestão de atributos normativos do Catálogo DUIMP para {descricao} NCM {ncm}",
-                SugestaoAtributos
-            )
-            agente_dados["atributos"] = atributos.model_dump()
-            if atributos.incertos:
-                divergencias.append(
-                    f"Alerta regulatório de catálogo: atributos com necessidade de revisão documental ({', '.join(atributos.incertos)})"
+        def _executar_u2():
+            try:
+                op_ag = client.ask_json(
+                    f"Executar conferência técnica de documentos para importação NCM {ncm}: {descricao}",
+                    OperacaoExtraida
                 )
-        except Exception as exc:
-            logger.debug(f"Agente U3 fallback: {exc}")
+                return op_ag
+            except Exception as exc:
+                logger.debug(f"Agente U2 fallback: {exc}")
+                return None
+
+        def _executar_u1():
+            try:
+                prompt_mercado = (
+                    f"Consulta de mercado para vinhos NCM {ncm} no Porto de Santos"
+                    if "2204" in ncm
+                    else f"Consulte os dados de MercadoNCM para NCM {ncm} Santos"
+                )
+                return client.ask_json(prompt_mercado, MercadoNCM)
+            except Exception as exc:
+                logger.debug(f"Agente U1 fallback: {exc}")
+                return None
+
+        def _executar_u3():
+            try:
+                return client.ask_json(
+                    f"Sugestão de atributos normativos do Catálogo DUIMP para {descricao} NCM {ncm}",
+                    SugestaoAtributos
+                )
+            except Exception as exc:
+                logger.debug(f"Agente U3 fallback: {exc}")
+                return None
+
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            fut_u2 = executor.submit(_executar_u2)
+            fut_u1 = executor.submit(_executar_u1)
+            fut_u3 = executor.submit(_executar_u3)
+
+            op_agente = fut_u2.result()
+            if op_agente:
+                for div in op_agente.divergencias:
+                    if div not in divergencias:
+                        divergencias.append(div)
+                agente_dados["analise_documental_aduaneira"] = op_agente.model_dump()
+                agente_dados["conferencia_documental"] = op_agente.model_dump()
+
+            mercado = fut_u1.result()
+            if mercado:
+                agente_dados["mercado"] = mercado.model_dump()
+
+            atributos = fut_u3.result()
+            if atributos:
+                agente_dados["atributos"] = atributos.model_dump()
+                if atributos.incertos:
+                    divergencias.append(
+                        f"Alerta regulatório de catálogo: atributos com necessidade de revisão documental ({', '.join(atributos.incertos)})"
+                    )
 
     # 2. Normalização da Operação
     op = OperacaoExtraida(
