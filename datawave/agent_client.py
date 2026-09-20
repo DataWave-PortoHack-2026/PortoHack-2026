@@ -25,6 +25,54 @@ class AgentRefusalError(Exception):
     pass
 
 
+def _extrair_json_de_texto(texto: str) -> Optional[Dict[str, Any]]:
+    """Extrai objeto JSON de qualquer formato textual retornado pelo agente."""
+    if not texto:
+        return None
+
+    # 1. Procura bloco de código markdown ```json { ... } ```
+    match_codeblock = re.search(r"```(?:json)?\s*(\{[\s\S]*?\})\s*```", texto)
+    if match_codeblock:
+        try:
+            return json.loads(match_codeblock.group(1))
+        except Exception:
+            pass
+
+    # 2. Procura primeiro bloco { ... } balanceado no texto
+    inicio = texto.find("{")
+    fim = texto.rfind("}")
+    if inicio != -1 and fim != -1 and fim > inicio:
+        candidato = texto[inicio : fim + 1]
+        try:
+            return json.loads(candidato)
+        except Exception:
+            pass
+
+    # 3. Tentativa direta
+    try:
+        return json.loads(texto.strip())
+    except Exception:
+        return None
+
+
+def _desempacotar_dados(data: Any, model_cls: Type[T]) -> Any:
+    """Se o modelo de IA empacotou o JSON em um envelope (ex: {'dados': {...}}), desempacota para o schema."""
+    if not isinstance(data, dict):
+        return data
+
+    campos_esperados = set(model_cls.model_fields.keys())
+    if any(k in data for k in campos_esperados):
+        return data
+
+    for envelope_key in ("dados", "data", "resultado", "item", "payload", "output"):
+        if envelope_key in data and isinstance(data[envelope_key], dict):
+            sub = data[envelope_key]
+            if any(k in sub for k in campos_esperados):
+                return sub
+
+    return data
+
+
 class AgentClient(ABC):
     """Interface abstrata para comunicação com o Agente DataWave."""
 
@@ -74,27 +122,30 @@ class AgentClient(ABC):
                     f"O agente recusou a solicitação com redirecionamento para trust.logcomex.ai: {raw_response}"
                 )
 
-            # Limpeza preventiva de cercas markdown (ex.: ```json ... ```)
-            cleaned = raw_response.strip()
-            if cleaned.startswith("```"):
-                cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
-                cleaned = re.sub(r"\s*```$", "", cleaned)
-            cleaned = cleaned.strip()
-
-            try:
-                data = json.loads(cleaned)
-                return model_cls.model_validate(data)
-            except (json.JSONDecodeError, ValidationError) as exc:
-                last_error = exc
-                logger.warning(
-                    f"Tentativa {attempt + 1}/{max_retries + 1} de parsing JSON falhou para {model_cls.__name__}: {exc}"
-                )
-                if attempt < max_retries:
-                    current_message = (
-                        f"Sua resposta anterior continha o seguinte erro de validação JSON/esquema:\n"
-                        f"{str(exc)}\n\n"
-                        f"Por favor, corrija e retorne unicamente o JSON válido para o modelo {model_cls.__name__}."
+            # Extração resiliente de JSON e desempacotamento de envelope
+            data_dict = _extrair_json_de_texto(raw_response)
+            if data_dict is not None:
+                try:
+                    payload = _desempacotar_dados(data_dict, model_cls)
+                    return model_cls.model_validate(payload)
+                except ValidationError as val_err:
+                    last_error = val_err
+                    logger.warning(
+                        f"Tentativa {attempt + 1}/{max_retries + 1} de validação Pydantic falhou para {model_cls.__name__}: {val_err}"
                     )
+            else:
+                last_error = json.JSONDecodeError("Nenhum bloco JSON válido identificado no texto retornado", raw_response, 0)
+                logger.warning(
+                    f"Tentativa {attempt + 1}/{max_retries + 1} de parsing JSON falhou para {model_cls.__name__}: texto não contém JSON balanceado"
+                )
+
+            if attempt < max_retries:
+                current_message = (
+                    f"Sua resposta anterior continha o seguinte erro de validação JSON/esquema:\n"
+                    f"{str(last_error)}\n\n"
+                    f"Por favor, retorne EXCLUSIVAMENTE o bloco JSON válido correspondente ao modelo {model_cls.__name__}:\n"
+                    f"{json.dumps(model_cls.model_json_schema(), ensure_ascii=False)}"
+                )
 
         raise ValueError(
             f"Falha ao validar resposta do agente para o modelo {model_cls.__name__} após {max_retries + 1} tentativas. "
