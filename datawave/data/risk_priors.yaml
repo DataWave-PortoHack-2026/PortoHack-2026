@@ -1,0 +1,44 @@
+# datawave/data/risk_priors.yaml
+# Priors estatísticos para simulação de permanência e risco no Porto de Santos
+
+canais_probabilidade_padrao:
+  verde: 0.88
+  amarelo: 0.08
+  vermelho: 0.04
+  fonte: "estatistica_aduaneira_santos_premissa"
+
+permanencia_dias_por_canal:
+  verde:
+    media: 2.5
+    desvio: 0.8
+    min: 1.0
+    max: 5.0
+    fonte: "premissa"
+  amarelo:
+    media: 6.0
+    desvio: 1.8
+    min: 3.0
+    max: 12.0
+    fonte: "premissa"
+  vermelho:
+    media: 18.0
+    desvio: 4.5
+    min: 9.0
+    max: 35.0
+    fonte: "estatistica_aduaneira_santos_premissa"
+
+modificadores_risco:
+  orgao_anuente_presente:
+    prob_vermelho_ajustada: 0.28
+    prob_amarelo_ajustada: 0.15
+    prob_verde_ajustada: 0.57
+    acrescimo_dias_vermelho: 4.0
+    fonte: "historico_inspecoes_anuentes"
+  operador_oea:
+    reducao_prob_vermelho_pct: 0.80
+    fator_tempo_liberacao: 0.70
+    fonte: "programa_brasileiro_oea"
+  divergencia_documental:
+    prob_vermelho_adicional: 0.20
+    prob_amarelo_adicional: 0.20
+    fonte: "malha_fiscal_aduaneira"

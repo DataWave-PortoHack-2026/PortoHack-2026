@@ -110,3 +110,15 @@ class RecomendacaoDecisao(BaseModel):
     p90_dias_permanencia: int = Field(..., description="Percentil 90 do tempo estimado de permanência")
     justificativa: str = Field(..., description="Explicação técnica com números auditados para o despachante aduaneiro")
     curva_sensibilidade: List[ResultadoCustoDiario] = Field(default_factory=list, description="Projeção dia a dia para gráficos de decisão")
+
+
+class ResultadoRiscoPermanencia(BaseModel):
+    """Métricas probabilísticas geradas pela simulação de Monte Carlo de permanência (Módulo B)."""
+    permanencia_media: float = Field(..., ge=0.0, description="Média ponderada dos dias de permanência")
+    permanencia_p50: float = Field(..., ge=0.0, description="Mediana (Percentil 50) dos dias de permanência")
+    permanencia_p90: float = Field(..., ge=0.0, description="Percentil 90 (pior cenário com 90% de confiança)")
+    probabilidade_estouro_free_time: float = Field(..., ge=0.0, le=1.0, description="P(Permanência > Free Time de Demurrage)")
+    distribuicao_dias: Dict[int, float] = Field(..., description="Distribuição de probabilidade por dia de permanência")
+    canal_mais_provavel: str = Field(..., description="'verde', 'amarelo' ou 'vermelho'")
+    fatores_agravantes_aplicados: List[str] = Field(default_factory=list, description="Lista de modificadores de risco ativados")
+    fonte_parametros: str = Field(..., description="Origem dos parâmetros (agente | premissa | simulado)")
