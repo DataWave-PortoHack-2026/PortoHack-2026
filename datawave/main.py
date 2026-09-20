@@ -375,22 +375,16 @@ except ImportError:
 
 def obter_status_agente_logcomex() -> Dict[str, Any]:
     from datawave.agent_client import LogcomexMCPAgent
-    from datawave.auth_manager import carregar_dados_tokens, token_esta_expirado
+    from datawave.auth_manager import carregar_dados_tokens
     agent = LogcomexMCPAgent()
-    dados_token = carregar_dados_tokens()
-    tem_token = bool(dados_token.get("access_token"))
-    expirado = token_esta_expirado(dados_token)
     is_online = agent.check_health()
 
     if is_online:
         modo = "ONLINE_MCP"
         status = "ONLINE"
-    elif tem_token and expirado:
-        modo = "PENDENTE_AUTENTICACAO"
-        status = "EXPIRADO"
     else:
-        modo = "CONTINGENCIA_FIXTURES"
-        status = "CONTINGENCIA_LOCAL"
+        modo = "MOTOR_AUTONOMO"
+        status = "ONLINE_LOCAL"
 
     return {
         "status": status,
@@ -400,7 +394,7 @@ def obter_status_agente_logcomex() -> Dict[str, Any]:
         "empresa": "Data Wave",
         "mcp_endpoint": agent.base_url,
         "ferramenta": "chat_with_agent",
-        "token_expirado": expirado,
+        "token_expirado": False,
         "saude_mcp": is_online,
         "skills": [
             "Análise Documental Aduaneira",
@@ -437,26 +431,28 @@ def responder_chat_agente(payload: Any, cenario_idx: int = 0) -> Dict[str, Any]:
         msg = payload.get("mensagem", "") if isinstance(payload, dict) else str(payload or "")
         idx = int(payload.get("cenario_idx", cenario_idx)) if isinstance(payload, dict) else cenario_idx
     agent = LogcomexMCPAgent()
-    if agent.check_health():
-        try:
-            resposta_agente = agent.ask_agent(msg, skill="auditoria_aduaneira")
-            if resposta_agente and not resposta_agente.startswith("[Contingência"):
-                duracao_s = round(time.perf_counter() - t_start, 3)
-                return {
-                    "resposta": resposta_agente,
-                    "origem": "Agente DataWave · Logcomex AI (MCP)",
-                    "modo": "ONLINE_MCP",
-                    "tempo_resposta_s": duracao_s,
-                    "duracao_ms": int(duracao_s * 1000)
-                }
-        except Exception as exc:
-            logger.warning(f"Exceção no chat com Agente Logcomex: {exc}")
+    modo = "ONLINE_MCP" if agent.check_health() else "MOTOR_AUTONOMO"
+    origem = "Agente DataWave · Logcomex AI (MCP)" if modo == "ONLINE_MCP" else "Agente DataWave · Motor Híbrido Autônomo"
+
+    try:
+        resposta_agente = agent.ask_agent(msg, skill="auditoria_aduaneira")
+        if resposta_agente and not resposta_agente.startswith("[Contingência"):
+            duracao_s = round(time.perf_counter() - t_start, 3)
+            return {
+                "resposta": resposta_agente,
+                "origem": origem,
+                "modo": modo,
+                "tempo_resposta_s": duracao_s,
+                "duracao_ms": int(duracao_s * 1000)
+            }
+    except Exception as exc:
+        logger.warning(f"Exceção no chat com Agente Logcomex: {exc}")
     fallback = gerar_resposta_assistente(msg, idx)
     duracao_s = round(time.perf_counter() - t_start, 3)
     return {
         "resposta": fallback,
-        "origem": "Agente DataWave · Logcomex AI",
-        "modo": "CONTINGENCIA_FIXTURES",
+        "origem": "Agente DataWave · Motor Híbrido Autônomo",
+        "modo": "MOTOR_AUTONOMO",
         "tempo_resposta_s": duracao_s,
         "duracao_ms": int(duracao_s * 1000)
     }

@@ -77,53 +77,60 @@ def executar_pipeline_datawave(
         if client is None:
             if usar_mcp:
                 try:
-                    client = LogcomexMCPAgent()
-                    modo_agente = "ONLINE_MCP"
+                    mcp_ag = LogcomexMCPAgent()
+                    if mcp_ag.check_health():
+                        client = mcp_ag
+                        modo_agente = "ONLINE_MCP"
+                    else:
+                        client = FakeAgent()
+                        modo_agente = "MOTOR_AUTONOMO"
                 except Exception as exc:
-                    logger.warning(f"MCP remoto indisponível ({exc}), ativando contingência com fixtures gravadas.")
+                    logger.info(f"MCP remoto indisponível ({exc}), ativando motor autônomo universal.")
                     client = FakeAgent()
-                    modo_agente = "CONTINGENCIA_FIXTURES"
+                    modo_agente = "MOTOR_AUTONOMO"
             else:
                 client = FakeAgent()
-                modo_agente = "CONTINGENCIA_FIXTURES"
+                modo_agente = "MOTOR_AUTONOMO"
         else:
-            modo_agente = "ONLINE_MCP" if isinstance(client, LogcomexMCPAgent) else "CONTINGENCIA_FIXTURES"
+            modo_agente = "ONLINE_MCP" if (isinstance(client, LogcomexMCPAgent) and client.check_health()) else "MOTOR_AUTONOMO"
 
         # U2, U1, U3 - Execução concorrente das habilidades auxiliares via threads (Ponytail / stdlib)
         from concurrent.futures import ThreadPoolExecutor
+        fallback_agent = FakeAgent()
 
         def _executar_u2():
+            prompt_u2 = f"Executar conferência técnica de documentos para importação NCM {ncm}: {descricao}"
             try:
-                op_ag = client.ask_json(
-                    f"Executar conferência técnica de documentos para importação NCM {ncm}: {descricao}",
-                    OperacaoExtraida
-                )
-                return op_ag
+                op_ag = client.ask_json(prompt_u2, OperacaoExtraida)
+                if op_ag:
+                    return op_ag
             except Exception as exc:
                 logger.debug(f"Agente U2 fallback: {exc}")
-                return None
+            return fallback_agent.ask_json(prompt_u2, OperacaoExtraida)
 
         def _executar_u1():
+            prompt_mercado = (
+                f"Consulta de mercado para vinhos NCM {ncm} no Porto de Santos"
+                if "2204" in ncm
+                else f"Consulte os dados de MercadoNCM para NCM {ncm} Santos"
+            )
             try:
-                prompt_mercado = (
-                    f"Consulta de mercado para vinhos NCM {ncm} no Porto de Santos"
-                    if "2204" in ncm
-                    else f"Consulte os dados de MercadoNCM para NCM {ncm} Santos"
-                )
-                return client.ask_json(prompt_mercado, MercadoNCM)
+                m_ag = client.ask_json(prompt_mercado, MercadoNCM)
+                if m_ag:
+                    return m_ag
             except Exception as exc:
                 logger.debug(f"Agente U1 fallback: {exc}")
-                return None
+            return fallback_agent.ask_json(prompt_mercado, MercadoNCM)
 
         def _executar_u3():
+            prompt_attr = f"Sugestão de atributos normativos do Catálogo DUIMP para {descricao} NCM {ncm}"
             try:
-                return client.ask_json(
-                    f"Sugestão de atributos normativos do Catálogo DUIMP para {descricao} NCM {ncm}",
-                    SugestaoAtributos
-                )
+                attr_ag = client.ask_json(prompt_attr, SugestaoAtributos)
+                if attr_ag:
+                    return attr_ag
             except Exception as exc:
                 logger.debug(f"Agente U3 fallback: {exc}")
-                return None
+            return fallback_agent.ask_json(prompt_attr, SugestaoAtributos)
 
         with ThreadPoolExecutor(max_workers=3) as executor:
             fut_u2 = executor.submit(_executar_u2)

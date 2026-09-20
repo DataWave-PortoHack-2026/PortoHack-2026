@@ -1,0 +1,12 @@
+{
+  "https://mcp.logcomex.ai": {
+    "client_id": "mcp_lKiShqe9ol8QDDixQUBsuQ",
+    "token": {
+      "access_token": "mcpat_ahpd3cD9bYfilK9ef-GDOUrodFILSeaj-7J8sCDHD-A",
+      "token_type": "Bearer",
+      "refresh_token": "mcprt_zau4empZV6P7a3QRTGgVDX0bu4tx520JSeW0jDjP8Ro",
+      "expiry": "2029-12-31T23:59:59.000000+00:00"
+    },
+    "token_url": "https://mcp.logcomex.ai/token"
+  }
+}

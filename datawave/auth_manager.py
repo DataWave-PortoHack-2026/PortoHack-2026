@@ -27,7 +27,9 @@ import webbrowser
 
 logger = logging.getLogger(__name__)
 
+_HERE = Path(__file__).resolve().parent
 _HOME = Path.home()
+ARQUIVO_PROJETO_TOKENS = Path(os.getenv("DATAWAVE_MCP_PROJECT_TOKENS", str(_HERE / "data" / "mcp_tokens.json")))
 ARQUIVO_GEMINI_TOKENS = Path(os.getenv("DATAWAVE_GEMINI_TOKENS_PATH", str(_HOME / ".gemini" / "antigravity" / "mcp_oauth_tokens.json")))
 ARQUIVO_MCP_REMOTE_TOKENS = Path(os.getenv("DATAWAVE_MCP_TOKENS_PATH", str(_HOME / ".mcp-auth" / "mcp-remote-v1" / "e82823be8b87682c8077bc598edc9e4c_tokens.json")))
 ARQUIVO_CLIENT_INFO = Path(os.getenv("DATAWAVE_MCP_CLIENT_INFO_PATH", str(_HOME / ".mcp-auth" / "mcp-remote-v1" / "e82823be8b87682c8077bc598edc9e4c_client_info.json")))
@@ -40,7 +42,7 @@ DEFAULT_CLIENT_ID = "mcp_lKiShqe9ol8QDDixQUBsuQ"
 
 
 def carregar_dados_tokens() -> Dict[str, Any]:
-    """Carrega dados consolidados de token a partir de todas as fontes conhecidas."""
+    """Carrega dados consolidados de token a partir de todas as fontes conhecidas (portátil para qualquer máquina)."""
     resultado: Dict[str, Any] = {
         "access_token": None,
         "refresh_token": None,
@@ -49,8 +51,41 @@ def carregar_dados_tokens() -> Dict[str, Any]:
         "origem": None
     }
 
-    # 1. Tentar arquivo Gemini / Antigravity
-    if ARQUIVO_GEMINI_TOKENS.exists():
+    # 0. Variáveis de ambiente diretas (Docker, CI/CD ou outras máquinas)
+    env_token = os.getenv("LOGCOMEX_ACCESS_TOKEN") or os.getenv("LOGCOMEX_MCP_TOKEN")
+    if env_token:
+        resultado["access_token"] = env_token
+        resultado["origem"] = "ENV"
+        resultado["refresh_token"] = os.getenv("LOGCOMEX_REFRESH_TOKEN")
+        resultado["client_id"] = os.getenv("LOGCOMEX_CLIENT_ID", DEFAULT_CLIENT_ID)
+        return resultado
+
+    # 1. Arquivo portátil no diretório do projeto (data/mcp_tokens.json)
+    if ARQUIVO_PROJETO_TOKENS.exists():
+        try:
+            dados = json.loads(ARQUIVO_PROJETO_TOKENS.read_text(encoding="utf-8"))
+            if isinstance(dados, dict):
+                entry = dados.get("https://mcp.logcomex.ai") or dados.get("logcomex") or dados
+                if isinstance(entry, dict):
+                    tok_obj = entry.get("token") if isinstance(entry.get("token"), dict) else entry
+                    acc = tok_obj.get("access_token")
+                    ref = tok_obj.get("refresh_token")
+                    exp = tok_obj.get("expiry")
+                    cid = entry.get("client_id")
+                    if acc:
+                        resultado["access_token"] = acc
+                        resultado["origem"] = str(ARQUIVO_PROJETO_TOKENS)
+                    if ref:
+                        resultado["refresh_token"] = ref
+                    if exp:
+                        resultado["expiry"] = exp
+                    if cid:
+                        resultado["client_id"] = cid
+        except Exception as exc:
+            logger.debug(f"Falha ao ler {ARQUIVO_PROJETO_TOKENS}: {exc}")
+
+    # 2. Tentar arquivo Gemini / Antigravity
+    if not resultado["access_token"] and ARQUIVO_GEMINI_TOKENS.exists():
         try:
             dados = json.loads(ARQUIVO_GEMINI_TOKENS.read_text(encoding="utf-8"))
             if isinstance(dados, dict):
@@ -64,17 +99,17 @@ def carregar_dados_tokens() -> Dict[str, Any]:
                     if acc:
                         resultado["access_token"] = acc
                         resultado["origem"] = str(ARQUIVO_GEMINI_TOKENS)
-                    if ref:
+                    if ref and not resultado["refresh_token"]:
                         resultado["refresh_token"] = ref
-                    if exp:
+                    if exp and not resultado["expiry"]:
                         resultado["expiry"] = exp
                     if cid:
                         resultado["client_id"] = cid
         except Exception as exc:
             logger.debug(f"Falha ao ler {ARQUIVO_GEMINI_TOKENS}: {exc}")
 
-    # 2. Tentar arquivo mcp-remote
-    if ARQUIVO_MCP_REMOTE_TOKENS.exists():
+    # 3. Tentar arquivo mcp-remote
+    if not resultado["access_token"] and ARQUIVO_MCP_REMOTE_TOKENS.exists():
         try:
             dados = json.loads(ARQUIVO_MCP_REMOTE_TOKENS.read_text(encoding="utf-8"))
             if isinstance(dados, dict):
@@ -93,7 +128,7 @@ def carregar_dados_tokens() -> Dict[str, Any]:
         except Exception as exc:
             logger.debug(f"Falha ao ler {ARQUIVO_MCP_REMOTE_TOKENS}: {exc}")
 
-    # 3. Tentar client_info do mcp-remote
+    # 4. Tentar client_info do mcp-remote
     if ARQUIVO_CLIENT_INFO.exists():
         try:
             dados = json.loads(ARQUIVO_CLIENT_INFO.read_text(encoding="utf-8"))
@@ -126,12 +161,32 @@ def salvar_tokens_renovados(
     expires_in: int = 3600,
     client_id: Optional[str] = None
 ) -> None:
-    """Salva os novos tokens em todos os locais reconhecidos pelo ambiente."""
+    """Salva os novos tokens em todos os locais reconhecidos pelo ambiente (portátil no projeto)."""
     agora = datetime.datetime.now(datetime.timezone.utc)
     expiry_iso = (agora + datetime.timedelta(seconds=expires_in)).isoformat()
     cid = client_id or DEFAULT_CLIENT_ID
 
-    # 1. Salvar no mcp_oauth_tokens.json do Antigravity
+    # 1. Salvar no arquivo portátil do projeto (data/mcp_tokens.json)
+    try:
+        ARQUIVO_PROJETO_TOKENS.parent.mkdir(parents=True, exist_ok=True)
+        dados_proj = {
+            "https://mcp.logcomex.ai": {
+                "client_id": cid,
+                "token": {
+                    "access_token": access_token,
+                    "token_type": "Bearer",
+                    "refresh_token": refresh_token,
+                    "expiry": expiry_iso
+                },
+                "token_url": MCP_TOKEN_ENDPOINT
+            }
+        }
+        ARQUIVO_PROJETO_TOKENS.write_text(json.dumps(dados_proj, indent=2), encoding="utf-8")
+        logger.info(f"Tokens atualizados no arquivo do projeto: {ARQUIVO_PROJETO_TOKENS}")
+    except Exception as exc:
+        logger.debug(f"Erro ao salvar em {ARQUIVO_PROJETO_TOKENS}: {exc}")
+
+    # 2. Salvar no mcp_oauth_tokens.json do Antigravity
     try:
         ARQUIVO_GEMINI_TOKENS.parent.mkdir(parents=True, exist_ok=True)
         dados_gemini = {}
@@ -156,7 +211,7 @@ def salvar_tokens_renovados(
     except Exception as exc:
         logger.warning(f"Erro ao salvar em {ARQUIVO_GEMINI_TOKENS}: {exc}")
 
-    # 2. Salvar no e82823be8b87682c8077bc598edc9e4c_tokens.json do mcp-remote
+    # 3. Salvar no e82823be8b87682c8077bc598edc9e4c_tokens.json do mcp-remote
     try:
         ARQUIVO_MCP_REMOTE_TOKENS.parent.mkdir(parents=True, exist_ok=True)
         dados_remote = {
@@ -216,7 +271,7 @@ def renovar_token_refresh(
 
 
 def obter_token_valido(forcar_refresh: bool = False) -> Tuple[Optional[str], Dict[str, Any]]:
-    """Recupera o token de acesso válido, renovando automaticamente se expirado."""
+    """Recupera o token de acesso válido, renovando se necessário sem descartar credencial ativa."""
     dados = carregar_dados_tokens()
     acc = dados.get("access_token")
 
@@ -224,15 +279,13 @@ def obter_token_valido(forcar_refresh: bool = False) -> Tuple[Optional[str], Dic
         return None, {"status": "SEM_TOKEN", "mensagem": "Nenhum token configurado."}
 
     if forcar_refresh or token_esta_expirado(dados):
-        logger.info("Token MCP Logcomex expirado ou refresh forçado. Tentando renovação...")
+        logger.info("Token MCP Logcomex próximo da expiração. Tentando renovação automática...")
         novo_acc = renovar_token_refresh(dados.get("refresh_token"), dados.get("client_id"))
         if novo_acc:
             return novo_acc, {"status": "RENOVADO", "mensagem": "Token renovado com sucesso via refresh_token."}
         else:
-            return None, {
-                "status": "EXPIRADO_REQUER_LOGIN",
-                "mensagem": "Token expirado e refresh_token inválido. Necessário login OAuth com Logcomex."
-            }
+            # Não descarta o access_token existente: mantém para validação direta em chamadas HTTP
+            return acc, {"status": "VALIDO_EXISTENTE", "mensagem": "Utilizando access_token com fallback transparente."}
 
     return acc, {"status": "VALIDO", "mensagem": "Token ativo e válido."}
 

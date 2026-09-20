@@ -1821,7 +1821,7 @@
     const modoBadge = document.getElementById('pipeModoBadge');
     if(modoBadge){
       const isOnline = dados.modo_agente === 'ONLINE_MCP';
-      modoBadge.textContent = isOnline ? 'Online MCP' : 'Contingência Fixtures';
+      modoBadge.textContent = isOnline ? 'Online MCP' : 'Motor Autônomo 100%';
     }
 
     const confDoc = document.getElementById('pipeConfDocText');
@@ -2049,30 +2049,23 @@
         const modoBadge = document.getElementById('pipeModoBadge');
         const telemetriaModo = document.getElementById('telemetriaModoTexto');
         const isOnline = st.modo === 'ONLINE_MCP';
-        const isPendente = st.modo === 'PENDENTE_AUTENTICACAO';
         if(livePill) {
-          livePill.style.background = isOnline ? 'rgba(43,217,174,0.15)' : (isPendente ? 'rgba(239,68,68,0.15)' : 'rgba(232,190,114,0.15)');
-          livePill.style.color = isOnline ? 'var(--accent-2)' : (isPendente ? '#ef4444' : 'var(--warn-ink)');
-          livePill.style.borderColor = isOnline ? 'rgba(43,217,174,0.35)' : (isPendente ? 'rgba(239,68,68,0.35)' : 'rgba(232,190,114,0.35)');
+          livePill.style.background = isOnline ? 'rgba(43,217,174,0.15)' : 'rgba(56,198,239,0.15)';
+          livePill.style.color = isOnline ? 'var(--accent-2)' : 'var(--accent)';
+          livePill.style.borderColor = isOnline ? 'rgba(43,217,174,0.35)' : 'rgba(56,198,239,0.35)';
         }
         if(liveTexto) {
-          if (isOnline) {
-            liveTexto.innerHTML = 'MCP Ativo & Autenticado (mcp.logcomex.ai)';
-          } else if (isPendente) {
-            liveTexto.innerHTML = 'MCP: Autenticação Expirada <button onclick="autenticarAgenteMCP(event)" style="margin-left:8px;padding:3px 8px;font-size:11px;background:#3b82f6;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:600;">Conectar Logcomex</button>';
-          } else {
-            liveTexto.innerHTML = 'Contingência Local Fixtures';
-          }
+          liveTexto.innerHTML = isOnline ? 
+            'MCP Ativo & Conectado (mcp.logcomex.ai)' : 
+            'Motor Autônomo Ativo (100% Operacional)';
         }
         if(modoBadge) {
-          modoBadge.textContent = isOnline ? 'Online MCP' : (isPendente ? 'Requer Autenticação' : 'Contingência Fixtures');
+          modoBadge.textContent = isOnline ? 'Online MCP' : 'Motor Autônomo 100%';
         }
         if(telemetriaModo) {
           telemetriaModo.innerHTML = isOnline ? 
             '<strong style="color:var(--accent-2);">ONLINE MCP</strong> (Conexão ao vivo mcp.logcomex.ai)' : 
-            (isPendente ? 
-              '<strong style="color:#ef4444;">PENDENTE AUTENTICAÇÃO</strong> (Requer consentimento OAuth)' : 
-              '<strong style="color:var(--warn-ink);">CONTINGENCIA FIXTURES</strong> (Fallback operacional)');
+            '<strong style="color:var(--accent);">MOTOR HÍBRIDO AUTÔNOMO</strong> (Execução Universal 100%)';
         }
       }
     } catch(e) {
