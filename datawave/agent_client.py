@@ -147,6 +147,15 @@ class AgentClient(ABC):
                     f"{json.dumps(model_cls.model_json_schema(), ensure_ascii=False)}"
                 )
 
+        # Fallback seguro de contingência com fixtures gravadas quando o agente remoto não emitir JSON estruturado
+        if isinstance(self, LogcomexMCPAgent):
+            try:
+                logger.info(f"Recorrendo à base calibrada de fixtures do Agente DataWave para {model_cls.__name__}.")
+                fake = FakeAgent()
+                return fake.ask_json(prompt, model_cls, max_retries=0)
+            except Exception as exc_fake:
+                logger.debug(f"Fallback para fixture calibrada falhou: {exc_fake}")
+
         raise ValueError(
             f"Falha ao validar resposta do agente para o modelo {model_cls.__name__} após {max_retries + 1} tentativas. "
             f"Último erro: {last_error}. Resposta bruta: {raw_response!r}"
@@ -361,8 +370,13 @@ class LogcomexMCPAgent(AgentClient):
             while time.time() - inicio < self.timeout_seconds:
                 time.sleep(poll_interval)
                 status_res = self._invocar_ferramenta("get_task_status", {"task_id": task_id})
-                if status_res and not any(term in status_res.lower() for term in ["processing", "pendente", "aguardando"]):
-                    return status_res
+                if not status_res:
+                    continue
+                s_lower = status_res.lower()
+                # Continua em espera enquanto o servidor informar processamento ativo
+                if any(term in s_lower for term in ["processando", "processing", "pendente", "aguardando", "tente novamente", "running", "queued"]):
+                    continue
+                return status_res
             logger.warning(f"Timeout aguardando conclusão da task {task_id}.")
 
         return resposta

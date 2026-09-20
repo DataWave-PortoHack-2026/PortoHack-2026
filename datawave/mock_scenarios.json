@@ -146,7 +146,7 @@
     "prob_retencao": "74%",
     "alert_tipo": "Exigência Regulatória MAPA (74%)",
     "alert_class": "alert warn",
-    "alert_icon": "🍷",
+    "alert_icon": "[!]",
     "alerta_texto": "Catálogo do Portal Único auditado: atributos ATT_10076 (Casal Branco) e ATT_14249 (DOC Tejo) mapeados, porém ATT_14240 está VAZIO. Inspeção Vigiagro/MAPA estimada em 11 dias de cais gerando estouro de 4 dias de free time.",
     "cais_tempo": "11 dias (estouro de 4)",
     "cais_demurrage": "US$ 640,00 (R$ 3.520,00)",

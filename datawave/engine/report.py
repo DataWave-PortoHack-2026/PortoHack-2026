@@ -331,7 +331,8 @@ def gerar_parecer_via_agente_logcomex(
     }
 
     prompt = (
-        f"Gere um Parecer Técnico Aduaneiro formal completo para a operação:\n"
+        f"Como especialista e consultor sênior em comércio exterior e auditoria aduaneira da Logcomex, "
+        f"elabore uma fundamentação técnica e parecer sobre a seguinte operação no Porto de Santos:\n"
         f"- Mercadoria: {op.descricao} (NCM {op.ncm})\n"
         f"- Valor FOB: {fob_str}\n"
         f"- Câmbio Referência: {cambio_str}\n"
@@ -346,15 +347,24 @@ def gerar_parecer_via_agente_logcomex(
         f"- Economia Projetada: {economia_str}\n"
         f"- Divergências Cadastrais/Documentais: {', '.join(op.divergencias) if op.divergencias else 'Nenhuma'}\n"
         f"Identificador de Trilha: {trace_id}\n\n"
-        f"INSTRUÇÃO OBRIGATÓRIA DE CONFORMIDADE:\n"
-        f"Mantenha exatamente a grafia dos valores de referência ({cais_esp_str}, {retro_esp_str}, {economia_str}, {fob_str}).\n"
-        f"Estruture o parecer em seções: 1. Identificação da Operação, 2. Auditoria Preventiva de Catálogo, "
-        f"3. Avaliação Probabilística de Permanência, 4. Matriz Financeira Comparativa e 5. Parecer Prescritivo e Instrução de Trânsito."
+        f"Apresente sua avaliação sobre os riscos aduaneiros (DUIMP, Receita Federal, órgãos anuentes), "
+        f"impactos operacionais no Porto de Santos e a recomendação de trânsito ({rec.opcao_recomendada})."
     )
 
     try:
         texto_agente = client.ask_agent(prompt)
-        if texto_agente and len(texto_agente) > 100 and not texto_agente.startswith("[Contingência"):
+        termos_recusa = [
+            "não há dados para gerar o documento",
+            "não retornou registros",
+            "nenhum conteúdo foi encontrado",
+            "ainda processando",
+            "tente novamente em",
+            "não foi possível gerar",
+            "para abortar, use cancel_task"
+        ]
+        eh_recusa = any(r in texto_agente.lower() for r in termos_recusa) if texto_agente else True
+
+        if texto_agente and len(texto_agente) > 100 and not texto_agente.startswith("[Contingência") and not eh_recusa:
             valido, inconsistencias = validar_conformidade_relatorio(texto_agente, valores_esperados)
             if valido:
                 return ParecerExecutivo(

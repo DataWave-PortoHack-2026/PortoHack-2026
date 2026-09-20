@@ -227,6 +227,9 @@ def executar_pipeline_datawave(
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(json.dumps(registro_log, ensure_ascii=False) + "\n")
 
+    custo_dict = recomendacao.model_dump()
+    custo_dict["economia_estimada_brl"] = recomendacao.economia_esperada_brl
+    custo_dict["economia_esperada_brl"] = recomendacao.economia_esperada_brl
     return {
         "trace_id": trace_id,
         "timestamp": timestamp_iso,
@@ -236,7 +239,7 @@ def executar_pipeline_datawave(
         "agente_dados": agente_dados,
         "operacao": op.model_dump(),
         "risco": risco.model_dump(),
-        "custo": recomendacao.model_dump(),
+        "custo": custo_dict,
         "plano_correcoes": plano_correcoes.model_dump(),
         "parecer": parecer.model_dump()
     }

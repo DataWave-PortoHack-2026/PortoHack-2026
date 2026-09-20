@@ -1170,9 +1170,9 @@
       suppliers: '40 importadores', exportersNote: '/ 88 exportadores',
       importer: 'Empresa OEA', freeTime: '7 dias',
       catalogOk: true, catalogText: 'Cadastro completo e validado',
-      alertLevel: 'warn', alertTitle: 'Alerta preditivo da IA',
-      alertText: 'Risco moderado de conferência aduaneira (Receita Federal), dentro da janela de free time. Probabilidade de retenção:',
-      alertProb: 45,
+      alertLevel: 'ok', alertTitle: 'Predição Aduaneira Conforme',
+      alertText: 'Baixo risco de conferência aduaneira ou retenção física. Operação segura dentro da janela de free time. Probabilidade de retenção:',
+      alertProb: 1,
       scenarioA: { riskTag:'ok', riskLabel:'Dentro do prazo',
         l1:['Tempo médio de permanência','6 dias','(dentro dos 7)'],
         l2:['Sobreestadia (demurrage)','R$ 0,00',''],
@@ -1300,7 +1300,23 @@
           if(c.cais_tempo) scenarios[i].scenarioA.l1[1] = c.cais_tempo;
           if(c.cais_demurrage) scenarios[i].scenarioA.l2[1] = c.cais_demurrage;
           if(c.cais_armazenagem) scenarios[i].scenarioA.l3[1] = c.cais_armazenagem;
-          if(c.prob_retencao) scenarios[i].alertProb = parseInt(c.prob_retencao) || scenarios[i].alertProb;
+          if(c.prob_retencao){
+            const pVal = parseInt(c.prob_retencao);
+            scenarios[i].alertProb = isNaN(pVal) ? scenarios[i].alertProb : pVal;
+            if(scenarios[i].alertProb < 25){
+              scenarios[i].alertLevel = 'ok';
+              scenarios[i].alertTitle = 'Predição Aduaneira Conforme';
+              scenarios[i].alertText = 'Baixo risco de conferência aduaneira ou retenção física. Operação segura dentro da janela de free time. Probabilidade de retenção:';
+            } else if(scenarios[i].alertProb < 70){
+              scenarios[i].alertLevel = 'warn';
+              scenarios[i].alertTitle = 'Alerta preditivo da IA';
+              scenarios[i].alertText = 'Risco moderado de conferência aduaneira (Receita Federal), dentro da janela de free time. Probabilidade de retenção:';
+            } else {
+              scenarios[i].alertLevel = '';
+              scenarios[i].alertTitle = 'Alerta preditivo da IA';
+              scenarios[i].alertText = 'Inconsistência cadastral crítica identificada. Probabilidade de retenção sanitária/aduaneira:';
+            }
+          }
         }
         renderScenario(currentScenario);
       }
@@ -1501,6 +1517,32 @@
     reader.readAsText(file);
   }
 
+  const presetsPlanilhas = [
+    {
+      nome: 'planilha_vinhos_santos_divergencia_peso.csv',
+      linhas: 4,
+      csv: 'ncm,descricao,quantidade,unidade_medida,valor_unitario_usd,valor_total_usd,peso_liquido_kg,peso_bruto_bl_kg,peso_bruto_packing_kg,incoterm,porto_descarga,free_time_dias,orgao_anuente\n' +
+           '2204.21.00,Vinho Fino Tinto Seco Red Blend 750ml,12000,UN,6.50,78000.00,9000.0,14500.0,14050.0,FOB,Santos,5,MAPA\n' +
+           '2204.21.00,Vinho Fino Branco Seco Alvarinho 750ml,6000,UN,7.20,43200.00,4500.0,7200.0,7200.0,FOB,Santos,5,MAPA\n' +
+           '2204.21.00,Vinho Regional Tejo Sauvignon 750ml,3600,UN,5.80,20880.00,2700.0,4300.0,4300.0,FOB,Santos,5,MAPA\n' +
+           '2204.21.00,Vinho Regional Tejo Cabernet 750ml,2400,UN,6.10,14640.00,1800.0,2900.0,2900.0,FOB,Santos,5,MAPA'
+    },
+    {
+      nome: 'planilha_defensivos_santos_mapa.csv',
+      linhas: 2,
+      csv: 'ncm,descricao,quantidade,unidade_medida,valor_unitario_usd,valor_total_usd,peso_liquido_kg,peso_bruto_bl_kg,peso_bruto_packing_kg,incoterm,porto_descarga,free_time_dias,orgao_anuente,observacoes\n' +
+           '3808.93.29,Herbicida agrícola formulado concentrado,8500,KG,12.50,106250.00,8500.0,9200.0,9200.0,FOB,Santos,5,MAPA/ANVISA,Inconsistência cadastral: Registro de Aptidão Sanitária A01 ausente no catálogo DUIMP\n' +
+           '3808.93.29,Adjuvante dispersante defensivo,2000,KG,11.125,22250.00,2000.0,2250.0,2250.0,FOB,Santos,5,MAPA/ANVISA,Registro de Aptidão Sanitária pendente'
+    },
+    {
+      nome: 'planilha_eletronicos_oea_conforme.csv',
+      linhas: 2,
+      csv: 'ncm,descricao,quantidade,unidade_medida,valor_unitario_usd,valor_total_usd,peso_liquido_kg,peso_bruto_bl_kg,peso_bruto_packing_kg,incoterm,porto_descarga,free_time_dias,operador_oea,observacoes\n' +
+           '8525.80.90,Câmeras digitais de alta velocidade e sensores óticos,500,UN,140.00,70000.00,1200.0,1450.0,1450.0,FOB,Santos,7,SIM,Cadastro OEA completo e validado no catálogo DUIMP\n' +
+           '8525.80.90,Módulos conversores CMOS para automação,300,UN,50.00,15000.00,600.0,750.0,750.0,FOB,Santos,7,SIM,Operação regular'
+    }
+  ];
+
   function carregarPresetPlanilha(idx){
     document.querySelectorAll('.preset-btn').forEach(function(b){ b.classList.remove('active'); });
     const btn = document.querySelector('.preset-btn[data-scenario="' + idx + '"]');
@@ -1548,19 +1590,19 @@
 
     globalProgressoTimers.push(setTimeout(function(){
       atualizarProgressoGlobal(35, 'Agente Logcomex MCP', 'Etapa 2/6 · Análise Documental Aduaneira (Skill 1)');
-    }, 200));
+    }, 2500));
 
     globalProgressoTimers.push(setTimeout(function(){
       atualizarProgressoGlobal(55, 'Agente Logcomex MCP', 'Etapa 3/6 · Predição de Canais & Consulta Comexstat Santos (Skills 2 e 5)');
-    }, 450));
+    }, 5500));
 
     globalProgressoTimers.push(setTimeout(function(){
       atualizarProgressoGlobal(75, 'Agente Logcomex MCP', 'Etapa 4/6 · Validação do Catálogo DUIMP & Regras Fiscais (Skills 3 e 4)');
-    }, 700));
+    }, 9000));
 
     globalProgressoTimers.push(setTimeout(function(){
       atualizarProgressoGlobal(90, 'Motor Estocástico', 'Etapa 5/6 · Simulação Estocástica de Permanência e Matriz de Custos');
-    }, 950));
+    }, 13000));
 
     const tStart = performance.now();
 
@@ -1610,19 +1652,19 @@
 
     globalProgressoTimers.push(setTimeout(function(){
       atualizarProgressoGlobal(35, 'Agente Logcomex MCP', 'Etapa 2/6 · Análise Documental Aduaneira (Skill 1)');
-    }, 200));
+    }, 2500));
 
     globalProgressoTimers.push(setTimeout(function(){
       atualizarProgressoGlobal(55, 'Agente Logcomex MCP', 'Etapa 3/6 · Predição de Canais & Consulta Comexstat Santos (Skills 2 e 5)');
-    }, 450));
+    }, 5500));
 
     globalProgressoTimers.push(setTimeout(function(){
       atualizarProgressoGlobal(75, 'Agente Logcomex MCP', 'Etapa 4/6 · Validação do Catálogo DUIMP & Regras Fiscais (Skills 3 e 4)');
-    }, 700));
+    }, 9000));
 
     globalProgressoTimers.push(setTimeout(function(){
       atualizarProgressoGlobal(90, 'Motor Estocástico', 'Etapa 5/6 · Simulação Estocástica de Permanência e Matriz de Custos');
-    }, 950));
+    }, 13000));
 
     const s = scenarios[currentScenario];
     const ncmLimpo = s.ncm.replace(/[^\d]/g, '');
@@ -1770,10 +1812,10 @@
       const impactRow = document.getElementById('impactRow');
       const savingsStrip = document.getElementById('savingsStrip');
 
-      const recomendacao = c.recomendacao || (c.melhor_cenario === 'CENARIO_C' ? 'CENARIO_C' : 'CENARIO_A');
-      const economiaBrl = c.economia_estimada_brl || 0;
-      const probRetencao = c.prob_retencao_pct !== undefined ? c.prob_retencao_pct : (scenarios[currentScenario].alertProb);
-      const demurrageDias = c.dias_demurrage_evitados !== undefined ? c.dias_demurrage_evitados : (recomendacao === 'CENARIO_C' ? 0 : 0);
+      const recomendacao = c.recomendacao || (c.melhor_cenario === 'CENARIO_C' ? 'CENARIO_C' : (c.opcao_recomendada === 'RETROPORTO' ? 'CENARIO_C' : 'CENARIO_A'));
+      const economiaBrl = c.economia_esperada_brl || c.economia_estimada_brl || 0;
+      const probRetencao = c.prob_retencao_pct !== undefined ? c.prob_retencao_pct : (c.probabilidade_estouro_free_time !== undefined ? Math.round(c.probabilidade_estouro_free_time * 100) : scenarios[currentScenario].alertProb);
+      const demurrageDias = c.dias_demurrage_evitados !== undefined ? c.dias_demurrage_evitados : 0;
 
       const economiaFmt = 'R$ ' + economiaBrl.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 

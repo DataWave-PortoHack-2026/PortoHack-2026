@@ -194,6 +194,7 @@ def executar_simulacao_customizada(params: Dict[str, Any]) -> Dict[str, Any]:
         "opcao_recomendada": rec.opcao_recomendada,
         "dia_break_even": rec.dia_break_even,
         "economia_esperada_brl": rec.economia_esperada_brl,
+        "economia_estimada_brl": rec.economia_esperada_brl,
         "custo_esperado_cais_brl": rec.custo_esperado_cais_brl,
         "custo_esperado_retro_brl": rec.custo_esperado_retro_brl,
         "probabilidade_estouro_free_time": rec.probabilidade_estouro_free_time,
