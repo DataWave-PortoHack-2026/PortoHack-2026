@@ -296,6 +296,11 @@ try:
         resposta = gerar_resposta_assistente(msg, idx)
         return {"resposta": resposta}
 
+    @app.post("/api/pipeline")
+    def api_pipeline(payload: Dict[str, Any]):
+        from datawave.pipeline import executar_pipeline_datawave
+        return executar_pipeline_datawave(payload)
+
 except ImportError:
     # Fallback transparente quando FastAPI não estiver no ambiente
     app = None
@@ -360,6 +365,13 @@ def run_fallback_server(host: str = "127.0.0.1", port: int = 8000):
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.end_headers()
                 self.wfile.write(json.dumps({"resposta": resp}, ensure_ascii=False).encode("utf-8"))
+            elif self.path.startswith("/api/pipeline"):
+                from datawave.pipeline import executar_pipeline_datawave
+                resultado = executar_pipeline_datawave(payload)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps(resultado, ensure_ascii=False).encode("utf-8"))
             else:
                 self.send_response(404)
                 self.end_headers()
