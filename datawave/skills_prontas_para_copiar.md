@@ -1,17 +1,24 @@
-# Configuração Rápida de Skills — Agente Logcomex
+# Configuração Rápida de Skills — Agente Logcomex (Versão Calibrada)
 
-Guia com os campos exatos para preenchimento no modal **Nova Skill** da plataforma Logcomex. Cada seção corresponde a uma skill pronta para cópia e colagem direta nos respectivos campos.
+Guia com os campos exatos para preenchimento no modal **Nova Skill** da plataforma Logcomex. As descrições foram calibradas com gatilhos de ativação direta para o roteador interno da plataforma.
 
 ---
 
 ## Skill 1: Catálogo de Produtos da DUIMP
 
-- **Nome:** `Catálogo de Produtos DUIMP`
-- **Descrição:** `Diretrizes do Portal Único Siscomex, árvores lógicas de atributos e validações normativas para auditoria do catálogo antes do embarque.`
+- **Ícone:** Cérebro
+- **Nome \*:**
+```text
+Catálogo de Produtos DUIMP
+```
+- **Descrição (Gatilho de Ativação):**
+```text
+Ative para qualquer solicitação envolvendo Catálogo de Produtos, DUIMP, atributos, NCM, Portal Único Siscomex, classificação técnica de produtos ou validação cadastral prévia.
+```
 - **Extender Capacidade:** `Nenhuma`
 - **Instruções Base:**
 ```text
-Esta skill orienta a auditoria, padronização e conferência prévia do Catálogo de Produtos da DUIMP no Portal Único Siscomex.
+Esta skill orienta a auditoria, padronização e conferência prévia do Catálogo de Produtos da DUIMP no Portal Único Siscomex. Não procure ferramentas de API para responder a análises de catálogo; analise o texto fornecido pelo usuário e responda diretamente.
 
 1. Padrões Canônicos do Portal Único Siscomex:
 - Modalidade: Preencha estritamente com os literais IMPORTACAO ou EXPORTACAO (caixa alta, sem acento).
@@ -29,7 +36,7 @@ Esta skill orienta a auditoria, padronização e conferência prévia do Catálo
 
 4. Diretrizes de Assistência do Agente:
 - Ao sugerir atributos a partir de documentos ou fichas técnicas, utilize exclusivamente códigos presentes nas listas oficiais do Siscomex ou do órgão anuente aplicável.
-- Se a documentação não trouxer comprovação inequívoca para o código, marque o atributo como incerto.
+- Se a documentação não trouxer comprovação inequívoca para o código, marque o atributo como incerto no array "incertos".
 - O motor determinístico local do sistema é a autoridade técnica final de validação cadastral.
 ```
 - **Nome em English (opcional):** `DUIMP Product Catalog`
@@ -39,8 +46,15 @@ Esta skill orienta a auditoria, padronização e conferência prévia do Catálo
 
 ## Skill 2: Contrato de Saída JSON DataWave
 
-- **Nome:** `Contrato de Saída JSON DataWave`
-- **Descrição:** `Especificação estrita de formatação em JSON puro e esquemas de dados integrados aos contratos Pydantic do sistema.`
+- **Ícone:** Cérebro
+- **Nome \*:**
+```text
+Contrato de Saída JSON DataWave
+```
+- **Descrição (Gatilho de Ativação):**
+```text
+Ative sempre que o usuário pedir resposta em formato JSON, JSON puro, formato estruturado ou dados dos esquemas OperacaoExtraida, MercadoNCM e SugestaoAtributos.
+```
 - **Extender Capacidade:** `Nenhuma`
 - **Instruções Base:**
 ```text
@@ -68,12 +82,19 @@ Esta skill estabelece a sintaxe obrigatória de comunicação estruturada do age
 
 ## Skill 3: Glossário e Premissas Cais vs. Retroporto
 
-- **Nome:** `Glossário e Premissas Cais vs Retroporto`
-- **Descrição:** `Conceitos aduaneiros de Santos, diferenciação crítica entre demurrage e detention, armazenagem progressiva e regras de decisão logística.`
+- **Ícone:** Cérebro
+- **Nome \*:**
+```text
+Glossário e Premissas Cais vs Retroporto
+```
+- **Descrição (Gatilho de Ativação):**
+```text
+Ative sempre que o usuário perguntar sobre cais, retroporto, demurrage, detention, armazenagem portuária, Santos, free time, sobre-estadia, CLIA ou canais de parametrização da DUIMP.
+```
 - **Extender Capacidade:** `Nenhuma`
 - **Instruções Base:**
 ```text
-Esta skill estabelece a base terminológica e as premissas aduaneiras e tarifárias do Porto de Santos para suporte à decisão logística.
+Esta skill estabelece a base terminológica e as premissas aduaneiras e tarifárias do Porto de Santos para suporte à decisão logística. Responda diretamente com base neste conhecimento conceitual, sem buscar ferramentas executáveis na plataforma.
 
 1. Zonas Portuárias de Santos:
 - Zona Primária (Cais): Terminais portuários molhados (Santos Brasil, BTP, DP World). Alta demanda de pátio e tabelas de armazenagem progressivas agressivas com períodos curtos para forçar a rotação da carga.
@@ -100,12 +121,19 @@ Esta skill estabelece a base terminológica e as premissas aduaneiras e tarifár
 
 ## Skill 4: Playbook de Extração Documental
 
-- **Nome:** `Playbook de Extração Documental`
-- **Descrição:** `Guia de leitura, conferência cruzada e mapeamento de inconsistências entre Bill of Lading, Commercial Invoice e Packing List.`
+- **Ícone:** Cérebro
+- **Nome \*:**
+```text
+Playbook de Extração Documental
+```
+- **Descrição (Gatilho de Ativação):**
+```text
+Ative sempre que o usuário fornecer dados de documentos de embarque, Bill of Lading, BL, Commercial Invoice, fatura comercial, Packing List, romaneio de carga ou solicitar conferência de divergências.
+```
 - **Extender Capacidade:** `Nenhuma`
 - **Instruções Base:**
 ```text
-Esta skill orienta a extração estruturada de dados operacionais e a conferência cruzada entre os três documentos essenciais da instrução aduaneira de importação marítima.
+Esta skill orienta a extração estruturada de dados operacionais e a conferência cruzada entre os três documentos essenciais da instrução aduaneira de importação marítima. Não procure ferramentas externas para analisar textos de documentos fornecidos no prompt; compare os dados diretamente e aponte as inconsistências.
 
 1. Documentos e Campos Críticos de Extração:
 - Conhecimento de Embarque (Bill of Lading - BL): Número do BL, armador marítimo, navio e viagem, porto de embarque (POL), porto de descarga (POD), numeração dos contêineres e respectivos lacres (seals), tipo/dimensão do contêiner, peso bruto total (kg), cubagem (CBM) e modalidade de frete (Freight Prepaid ou Freight Collect).
