@@ -265,6 +265,9 @@ def run_fallback_server(host: str = "127.0.0.1", port: int = 8000):
                     self.wfile.write(HTML_FILE.read_bytes())
                 else:
                     self.wfile.write(b"<h1>DataWave Engine</h1>")
+            elif self.path == "/favicon.ico":
+                self.send_response(204)
+                self.end_headers()
             elif self.path.startswith("/api/cenarios") or self.path.startswith("/api/operacoes"):
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
