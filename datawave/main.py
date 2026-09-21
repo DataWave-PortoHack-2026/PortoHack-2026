@@ -364,15 +364,6 @@ try:
     def api_agente_chat(payload: Dict[str, Any]):
         return responder_chat_agente(payload)
 
-    @app.post("/api/agente/configurar-token")
-    def api_configurar_token(payload: Dict[str, Any]):
-        token = payload.get("access_token") or payload.get("token")
-        if not token:
-            return {"status": "ERRO", "mensagem": "Token não fornecido."}
-        from datawave.auth_manager import salvar_tokens_renovados
-        salvar_tokens_renovados(access_token=str(token).strip(), expires_in=86400 * 365)
-        return {"status": "SUCESSO", "mensagem": "Token registrado com sucesso."}
-
     @app.post("/api/despachante/processar-planilha")
     def api_despachante_processar(payload: Dict[str, Any]):
         return processar_planilha_despachante_api(payload)
@@ -565,18 +556,6 @@ def run_fallback_server(host: str = "127.0.0.1", port: int = 8000):
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.end_headers()
                 self.wfile.write(json.dumps(resultado, ensure_ascii=False).encode("utf-8"))
-            elif self.path.startswith("/api/agente/configurar-token"):
-                token = payload.get("access_token") or payload.get("token")
-                if token:
-                    from datawave.auth_manager import salvar_tokens_renovados
-                    salvar_tokens_renovados(access_token=str(token).strip(), expires_in=86400 * 365)
-                    res = {"status": "SUCESSO", "mensagem": "Token registrado com sucesso."}
-                else:
-                    res = {"status": "ERRO", "mensagem": "Token não fornecido."}
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json; charset=utf-8")
-                self.end_headers()
-                self.wfile.write(json.dumps(res, ensure_ascii=False).encode("utf-8"))
             else:
                 self.send_response(404)
                 self.end_headers()
@@ -593,7 +572,13 @@ if __name__ == "__main__":
     if app is not None:
         try:
             import uvicorn
-            uvicorn.run(app, host="127.0.0.1", port=8000)
+            import os
+            port = int(os.environ.get("PORT", 8000))
+            uvicorn.run(
+                app,
+                host="0.0.0.0",
+                port=port
+            )
         except ImportError:
             run_fallback_server()
     else:
