@@ -1866,7 +1866,18 @@
     if(!p) return;
     arquivoCarregadoTexto = p.csv;
     nomeArquivoCarregado = p.nome;
+    pipelineDadosAtuais = null;
     exibirArquivoCarregado(p.nome, p.linhas);
+
+    // Zera painel de auditoria para nao persistir resultado de auditoria anterior
+    const traceEl = document.getElementById('pipeTraceId');
+    if(traceEl) traceEl.innerHTML = '<span style="font-family:monospace; font-size:14px; font-weight:600; color:var(--ink-soft);">--</span>';
+    const confDoc = document.getElementById('pipeConfDocText');
+    if(confDoc) confDoc.textContent = 'Aguardando acionamento da auditoria cadastral...';
+    const parecerBadge = document.getElementById('pipeParecerBadge');
+    if(parecerBadge){ parecerBadge.textContent = 'Pendente'; parecerBadge.style.background = 'var(--bg-sunken)'; parecerBadge.style.color = 'var(--ink-soft)'; parecerBadge.style.borderColor = 'var(--line)'; }
+    const tsAud = document.getElementById('tsAuditoriaDoc');
+    if(tsAud) tsAud.textContent = 'Aguardando auditoria';
 
     const badge = document.getElementById('badgeArquivoLinhas');
     if(badge){
