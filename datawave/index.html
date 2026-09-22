@@ -698,8 +698,8 @@
           </div>
           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <div class="live-pill" id="livePillMCP">
-              <span class="live-pulse"></span>
-              <span id="livePillTexto">MCP Ativo & Autenticado (mcp.logcomex.ai)</span>
+              <span class="live-pulse" id="livePulseDot"></span>
+              <span id="livePillTexto">Agente Logcomex AI Funcional & Conectado (mcp.logcomex.ai)</span>
             </div>
             <button class="cta-secondary" id="btnConectarMCP" onclick="conectarOuReconectarMCP(event)" style="padding:6px 14px; font-size:12px; border-color:rgba(56,198,239,0.4); color:var(--accent);">
               Conectar Agente MCP
@@ -770,7 +770,7 @@
           </div>
           <div class="kv">
             <div class="k">Modo do Agente Logcomex</div>
-            <div class="v" id="pipeModoAgente"><span class="badge" id="pipeModoBadge">Agente Logcomex AI Ativo</span></div>
+            <div class="v" id="pipeModoAgente"><span class="badge" id="pipeModoBadge" style="background:rgba(43,217,174,0.15); color:var(--accent-2); border-color:rgba(43,217,174,0.35);">Agente Logcomex AI Funcional (MCP Ativo)</span></div>
           </div>
           <div class="kv">
             <div class="k">Análise Documental Aduaneira</div>
@@ -1818,7 +1818,6 @@
 
     // Contingencia local estruturada
     try {
-      await animacaoPromise;
       const duracaoFallback = ((performance.now() - tStart) / 1000).toFixed(2) + 's';
       concluirProgressoGlobal('Processamento concluído em ' + duracaoFallback + ' · Modo Contingência', duracaoFallback);
 
@@ -1826,7 +1825,7 @@
       const fallbackParecer = gerarParecerFallback(s, payload, fallbackTraceId);
       pipelineDadosAtuais = {
         trace_id: fallbackTraceId,
-        modo_agente: 'ONLINE_MCP',
+        modo_agente: 'MOTOR_AUTONOMO',
         duracao_ms: Math.round(performance.now() - tStart),
         tempo_resposta_s: parseFloat(duracaoFallback),
         plano_correcoes: {
@@ -1863,7 +1862,19 @@
     const modoBadge = document.getElementById('pipeModoBadge');
     if(modoBadge){
       const isOnline = dados.modo_agente === 'ONLINE_MCP';
-      modoBadge.textContent = isOnline ? 'Agente MCP Conectado' : 'Agente Logcomex AI Ativo';
+      modoBadge.textContent = isOnline ? 'Agente Logcomex AI Funcional (MCP Ativo)' : 'Agente Logcomex Não Funcional (Contingência Local)';
+      modoBadge.style.background = isOnline ? 'rgba(43,217,174,0.15)' : 'rgba(239,68,68,0.15)';
+      modoBadge.style.color = isOnline ? 'var(--accent-2)' : '#ef4444';
+      modoBadge.style.borderColor = isOnline ? 'rgba(43,217,174,0.4)' : 'rgba(239,68,68,0.4)';
+    }
+
+    if(dados.operacao){
+      const elNcm = document.getElementById('v-ncm');
+      if(elNcm && dados.operacao.ncm) elNcm.textContent = dados.operacao.ncm;
+      const elFob = document.getElementById('v-fob');
+      if(elFob && dados.operacao.valor_lote_usd) {
+        elFob.textContent = 'US$ ' + Number(dados.operacao.valor_lote_usd).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+      }
     }
 
     const confDoc = document.getElementById('pipeConfDocText');
@@ -2103,39 +2114,47 @@
         const st = await resp.json();
         const livePill = document.getElementById('livePillMCP');
         const liveTexto = document.getElementById('livePillTexto');
+        const livePulse = document.getElementById('livePulseDot');
         const modoBadge = document.getElementById('pipeModoBadge');
         const telemetriaModo = document.getElementById('telemetriaModoTexto');
         const btnConectar = document.getElementById('btnConectarMCP');
         const isOnline = st.modo === 'ONLINE_MCP';
         if(livePill) {
-          livePill.style.background = isOnline ? 'rgba(43,217,174,0.15)' : 'rgba(56,198,239,0.15)';
-          livePill.style.color = isOnline ? 'var(--accent-2)' : 'var(--accent)';
-          livePill.style.borderColor = isOnline ? 'rgba(43,217,174,0.35)' : 'rgba(56,198,239,0.35)';
+          livePill.style.background = isOnline ? 'rgba(43,217,174,0.15)' : 'rgba(239,68,68,0.15)';
+          livePill.style.color = isOnline ? 'var(--accent-2)' : '#ef4444';
+          livePill.style.borderColor = isOnline ? 'rgba(43,217,174,0.4)' : 'rgba(239,68,68,0.4)';
+        }
+        if(livePulse) {
+          livePulse.style.background = isOnline ? 'var(--accent-2)' : '#ef4444';
+          livePulse.style.boxShadow = isOnline ? '0 0 10px var(--accent-2)' : 'none';
         }
         if(liveTexto) {
           liveTexto.innerHTML = isOnline ? 
-            'MCP Ativo & Conectado (mcp.logcomex.ai)' : 
-            'Agente Logcomex AI Ativo (Motor 100% Operacional)';
+            'Agente Logcomex AI Funcional & Conectado (mcp.logcomex.ai)' : 
+            'Agente Logcomex Não Funcional · Desconectado (Contingência Local)';
         }
         if(modoBadge) {
-          modoBadge.textContent = isOnline ? 'Agente MCP Conectado' : 'Agente Logcomex AI Ativo';
+          modoBadge.textContent = isOnline ? 'Agente Logcomex AI Funcional (MCP Ativo)' : 'Agente Logcomex Não Funcional (Contingência Local)';
+          modoBadge.style.background = isOnline ? 'rgba(43,217,174,0.15)' : 'rgba(239,68,68,0.15)';
+          modoBadge.style.color = isOnline ? 'var(--accent-2)' : '#ef4444';
+          modoBadge.style.borderColor = isOnline ? 'rgba(43,217,174,0.4)' : 'rgba(239,68,68,0.4)';
         }
         if(telemetriaModo) {
           telemetriaModo.innerHTML = isOnline ? 
-            '<strong style="color:var(--accent-2);">ONLINE MCP</strong> (Conexão ao vivo mcp.logcomex.ai)' : 
-            '<strong style="color:var(--accent);">AGENTE LOGCOMEX AI OPERACIONAL</strong> (Motor Cognitivo 100%)';
+            '<strong style="color:var(--accent-2);">AGENTE LOGCOMEX FUNCIONAL</strong> (Conexão ao vivo mcp.logcomex.ai)' : 
+            '<strong style="color:#ef4444;">AGENTE LOGCOMEX NÃO FUNCIONAL</strong> (Desconectado - Requer Conexão MCP)';
         }
         if(btnConectar) {
           if(isOnline) {
-            btnConectar.textContent = 'Reconectar MCP';
-            btnConectar.style.borderColor = 'rgba(43,217,174,0.4)';
+            btnConectar.textContent = 'Agente MCP Conectado';
+            btnConectar.style.borderColor = 'rgba(43,217,174,0.5)';
             btnConectar.style.color = 'var(--accent-2)';
-            btnConectar.title = 'Servidor MCP conectado. Clique para renovar autorização OAuth ou reconectar.';
+            btnConectar.title = 'Servidor MCP conectado e operacional. Clique para renovar se necessário.';
           } else {
             btnConectar.textContent = 'Conectar Agente MCP';
-            btnConectar.style.borderColor = 'rgba(56,198,239,0.5)';
-            btnConectar.style.color = 'var(--accent)';
-            btnConectar.title = 'Clique para conectar ou autorizar o MCP da Logcomex via OAuth.';
+            btnConectar.style.borderColor = 'rgba(239,68,68,0.5)';
+            btnConectar.style.color = '#ef4444';
+            btnConectar.title = 'Agente Logcomex desconectado. Clique para autenticar e conectar via OAuth.';
           }
           btnConectar.disabled = false;
         }
@@ -2365,8 +2384,10 @@
         const data = await resp.json();
         const duracaoFormatada = data.tempo_resposta_s ? data.tempo_resposta_s.toFixed(2) + 's' : ((performance.now() - tStart) / 1000).toFixed(2) + 's';
         concluirProgressoGlobal('Resposta do Agente concluída', duracaoFormatada);
-        const badgeHtml = '<div style="font-size:11px; font-weight:600; color:var(--accent); margin-bottom:4px;">' +
-          (data.origem || 'Agente DataWave · Logcomex AI (MCP)') + ' · Resposta em ' + duracaoFormatada + '</div>';
+        const isOnline = data.modo === 'ONLINE_MCP';
+        const corBadge = isOnline ? 'var(--accent-2)' : '#ef4444';
+        const badgeHtml = '<div style="font-size:11px; font-weight:600; color:' + corBadge + '; margin-bottom:4px;">' +
+          (data.origem || (isOnline ? 'Agente Logcomex AI Funcional (mcp.logcomex.ai)' : 'Agente Logcomex Não Funcional (Modo Contingência)')) + ' · Resposta em ' + duracaoFormatada + '</div>';
         appendChatMessageHtml('agent', badgeHtml + (data.resposta ? data.resposta.replace(/\n/g, '<br>') : ''));
         return false;
       }
@@ -2380,7 +2401,7 @@
     // Fallback local
     setTimeout(function(){
       const duracaoFallback = ((performance.now() - tStart) / 1000).toFixed(2) + 's';
-      const badgeHtml = '<div style="font-size:11px; font-weight:600; color:var(--accent); margin-bottom:4px;">Agente DataWave · Logcomex AI (Fallback Local) · Resposta em ' + duracaoFallback + '</div>';
+      const badgeHtml = '<div style="font-size:11px; font-weight:600; color:#ef4444; margin-bottom:4px;">Agente Logcomex Não Funcional (Modo de Contingência Local) · Resposta em ' + duracaoFallback + '</div>';
       appendChatMessageHtml('agent', badgeHtml + agentReply(text));
     }, 450);
     return false;

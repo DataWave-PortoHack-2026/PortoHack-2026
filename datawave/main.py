@@ -543,18 +543,18 @@ def obter_status_agente_logcomex() -> Dict[str, Any]:
         modo = "ONLINE_MCP"
         status = "ONLINE"
     else:
-        modo = "MOTOR_AUTONOMO"
-        status = "ONLINE_LOCAL"
+        modo = "DESCONECTADO"
+        status = "OFFLINE"
 
     return {
         "status": status,
         "modo": modo,
         "agente_id": agent.agent_id,
-        "agente_nome": "Agente DataWave",
+        "agente_nome": "Agente DataWave · Logcomex AI",
         "empresa": "Data Wave",
         "mcp_endpoint": agent.base_url,
         "ferramenta": "chat_with_agent",
-        "token_expirado": False,
+        "token_expirado": not is_online,
         "saude_mcp": is_online,
         "skills": [
             "Análise Documental Aduaneira",
@@ -591,27 +591,36 @@ def responder_chat_agente(payload: Any, cenario_idx: int = 0) -> Dict[str, Any]:
         msg = payload.get("mensagem", "") if isinstance(payload, dict) else str(payload or "")
         idx = int(payload.get("cenario_idx", cenario_idx)) if isinstance(payload, dict) else cenario_idx
     agent = LogcomexMCPAgent()
-    modo = "ONLINE_MCP" if agent.check_health() else "MOTOR_AUTONOMO"
-    origem = "Agente DataWave · Logcomex AI (MCP)" if modo == "ONLINE_MCP" else "Agente DataWave · Motor Híbrido Autônomo"
 
     try:
         resposta_agente = agent.ask_agent(msg, skill="auditoria_aduaneira")
-        if resposta_agente and not resposta_agente.startswith("[Contingência"):
+        eh_mock = (
+            not resposta_agente
+            or "resposta mock do agente datawave" in resposta_agente.lower()
+            or resposta_agente.startswith("[Contingência")
+        )
+        if not eh_mock:
             duracao_s = round(time.perf_counter() - t_start, 3)
             return {
                 "resposta": resposta_agente,
-                "origem": origem,
-                "modo": modo,
+                "origem": "Agente Logcomex AI Funcional (mcp.logcomex.ai)",
+                "modo": "ONLINE_MCP",
                 "tempo_resposta_s": duracao_s,
                 "duracao_ms": int(duracao_s * 1000)
             }
     except Exception as exc:
         logger.warning(f"Exceção no chat com Agente Logcomex: {exc}")
+
     fallback = gerar_resposta_assistente(msg, idx)
     duracao_s = round(time.perf_counter() - t_start, 3)
+    aviso_desconectado = (
+        "[Agente Logcomex Não Funcional / Desconectado]\n"
+        "O agente remoto está offline ou sem autorização ativa no momento. "
+        "A consulta abaixo foi respondida pelo motor local de contingência.\n\n"
+    )
     return {
-        "resposta": fallback,
-        "origem": "Agente DataWave · Motor Híbrido Autônomo",
+        "resposta": aviso_desconectado + fallback,
+        "origem": "Agente Logcomex Não Funcional (Modo de Contingência Local)",
         "modo": "MOTOR_AUTONOMO",
         "tempo_resposta_s": duracao_s,
         "duracao_ms": int(duracao_s * 1000)

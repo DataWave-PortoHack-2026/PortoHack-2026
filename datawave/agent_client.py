@@ -303,12 +303,26 @@ class LogcomexMCPAgent(AgentClient):
             logger.debug(f"Falha ao obter token pelo auth_manager: {exc}")
             return None
 
+    _ultimo_sucesso_mcp: float = 0.0
+    _ultimo_check_health_timestamp: float = 0.0
+    _ultimo_check_health_resultado: bool = False
+
     def check_health(self) -> bool:
         """Verifica se o servidor MCP remoto está acessível e com credencial válida em tempo hábil."""
         if self.mcp_caller is not None:
             return True
+        agora = time.time()
+        # Se houve sucesso recente de chamada MCP nos últimos 3 minutos, a conexão está viva
+        if agora - LogcomexMCPAgent._ultimo_sucesso_mcp < 180.0:
+            return True
+        # Cache de 15 segundos para evitar sobrecarga de requisições
+        if agora - LogcomexMCPAgent._ultimo_check_health_timestamp < 15.0:
+            return LogcomexMCPAgent._ultimo_check_health_resultado
+
         token = self._obter_token_acesso()
         if not token:
+            LogcomexMCPAgent._ultimo_check_health_resultado = False
+            LogcomexMCPAgent._ultimo_check_health_timestamp = agora
             return False
         try:
             import urllib.request
@@ -329,10 +343,36 @@ class LogcomexMCPAgent(AgentClient):
                     "Authorization": f"Bearer {token}"
                 }
             )
-            with urllib.request.urlopen(req, timeout=2.5) as resp:
+            with urllib.request.urlopen(req, timeout=10.0) as resp:
                 corpo = json.loads(resp.read().decode("utf-8"))
-                return resp.status == 200 and "error" not in corpo
+                ok = resp.status == 200 and "error" not in corpo
+                LogcomexMCPAgent._ultimo_check_health_resultado = ok
+                LogcomexMCPAgent._ultimo_check_health_timestamp = agora
+                if ok:
+                    LogcomexMCPAgent._ultimo_sucesso_mcp = agora
+                return ok
+        except urllib.error.HTTPError as err:
+            if err.code == 401:
+                novo_token = self._obter_token_acesso(forcar_refresh=True)
+                if novo_token and novo_token != token:
+                    try:
+                        req.headers["Authorization"] = f"Bearer {novo_token}"
+                        with urllib.request.urlopen(req, timeout=10.0) as resp:
+                            corpo = json.loads(resp.read().decode("utf-8"))
+                            ok = resp.status == 200 and "error" not in corpo
+                            LogcomexMCPAgent._ultimo_check_health_resultado = ok
+                            LogcomexMCPAgent._ultimo_check_health_timestamp = agora
+                            if ok:
+                                LogcomexMCPAgent._ultimo_sucesso_mcp = agora
+                            return ok
+                    except Exception:
+                        pass
+            LogcomexMCPAgent._ultimo_check_health_resultado = False
+            LogcomexMCPAgent._ultimo_check_health_timestamp = agora
+            return False
         except Exception:
+            LogcomexMCPAgent._ultimo_check_health_resultado = False
+            LogcomexMCPAgent._ultimo_check_health_timestamp = agora
             return False
 
     def _invocar_ferramenta(self, tool_name: str, arguments: Dict[str, Any], _tentativa_retry: bool = False) -> str:
@@ -376,7 +416,12 @@ class LogcomexMCPAgent(AgentClient):
                 resultado = corpo.get("result", {})
                 conteudo = resultado.get("content", [])
                 textos = [item.get("text", "") for item in conteudo if isinstance(item, dict) and item.get("type") == "text"]
-                return "\n".join(textos) if textos else str(resultado)
+                texto_final = "\n".join(textos) if textos else str(resultado)
+                agora = time.time()
+                LogcomexMCPAgent._ultimo_sucesso_mcp = agora
+                LogcomexMCPAgent._ultimo_check_health_resultado = True
+                LogcomexMCPAgent._ultimo_check_health_timestamp = agora
+                return texto_final
         except urllib.error.HTTPError as http_err:
             if http_err.code == 401 and not _tentativa_retry:
                 logger.info("HTTP 401 retornado pelo MCP Logcomex. Tentando renovação automática de token...")
@@ -427,9 +472,11 @@ class LogcomexMCPAgent(AgentClient):
                     if any(term in s_lower for term in ["processando", "processing", "pendente", "aguardando", "tente novamente", "running", "queued", "decorridos", "cancel_task"]):
                         continue
                     if len(status_res.strip()) > 20:
+                        LogcomexMCPAgent._ultimo_sucesso_mcp = time.time()
                         return status_res
                 return self._fallback.ask_agent(message, attachments, conversation_id)
 
+            LogcomexMCPAgent._ultimo_sucesso_mcp = time.time()
             return resposta
         except Exception as exc:
             logger.info(f"Conexão MCP remota indisponível ({exc}). Acionando motor autônomo com fixtures de alta precisão.")
