@@ -154,6 +154,30 @@ class TestReportAndPipeline(unittest.TestCase):
         correcoes = resultado["plano_correcoes"]["correcoes"]
         self.assertTrue(any(c["categoria"] == "Documental" for c in correcoes))
 
+    def test_parecer_com_agente_checksum_e_sem_json_cru(self):
+        """Assegura que o parecer via agente possui checksum SHA-256 e não vaza JSON cru."""
+        from datawave.pipeline import executar_pipeline_datawave
+
+        payload = {
+            "ncm": "3808.93.29",
+            "descricao": "Defensivos Agrícolas",
+            "valor_lote_usd": 128500.0,
+            "qtd_conteineres": 1,
+            "porto_descarga": "Santos"
+        }
+        resultado = executar_pipeline_datawave(payload, usar_agente=True, usar_mcp=True)
+        parecer = resultado["parecer"]
+
+        self.assertTrue(parecer["valido"])
+        self.assertEqual(parecer["inconsistencias"], [])
+        self.assertIsNotNone(parecer.get("checksum_sha256"))
+        self.assertEqual(len(parecer["checksum_sha256"]), 64)
+        self.assertIn("PARECER TÉCNICO ADUANEIRO", parecer["texto"])
+        self.assertIn("1. IDENTIFICAÇÃO DA OPERAÇÃO", parecer["texto"])
+        self.assertIn("5. PARECER PRESCRITIVO E INSTRUÇÃO DE TRÂNSITO", parecer["texto"])
+        self.assertFalse(parecer["texto"].strip().startswith("{"))
+        self.assertNotIn('{"sugestoes"', parecer["texto"])
+
 
 if __name__ == "__main__":
     unittest.main()

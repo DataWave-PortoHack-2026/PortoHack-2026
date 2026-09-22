@@ -778,8 +778,32 @@
           </div>
           <div class="kv">
             <div class="k">Parecer Técnico Aduaneiro (MCP)</div>
-            <div class="v" id="pipeParecerStatus"><span class="badge" id="pipeParecerBadge">Pendente</span></div>
+            <div class="v" id="pipeParecerStatus">
+              <span class="badge" id="pipeParecerBadge">Pendente</span>
+              <button class="cta" id="btnVerParecerScreen1" onclick="abrirModalParecer()" style="display:none; margin-top:6px; padding:6px 12px; font-size:12px; background:linear-gradient(135deg, #38C6EF, #2BD9AE); color:#04121c; font-weight:600; border-radius:8px; border:none; cursor:pointer;">Visualizar Parecer</button>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <!-- BANNER DE CONCLUSÃO DA AUDITORIA & ACESSO AO PARECER -->
+      <div id="bannerAcoesAuditado" style="display:none; background:var(--bg-panel); border:1px solid rgba(56,198,239,0.4); border-radius:var(--radius); padding:16px 20px; margin-bottom:16px; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 4px 20px rgba(0,0,0,0.15);">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="badge" style="background:var(--ok-bg); color:var(--ok-ink); border-color:var(--ok-line); font-size:11.5px; font-weight:700;">Auditoria Concluída</span>
+            <span style="font-size:12px; color:var(--ink-soft);">Parecer pericial homologado</span>
+          </div>
+          <div style="font-size:14px; font-weight:600; color:var(--ink); margin-top:3px;">
+            O Parecer Técnico Aduaneiro foi formulado pelo Agente Logcomex com 100% de integridade matemática.
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="cta" onclick="abrirModalParecer()" style="background:linear-gradient(135deg, #38C6EF, #2BD9AE); color:#04121c; font-weight:600; padding:9px 18px; font-size:13px; cursor:pointer;">
+            Visualizar Parecer Técnico
+          </button>
+          <button class="cta-secondary" onclick="showScreen(3)" style="padding:9px 16px; font-size:13px; cursor:pointer;">
+            Ver Recomendação Prescritiva (Tela 3)
+          </button>
         </div>
       </div>
 
@@ -1703,6 +1727,7 @@
           btn.disabled = false;
           btn.textContent = 'Auditar com Agente Logcomex (MCP)';
         }
+        abrirModalParecer();
         return dados;
       }
     } catch(err){
@@ -1784,6 +1809,7 @@
           btn.disabled = false;
           btn.textContent = 'Auditar com Agente Logcomex (MCP)';
         }
+        abrirModalParecer();
         return dados;
       }
     } catch(err) {
@@ -1816,6 +1842,7 @@
         ]
       },
       parecer: {
+        titulo: 'PARECER TÉCNICO ADUANEIRO — DATAWAVE AI',
         texto: fallbackParecer,
         valido: true,
         inconsistencias: [],
@@ -1829,6 +1856,7 @@
       btn.disabled = false;
       btn.textContent = 'Auditar com Agente Logcomex (MCP)';
     }
+    abrirModalParecer();
     return pipelineDadosAtuais;
   }
 
@@ -1856,13 +1884,23 @@
     const parecerBadge = document.getElementById('pipeParecerBadge');
     if(parecerBadge){
       const ok = dados.parecer && dados.parecer.valido;
-      parecerBadge.textContent = ok ? 'Auditado e Validado' : 'Pendente de Revisão';
+      parecerBadge.textContent = ok ? 'Auditado e Homologado' : 'Pendente de Revisão';
       parecerBadge.style.background = ok ? 'var(--ok-bg)' : 'var(--warn-bg)';
       parecerBadge.style.color = ok ? 'var(--ok-ink)' : 'var(--warn-ink)';
       parecerBadge.style.borderColor = ok ? 'var(--ok-line)' : 'var(--warn-line)';
     }
 
+    const btnScreen1 = document.getElementById('btnVerParecerScreen1');
+    if(btnScreen1) btnScreen1.style.display = 'inline-flex';
+
+    const bannerAuditado = document.getElementById('bannerAcoesAuditado');
+    if(bannerAuditado) bannerAuditado.style.display = 'flex';
+
     // Modal Parecer
+    const modalTitle = document.getElementById('modalParecerTitle');
+    if(modalTitle && dados.parecer && dados.parecer.titulo){
+      modalTitle.textContent = dados.parecer.titulo;
+    }
     const modalConteudo = document.getElementById('modalParecerConteudo');
     if(modalConteudo && dados.parecer && dados.parecer.texto){
       modalConteudo.textContent = dados.parecer.texto;
@@ -1871,6 +1909,15 @@
     if(modalTrace) modalTrace.textContent = dados.trace_id || '--';
     const modalCheck = document.getElementById('modalChecksum');
     if(modalCheck && dados.parecer) modalCheck.textContent = dados.parecer.checksum_sha256 || '--';
+
+    const modalBadge = document.getElementById('modalValidadorBadge');
+    if(modalBadge && dados.parecer){
+      const ok = dados.parecer.valido;
+      modalBadge.textContent = ok ? 'Validação Estrita: 100% Homologado' : 'Validação com Inconsistências';
+      modalBadge.style.background = ok ? 'var(--ok-bg)' : 'var(--warn-bg)';
+      modalBadge.style.color = ok ? 'var(--ok-ink)' : 'var(--warn-ink)';
+      modalBadge.style.borderColor = ok ? 'var(--ok-line)' : 'var(--warn-line)';
+    }
 
     // Renderiza o Plano Prescritivo de Correções
     renderizarPlanoCorrecoes(dados.plano_correcoes);

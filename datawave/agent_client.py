@@ -204,32 +204,40 @@ class FakeAgent(AgentClient):
             "timestamp": time.time()
         })
 
-        # 1. Tentar localizar fixture gravada
+        # 1. Tentar localizar fixture gravada com pontuação por especificidade e intenção
         if self.fixtures_dir.exists():
             # Priorizar o prompt original do usuário antes do schema JSON appended pelo ask_json
             prompt_user = message.split("\n\nResponda EXCLUSIVAMENTE")[0].strip()
             alvo_busca = prompt_user if prompt_user else message
+            alvo_lower = alvo_busca.lower()
 
-            for fix_file in sorted(self.fixtures_dir.glob("*.json")):
+            melhor_resp = None
+            maior_score = 0
+
+            for fix_file in self.fixtures_dir.glob("*.json"):
                 try:
                     fix_data = json.loads(fix_file.read_text(encoding="utf-8"))
                     kw = fix_data.get("match_keyword")
                     keywords = fix_data.get("match_keywords", [kw] if kw else [])
                     
-                    matched = False
                     for k in keywords:
                         if not k:
                             continue
-                        pattern = rf"(?:\b|_){re.escape(k.lower())}(?:\b|_)"
-                        if re.search(pattern, alvo_busca.lower()):
-                            matched = True
-                            break
-
-                    if matched:
-                        resp = fix_data["response"]
-                        return json.dumps(resp, ensure_ascii=False) if not isinstance(resp, str) else resp
+                        k_lower = k.lower()
+                        pattern = rf"(?:\b|_){re.escape(k_lower)}(?:\b|_)"
+                        if re.search(pattern, alvo_lower):
+                            score = len(k_lower)
+                            # Se for termo indicativo de relatório/parecer técnico, atribuir prioridade
+                            if any(term in k_lower for term in ["parecer", "justificativa", "fundamenta"]):
+                                score += 50
+                            if score > maior_score:
+                                maior_score = score
+                                melhor_resp = fix_data["response"]
                 except Exception:
                     continue
+
+            if melhor_resp is not None:
+                return json.dumps(melhor_resp, ensure_ascii=False) if not isinstance(melhor_resp, str) else melhor_resp
 
         # 2. Mock determinístico de resposta com base no conteúdo da mensagem
         msg_lower = message.lower()

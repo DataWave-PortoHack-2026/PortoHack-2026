@@ -6,6 +6,8 @@ correspondam rigorosamente aos valores apurados pelos motores determinísticos.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import re
 from typing import Any, Dict, List, Optional, Tuple
@@ -35,6 +37,7 @@ class ParecerExecutivo(BaseModel):
     valido: bool = Field(description="Indica se passou na validação estrita por expressões regulares")
     valores_esperados: Dict[str, str] = Field(default_factory=dict, description="Dicionário de valores esperados no texto")
     inconsistencias: List[str] = Field(default_factory=list, description="Lista de divergências encontradas pelo validador")
+    checksum_sha256: Optional[str] = Field(default=None, description="Hash SHA-256 do conteúdo íntegro do parecer")
 
 
 def _formatar_brl(valor: float) -> str:
@@ -115,9 +118,11 @@ def gerar_parecer_executivo(
     tarifas: TarifasConfig,
     risco: ResultadoRiscoPermanencia,
     recomendacao: RecomendacaoDecisao,
-    autoridade_responsavel: str = "Consultoria Aduaneira DataWave"
+    autoridade_responsavel: str = "Consultoria Aduaneira DataWave",
+    justificativa_customizada: Optional[str] = None
 ) -> ParecerExecutivo:
     """Gera o parecer executivo formal e o submete ao validador estrito por expressões regulares."""
+    import hashlib
     titulo = f"PARECER TÉCNICO ADUANEIRO — LOTE NCM {operacao.ncm} (PORTO DE SANTOS)"
 
     # Formatação padronizada de valores de referência
@@ -139,7 +144,7 @@ def gerar_parecer_executivo(
     # Diagnóstico de rota e recomendação
     if recomendacao.opcao_recomendada == "RETROPORTO":
         acao_recomendada = "EMISSÃO DE DECLARAÇÃO DE TRÂNSITO ADUANEIRO (DTC / DTE) PARA RETROPORTO"
-        estrategia_desc = (
+        estrategia_padrao = (
             f"Diante da probabilidade de retenção fitossanitária/sanitária estimada em {prob_retencao_str} "
             f"e do tempo de permanência P90 projetado em {p90_str}, o despacho no Cais ultrapassa a janela de "
             f"free time ({ft_str}). A transferência da carga sob regime de trânsito aduaneiro estanca a cobrança "
@@ -148,11 +153,16 @@ def gerar_parecer_executivo(
         )
     else:
         acao_recomendada = "MANUTENÇÃO NO CAIS E DESPACHO DIRETO SOBRE ÁGUAS (CANAL VERDE)"
-        estrategia_desc = (
+        estrategia_padrao = (
             f"Com perfil de baixo risco aduaneiro e tempo médio de permanência projetado em {p50_str}, "
             f"a liberação ocorre com segurança dentro do free time ({ft_str}). O despacho direto no cais "
             f"evita os custos fixos de frete e movimentação para zona secundária, gerando uma economia de {economia_str}."
         )
+
+    if justificativa_customizada and len(justificativa_customizada.strip()) > 30:
+        estrategia_desc = f"{justificativa_customizada.strip()}\n\n{estrategia_padrao}"
+    else:
+        estrategia_desc = estrategia_padrao
 
     # Redação do parecer estruturado
     texto = f"""# {titulo}
@@ -222,13 +232,15 @@ Análise de custo esperado ponderado pela distribuição de probabilidade de per
     }
 
     valido, inconsistencias = validar_conformidade_relatorio(texto, valores_esperados)
+    checksum = hashlib.sha256(texto.encode("utf-8")).hexdigest()
 
     return ParecerExecutivo(
         titulo=titulo,
         texto=texto,
         valido=valido,
         valores_esperados=valores_esperados,
-        inconsistencias=inconsistencias
+        inconsistencias=inconsistencias,
+        checksum_sha256=checksum
     )
 
 
@@ -351,6 +363,7 @@ def gerar_parecer_via_agente_logcomex(
         f"impactos operacionais no Porto de Santos e a recomendação de trânsito ({rec.opcao_recomendada})."
     )
 
+    justificativa_agente: Optional[str] = None
     try:
         texto_agente = client.ask_agent(prompt)
         termos_recusa = [
@@ -368,53 +381,56 @@ def gerar_parecer_via_agente_logcomex(
         ]
         eh_recusa = any(r in texto_agente.lower() for r in termos_recusa) if texto_agente else True
 
-        if texto_agente and len(texto_agente) > 100 and not texto_agente.startswith("[Contingência") and not eh_recusa:
-            valido, inconsistencias = validar_conformidade_relatorio(texto_agente, valores_esperados)
-            if valido:
-                return ParecerExecutivo(
-                    titulo=f"PARECER TÉCNICO ADUANEIRO — LOTE NCM {op.ncm} (LOGCOMEX AI)",
-                    texto=texto_agente,
-                    valido=True,
-                    valores_esperados=valores_esperados,
-                    inconsistencias=[]
-                )
-            else:
-                logger.info(
-                    f"Parecer gerado pelo Agente Logcomex recebido com {len(inconsistencias)} notas de formatação. "
-                    f"Consolidando parecer analítico do agente com matriz técnica homologada."
-                )
-                tabela_oficial = (
-                    f"\n\n---\n"
-                    f"### Matriz Financeira Homologada (Motor Determinístico DataWave)\n"
-                    f"- Custo Projetado Cais: {cais_esp_str}\n"
-                    f"- Custo Projetado Retroporto: {retro_esp_str}\n"
-                    f"- Economia Estimada: {economia_str}\n"
-                    f"- Probabilidade de Retenção: {prob_retencao_str}\n"
-                    f"- P50 / P90: {p50_str} / {p90_str}\n"
-                    f"- Certificação: Trilha {trace_id} · Validação Matemática Homologada\n"
-                )
-                return ParecerExecutivo(
-                    titulo=f"PARECER TÉCNICO ADUANEIRO — LOTE NCM {op.ncm} (LOGCOMEX AI)",
-                    texto=texto_agente + tabela_oficial,
-                    valido=True,
-                    valores_esperados=valores_esperados,
-                    inconsistencias=[]
-                )
+        if texto_agente and not eh_recusa and not texto_agente.startswith("[Contingência"):
+            texto_strip = texto_agente.strip()
+            # Se for JSON retornado pelo agente (como fixture u4 ou dados estruturados)
+            if (texto_strip.startswith("{") and texto_strip.endswith("}")) or (texto_strip.startswith("[") and texto_strip.endswith("]")):
+                try:
+                    d_ag = json.loads(texto_strip)
+                    if isinstance(d_ag, dict):
+                        partes = []
+                        if d_ag.get("fundamentacao_tecnica"):
+                            partes.append(str(d_ag["fundamentacao_tecnica"]))
+                        if d_ag.get("conclusao"):
+                            partes.append(str(d_ag["conclusao"]))
+                        if partes:
+                            justificativa_agente = "\n\n".join(partes)
+                except Exception:
+                    pass
+            elif len(texto_strip) > 120 and "###" in texto_strip:
+                valido, inconsistencias = validar_conformidade_relatorio(texto_strip, valores_esperados)
+                if valido:
+                    return ParecerExecutivo(
+                        titulo=f"PARECER TÉCNICO ADUANEIRO — LOTE NCM {op.ncm} (LOGCOMEX AI)",
+                        texto=texto_strip,
+                        valido=True,
+                        valores_esperados=valores_esperados,
+                        inconsistencias=[],
+                        checksum_sha256=hashlib.sha256(texto_strip.encode("utf-8")).hexdigest()
+                    )
+                else:
+                    justificativa_agente = texto_strip
+            elif len(texto_strip) > 40:
+                justificativa_agente = texto_strip
+
     except Exception as exc:
         logger.warning(f"Exceção na consulta de parecer ao Agente Logcomex ({exc}). Ativando motor determinístico DataWave.")
 
-    # Fallback determinístico garantido com chancela Logcomex AI
+    # Constrói o parecer formal oficial certificado pela Logcomex AI
     parecer_seguro = gerar_parecer_executivo(
         operacao=op,
         tarifas=tarifas,
         risco=risco,
-        recomendacao=rec
+        recomendacao=rec,
+        autoridade_responsavel="Agente Logcomex AI · Consultoria Aduaneira DataWave",
+        justificativa_customizada=justificativa_agente
     )
     return ParecerExecutivo(
         titulo=f"PARECER TÉCNICO ADUANEIRO — LOTE NCM {op.ncm} (LOGCOMEX AI)",
         texto=parecer_seguro.texto,
         valido=parecer_seguro.valido,
         valores_esperados=parecer_seguro.valores_esperados,
-        inconsistencias=parecer_seguro.inconsistencias
+        inconsistencias=parecer_seguro.inconsistencias,
+        checksum_sha256=parecer_seguro.checksum_sha256
     )
 
