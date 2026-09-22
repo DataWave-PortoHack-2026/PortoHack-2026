@@ -423,12 +423,11 @@ class LogcomexMCPAgent(AgentClient):
                         break
                     if not status_res:
                         continue
-                    if len(status_res.strip()) > 150:
-                        return status_res
                     s_lower = status_res.lower()
-                    if any(term in s_lower for term in ["processando", "processing", "pendente", "aguardando", "tente novamente", "running", "queued"]):
+                    if any(term in s_lower for term in ["processando", "processing", "pendente", "aguardando", "tente novamente", "running", "queued", "decorridos", "cancel_task"]):
                         continue
-                    return status_res
+                    if len(status_res.strip()) > 20:
+                        return status_res
                 return self._fallback.ask_agent(message, attachments, conversation_id)
 
             return resposta

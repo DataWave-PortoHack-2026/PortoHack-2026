@@ -75,24 +75,15 @@ def executar_pipeline_datawave(
     client = agent_client
     if usar_agente or agent_client is not None or usar_mcp:
         if client is None:
-            if usar_mcp:
-                try:
-                    mcp_ag = LogcomexMCPAgent()
-                    if mcp_ag.check_health():
-                        client = mcp_ag
-                        modo_agente = "ONLINE_MCP"
-                    else:
-                        client = FakeAgent()
-                        modo_agente = "MOTOR_AUTONOMO"
-                except Exception as exc:
-                    logger.info(f"MCP remoto indisponível ({exc}), ativando motor autônomo universal.")
-                    client = FakeAgent()
-                    modo_agente = "MOTOR_AUTONOMO"
-            else:
+            try:
+                client = LogcomexMCPAgent()
+                modo_agente = "ONLINE_MCP"
+            except Exception as exc:
+                logger.info(f"Falha ao instanciar Agente Logcomex MCP ({exc}). Ativando motor autônomo.")
                 client = FakeAgent()
                 modo_agente = "MOTOR_AUTONOMO"
         else:
-            modo_agente = "ONLINE_MCP" if (isinstance(client, LogcomexMCPAgent) and client.check_health()) else "MOTOR_AUTONOMO"
+            modo_agente = "ONLINE_MCP" if isinstance(client, LogcomexMCPAgent) else "MOTOR_AUTONOMO"
 
         # U2, U1, U3 - Execução concorrente das habilidades auxiliares via threads (Ponytail / stdlib)
         from concurrent.futures import ThreadPoolExecutor

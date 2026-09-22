@@ -492,7 +492,7 @@ try:
     def api_pipeline(payload: Dict[str, Any]):
         from datawave.pipeline import executar_pipeline_datawave
         usar_ag = payload.get("usar_agente", True)
-        usar_mcp = payload.get("usar_mcp", False)
+        usar_mcp = payload.get("usar_mcp", True)
         return executar_pipeline_datawave(payload, usar_agente=usar_ag, usar_mcp=usar_mcp)
 
     @app.get("/api/agente/status")

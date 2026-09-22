@@ -1691,18 +1691,26 @@
     }
   }
 
-  async function executarCicloProgressoEtapas(textoInicial){
+  function iniciarCicloProgressoDinamico(textoInicial){
     iniciarProgressoGlobal(15, textoInicial || 'Etapa 1/6 · Ingestão e Normalização Documental');
-    await new Promise(r => setTimeout(r, 700));
-    atualizarProgressoGlobal(35, 'Agente Logcomex MCP', 'Etapa 2/6 · Análise Documental Aduaneira (Skill 1)');
-    await new Promise(r => setTimeout(r, 750));
-    atualizarProgressoGlobal(55, 'Agente Logcomex MCP', 'Etapa 3/6 · Predição de Canais & Consulta Comexstat Santos (Skills 2 e 5)');
-    await new Promise(r => setTimeout(r, 750));
-    atualizarProgressoGlobal(75, 'Agente Logcomex MCP', 'Etapa 4/6 · Validação do Catálogo DUIMP & Regras Fiscais (Skills 3 e 4)');
-    await new Promise(r => setTimeout(r, 750));
-    atualizarProgressoGlobal(90, 'Motor Estocástico', 'Etapa 5/6 · Simulação Estocástica de Permanência e Matriz de Custos');
-    await new Promise(r => setTimeout(r, 800));
-    atualizarProgressoGlobal(100, 'Agente Logcomex MCP', 'Etapa 6/6 · Recomendação Prescritiva e Parecer Técnico Concluídos');
+    const t0 = performance.now();
+    const interval = setInterval(function(){
+      const decorrido = (performance.now() - t0) / 1000;
+      if(decorrido >= 1.5 && decorrido < 5.0){
+        atualizarProgressoGlobal(35, 'Agente Logcomex MCP', 'Etapa 2/6 · Análise Documental Aduaneira (Invocando Agente)');
+      } else if(decorrido >= 5.0 && decorrido < 12.0){
+        atualizarProgressoGlobal(55, 'Agente Logcomex MCP', 'Etapa 3/6 · Predição de Canais & Consulta Comexstat Santos (Processando)');
+      } else if(decorrido >= 12.0 && decorrido < 20.0){
+        atualizarProgressoGlobal(75, 'Agente Logcomex MCP', 'Etapa 4/6 · Validação do Catálogo DUIMP & Regras Fiscais (Processando)');
+      } else if(decorrido >= 20.0 && decorrido < 28.0){
+        atualizarProgressoGlobal(90, 'Motor Estocástico', 'Etapa 5/6 · Simulação Estocástica de Permanência e Matriz de Custos');
+      } else if(decorrido >= 28.0){
+        atualizarProgressoGlobal(95, 'Agente Logcomex MCP', 'Etapa 6/6 · Consolidando Recomendação Prescritiva e Parecer Técnico...');
+      }
+    }, 400);
+    return function pararCiclo(){
+      clearInterval(interval);
+    };
   }
 
   async function dispararAuditoriaPlanilha(csvTexto, nomeArquivo){
@@ -1713,31 +1721,33 @@
     }
 
     const tStart = performance.now();
-    const animacaoPromise = executarCicloProgressoEtapas('Etapa 1/6 · Ingestão e Normalização Documental da Planilha');
-    const fetchPromise = fetch('/api/despachante/processar-planilha', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        conteudo_csv: csvTexto,
-        nome_arquivo: nomeArquivo || 'planilha_operacional.csv',
-        usar_agente: true,
-        usar_mcp: true
-      })
-    });
+    const pararCiclo = iniciarCicloProgressoDinamico('Etapa 1/6 · Ingestão e Normalização Documental da Planilha');
 
     try {
-      const [_, resp] = await Promise.all([animacaoPromise, fetchPromise]);
+      const resp = await fetch('/api/despachante/processar-planilha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conteudo_csv: csvTexto,
+          nome_arquivo: nomeArquivo || 'planilha_operacional.csv',
+          usar_agente: true,
+          usar_mcp: true
+        })
+      });
+      pararCiclo();
       if(resp.ok){
         const dados = await resp.json();
         pipelineDadosAtuais = dados;
         const duracaoS = ((performance.now() - tStart) / 1000).toFixed(2) + 's';
 
+        atualizarProgressoGlobal(100, 'Agente Logcomex MCP', 'Etapa 6/6 · Recomendação Prescritiva e Parecer Técnico Concluídos');
         concluirProgressoGlobal('Processamento concluído em ' + duracaoS + ' · Agente Logcomex MCP', duracaoS);
         atualizarUIComPipeline(dados);
         aplicarTodosTimestamps();
         return dados;
       }
     } catch(err){
+      pararCiclo();
       console.warn('Falha na auditoria de planilha via API, recorrendo ao pipeline padrão.', err);
     } finally {
       if(btn){
@@ -1781,26 +1791,28 @@
     };
 
     const tStart = performance.now();
-    const animacaoPromise = executarCicloProgressoEtapas('Etapa 1/6 · Ingestão e Normalização Documental do Cenário');
-    const fetchPromise = fetch('/api/pipeline', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    const pararCiclo = iniciarCicloProgressoDinamico('Etapa 1/6 · Ingestão e Normalização Documental do Cenário');
 
     try {
-      const [_, resp] = await Promise.all([animacaoPromise, fetchPromise]);
+      const resp = await fetch('/api/pipeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      pararCiclo();
       if(resp.ok){
         const dados = await resp.json();
         pipelineDadosAtuais = dados;
         const duracaoS = ((performance.now() - tStart) / 1000).toFixed(2) + 's';
 
+        atualizarProgressoGlobal(100, 'Agente Logcomex MCP', 'Etapa 6/6 · Recomendação Prescritiva e Parecer Técnico Concluídos');
         concluirProgressoGlobal('Processamento concluído em ' + duracaoS + ' · Agente Logcomex MCP', duracaoS);
         atualizarUIComPipeline(dados);
         aplicarTodosTimestamps();
         return dados;
       }
     } catch(err) {
+      pararCiclo();
       console.warn('Falha na comunicação com a API do pipeline, aplicando contingência local.', err);
     }
 
