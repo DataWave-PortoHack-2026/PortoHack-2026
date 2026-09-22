@@ -37,8 +37,82 @@ ARQUIVO_CLIENT_INFO = Path(os.getenv("DATAWAVE_MCP_CLIENT_INFO_PATH", str(_HOME 
 MCP_TOKEN_ENDPOINT = "https://mcp.logcomex.ai/token"
 MCP_AUTHORIZE_ENDPOINT = "https://mcp.logcomex.ai/authorize"
 CALLBACK_PORT = 16951
-CALLBACK_URL = f"http://127.0.0.1:{CALLBACK_PORT}/oauth/callback"
-DEFAULT_CLIENT_ID = "mcp_lKiShqe9ol8QDDixQUBsuQ"
+
+# Resolucao de URL base para producao (Render) e desenvolvimento local
+RENDER_URL_PADRAO = "https://portohack-2026-datawave.onrender.com"
+BASE_URL = os.getenv("RENDER_EXTERNAL_URL") or os.getenv("DATAWAVE_BASE_URL") or RENDER_URL_PADRAO
+DEFAULT_CALLBACK_URL = f"{BASE_URL.rstrip('/')}/oauth/callback"
+LOCAL_CALLBACK_URL = f"http://127.0.0.1:{CALLBACK_PORT}/oauth/callback"
+CALLBACK_URL = DEFAULT_CALLBACK_URL
+
+DEFAULT_CLIENT_ID = "mcp_s7dB7UnpSPSDtIVZjIXB_g"
+
+CLIENTES_CONHECIDOS: Dict[str, str] = {
+    f"{RENDER_URL_PADRAO}/oauth/callback": "mcp_s7dB7UnpSPSDtIVZjIXB_g",
+    "http://127.0.0.1:16951/oauth/callback": "mcp_p2JAp_zesXbtLk8FpLXfzA",
+    "http://127.0.0.1:8000/oauth/callback": "mcp_s7dB7UnpSPSDtIVZjIXB_g",
+    "http://localhost:8000/oauth/callback": "mcp_s7dB7UnpSPSDtIVZjIXB_g",
+}
+
+# Controle de estados PKCE pendentes em memoria para verificacao estrita no callback
+_ESTADOS_OAUTH: Dict[str, Dict[str, Any]] = {}
+_ESTADOS_LOCK = threading.Lock()
+
+
+def salvar_estado_oauth(state: str, code_verifier: str, redirect_uri: str, client_id: str) -> None:
+    """Registra estado PKCE pendente para validacao segura no callback."""
+    with _ESTADOS_LOCK:
+        agora = time.time()
+        # Expira estados apos 10 minutos
+        expirados = [s for s, dados in _ESTADOS_OAUTH.items() if agora - dados.get("criado_em", 0) > 600]
+        for s in expirados:
+            _ESTADOS_OAUTH.pop(s, None)
+        _ESTADOS_OAUTH[state] = {
+            "code_verifier": code_verifier,
+            "redirect_uri": redirect_uri,
+            "client_id": client_id,
+            "criado_em": agora
+        }
+
+
+def consumir_estado_oauth(state: str) -> Optional[Dict[str, Any]]:
+    """Recupera e consome o estado PKCE pendente para troca de token (one-time use)."""
+    with _ESTADOS_LOCK:
+        return _ESTADOS_OAUTH.pop(state, None)
+
+
+def obter_client_id_para_redirect_uri(redirect_uri: str) -> str:
+    """Retorna o client_id apropriado para o redirect_uri ou registra dinamicamente via RFC 7591."""
+    if redirect_uri in CLIENTES_CONHECIDOS:
+        return CLIENTES_CONHECIDOS[redirect_uri]
+
+    # Tentativa de registro dinamico via RFC 7591
+    try:
+        corpo = json.dumps({
+            "redirect_uris": [redirect_uri],
+            "client_name": "DataWave PortoHack 2026",
+            "token_endpoint_auth_method": "none",
+            "grant_types": ["authorization_code", "refresh_token"],
+            "response_types": ["code"]
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            "https://mcp.logcomex.ai/register",
+            data=corpo,
+            headers={"Content-Type": "application/json", "User-Agent": "DataWave-Client/1.0"}
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            if resp.status in (200, 201):
+                resposta = json.loads(resp.read().decode("utf-8"))
+                cid = resposta.get("client_id")
+                if cid:
+                    CLIENTES_CONHECIDOS[redirect_uri] = cid
+                    logger.info(f"Client ID registrado dinamicamente para {redirect_uri}: {cid}")
+                    return cid
+    except Exception as exc:
+        logger.warning(f"Nao foi possivel registrar client_id dinamicamente para {redirect_uri}: {exc}")
+
+    return DEFAULT_CLIENT_ID
+
 
 
 def carregar_dados_tokens() -> Dict[str, Any]:
@@ -290,12 +364,16 @@ def obter_token_valido(forcar_refresh: bool = False) -> Tuple[Optional[str], Dic
     return acc, {"status": "VALIDO", "mensagem": "Token ativo e válido."}
 
 
-def gerar_url_autorizacao(client_id: Optional[str] = None) -> Tuple[str, str, str]:
+def gerar_url_autorizacao(
+    client_id: Optional[str] = None,
+    redirect_uri: Optional[str] = None
+) -> Tuple[str, str, str]:
     """Gera os parâmetros PKCE e a URL para o usuário autorizar o app no navegador.
 
     Retorna: (auth_url, code_verifier, state)
     """
-    cid = client_id or DEFAULT_CLIENT_ID
+    r_uri = redirect_uri or DEFAULT_CALLBACK_URL
+    cid = client_id or obter_client_id_para_redirect_uri(r_uri)
     code_verifier = secrets.token_urlsafe(64)
     digest = hashlib.sha256(code_verifier.encode("ascii")).digest()
     code_challenge = base64.urlsafe_b64encode(digest).decode("ascii").rstrip("=")
@@ -306,29 +384,32 @@ def gerar_url_autorizacao(client_id: Optional[str] = None) -> Tuple[str, str, st
         "client_id": cid,
         "code_challenge": code_challenge,
         "code_challenge_method": "S256",
-        "redirect_uri": CALLBACK_URL,
+        "redirect_uri": r_uri,
         "scope": "mcp:chat:agents mcp:chat:free offline_access",
         "state": state,
         "prompt": "consent",
         "resource": "https://mcp.logcomex.ai/"
     }
     auth_url = f"{MCP_AUTHORIZE_ENDPOINT}?{urllib.parse.urlencode(params)}"
+    salvar_estado_oauth(state, code_verifier, r_uri, cid)
     return auth_url, code_verifier, state
 
 
 def trocar_codigo_por_token(
     code: str,
     code_verifier: str,
-    client_id: Optional[str] = None
+    client_id: Optional[str] = None,
+    redirect_uri: Optional[str] = None
 ) -> Optional[Dict[str, Any]]:
     """Troca o authorization code pelo par de tokens OAuth (access_token + refresh_token)."""
-    cid = client_id or DEFAULT_CLIENT_ID
+    r_uri = redirect_uri or DEFAULT_CALLBACK_URL
+    cid = client_id or obter_client_id_para_redirect_uri(r_uri)
     corpo = urllib.parse.urlencode({
         "grant_type": "authorization_code",
         "code": code,
         "code_verifier": code_verifier,
         "client_id": cid,
-        "redirect_uri": CALLBACK_URL
+        "redirect_uri": r_uri
     }).encode("utf-8")
 
     req = urllib.request.Request(

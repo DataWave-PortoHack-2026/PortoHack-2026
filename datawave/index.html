@@ -2109,6 +2109,13 @@
     return null;
   }
 
+  // Escuta mensagem de autenticacao bem-sucedida vinda da popup OAuth
+  window.addEventListener('message', function(event) {
+    if (event.data && event.data.type === 'MCP_AUTH_SUCCESS') {
+      verificarStatusAgente();
+    }
+  });
+
   async function conectarOuReconectarMCP(event){
     if(event) event.stopPropagation();
     const btn = document.getElementById('btnConectarMCP');
@@ -2118,7 +2125,8 @@
       btn.disabled = true;
     }
     try {
-      const resp = await fetch('/api/agente/autenticar');
+      const origin = window.location.origin;
+      const resp = await fetch('/api/agente/autenticar?origin=' + encodeURIComponent(origin));
       if(resp.ok){
         const data = await resp.json();
         if(data.auth_url) {
@@ -2133,7 +2141,7 @@
             const st = await verificarStatusAgente();
             if(st && st.modo === 'ONLINE_MCP'){
               clearInterval(pollInterval);
-            } else if(tentativas >= 12){
+            } else if(tentativas >= 16){
               clearInterval(pollInterval);
               if(btn && !btn.disabled) return;
               verificarStatusAgente();
@@ -2168,11 +2176,11 @@
         body: JSON.stringify({ access_token: token.trim() })
       });
       const data = await resp.json();
-      if(resp.ok && data.status === 'ok'){
+      if(resp.ok && (data.status === 'ok' || data.status === 'SUCESSO')){
         alert('Token MCP configurado e salvo com sucesso! A conexão foi restabelecida.');
         await verificarStatusAgente();
       } else {
-        alert('Falha ao salvar token: ' + (data.error || 'Erro desconhecido'));
+        alert('Falha ao salvar token: ' + (data.mensagem || data.error || 'Erro desconhecido'));
       }
     } catch(e) {
       alert('Erro ao enviar token para o backend: ' + e.message);

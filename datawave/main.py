@@ -6,10 +6,13 @@ ao frontend executivo (index.html) e ao banco de dados SQLite.
 from __future__ import annotations
 
 import json
+import logging
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+
+logger = logging.getLogger("datawave.main")
 
 # Garante que o pacote datawave seja encontrado independentemente de onde o script for executado
 HERE = Path(__file__).resolve().parent
@@ -263,41 +266,166 @@ def gerar_resposta_assistente(mensagem: str, cenario_idx: int = 0) -> str:
     )
 
 
-def iniciar_autenticacao_agente_api() -> Dict[str, Any]:
-    """Dispara a abertura do navegador para autenticação OAuth com callback em 16951."""
-    import threading
-    from datawave.auth_manager import gerar_url_autorizacao, CALLBACK_PORT, DEFAULT_CLIENT_ID
-    from datawave.autenticar_mcp import OAuthCallbackHandler
-    from http.server import HTTPServer
-    import webbrowser
+def resolver_base_url(origin: Optional[str] = None, host_header: Optional[str] = None) -> str:
+    """Resolve a URL base publica para retorno do OAuth no Render ou ambiente local."""
+    if origin and (origin.startswith("http://") or origin.startswith("https://")):
+        return origin.rstrip("/")
+    if host_header:
+        proto = "https" if ("onrender.com" in host_header or (not host_header.startswith("127.0.0.1") and not host_header.startswith("localhost"))) else "http"
+        return f"{proto}://{host_header.rstrip('/')}"
+    from datawave.auth_manager import BASE_URL
+    return BASE_URL.rstrip("/")
 
-    auth_url, code_verifier, state = gerar_url_autorizacao(DEFAULT_CLIENT_ID)
-    OAuthCallbackHandler.code_verifier = code_verifier
-    OAuthCallbackHandler.expected_state = state
-    OAuthCallbackHandler.client_id = DEFAULT_CLIENT_ID
 
-    def _escutar_callback():
-        try:
-            srv = HTTPServer(("127.0.0.1", CALLBACK_PORT), OAuthCallbackHandler)
-            srv.timeout = 180
-            srv.handle_request()
-            srv.server_close()
-        except Exception as exc:
-            logger.debug(f"Servidor de callback finalizado: {exc}")
+def _gerar_html_callback(sucesso: bool, titulo: str, mensagem: str) -> str:
+    cor_titulo = "#10b981" if sucesso else "#ef4444"
+    script_notificacao = """
+    <script>
+        if (window.opener) {
+            try {
+                window.opener.postMessage({ type: 'MCP_AUTH_SUCCESS' }, '*');
+            } catch(e) {}
+            setTimeout(function() {
+                window.close();
+            }, 1800);
+        } else {
+            setTimeout(function() {
+                window.location.href = '/';
+            }, 2500);
+        }
+    </script>
+    """ if sucesso else ""
 
-    t = threading.Thread(target=_escutar_callback, daemon=True)
-    t.start()
+    return f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{titulo} · DataWave</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0b1329;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }}
+        .card {{
+            background: #111e38;
+            padding: 36px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            max-width: 520px;
+            text-align: center;
+            border: 1px solid #1e293b;
+        }}
+        h2 {{ margin-top: 0; color: {cor_titulo}; font-size: 20px; }}
+        p {{ color: #94a3b8; line-height: 1.6; font-size: 14px; }}
+        .btn {{
+            display: inline-block;
+            margin-top: 18px;
+            padding: 10px 22px;
+            background: #2bd9ae;
+            color: #0b1329;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 13px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>{titulo}</h2>
+        <p>{mensagem}</p>
+        <p style="font-size:12px; color:#64748b;">{"Retornando automaticamente ao painel..." if sucesso else "Clique abaixo para retornar ao DataWave."}</p>
+        <a href="/" class="btn">Retornar ao DataWave</a>
+    </div>
+    {script_notificacao}
+</body>
+</html>"""
 
-    try:
-        webbrowser.open(auth_url)
-    except Exception:
-        pass
+
+def processar_oauth_callback(
+    code: Optional[str],
+    state: Optional[str],
+    error: Optional[str] = None,
+    base_url: Optional[str] = None
+) -> Tuple[int, str]:
+    """Processa o retorno do provedor OAuth Logcomex, efetuando a troca do authorization code."""
+    from datawave.auth_manager import consumir_estado_oauth, trocar_codigo_por_token, DEFAULT_CALLBACK_URL
+
+    if error:
+        msg_erro = f"Autorização recusada pelo provedor: {error}"
+        return 400, _gerar_html_callback(False, "Erro na Autenticação", msg_erro)
+
+    if not code or not state:
+        return 400, _gerar_html_callback(False, "Parâmetros Inválidos", "Código de autorização ou parâmetro de estado ausentes.")
+
+    estado_armazenado = consumir_estado_oauth(state)
+    if not estado_armazenado:
+        logger.warning(f"Estado OAuth não encontrado ou expirado: {state}")
+        return 400, _gerar_html_callback(False, "Sessão Expirada", "A sessão de autorização expirou ou é inválida. Por favor, tente reconectar novamente.")
+
+    code_verifier = estado_armazenado["code_verifier"]
+    redirect_uri = estado_armazenado.get("redirect_uri") or (f"{base_url.rstrip('/')}/oauth/callback" if base_url else DEFAULT_CALLBACK_URL)
+    client_id = estado_armazenado.get("client_id")
+
+    resultado = trocar_codigo_por_token(
+        code=code,
+        code_verifier=code_verifier,
+        client_id=client_id,
+        redirect_uri=redirect_uri
+    )
+
+    if resultado and resultado.get("access_token"):
+        logger.info(f"Autenticação OAuth MCP concluída com sucesso para client_id {client_id}")
+        return 200, _gerar_html_callback(True, "Autenticação Concluída", "Autenticação com Logcomex AI realizada com sucesso! O token de acesso e a chave de renovação foram gravados.")
+    else:
+        logger.error(f"Falha ao trocar código por token para client_id {client_id}")
+        return 500, _gerar_html_callback(False, "Erro ao Obter Tokens", "Não foi possível trocar o código de autorização pelo token de acesso na Logcomex.")
+
+
+def iniciar_autenticacao_agente_api(origin: Optional[str] = None, host_header: Optional[str] = None) -> Dict[str, Any]:
+    """Prepara a URL de autorização OAuth 2.0 PKCE para conexão com o Agente Logcomex."""
+    from datawave.auth_manager import gerar_url_autorizacao, obter_client_id_para_redirect_uri
+    base_url = resolver_base_url(origin=origin, host_header=host_header)
+    redirect_uri = f"{base_url}/oauth/callback"
+    client_id = obter_client_id_para_redirect_uri(redirect_uri)
+    auth_url, code_verifier, state = gerar_url_autorizacao(client_id=client_id, redirect_uri=redirect_uri)
+
+    # Inicia listener secundário local apenas se estiver estritamente em loopback local
+    if "127.0.0.1" in base_url or "localhost" in base_url:
+        import threading
+        from datawave.auth_manager import CALLBACK_PORT
+        from datawave.autenticar_mcp import OAuthCallbackHandler
+        from http.server import HTTPServer
+
+        OAuthCallbackHandler.code_verifier = code_verifier
+        OAuthCallbackHandler.expected_state = state
+        OAuthCallbackHandler.client_id = client_id
+
+        def _escutar_callback():
+            try:
+                srv = HTTPServer(("127.0.0.1", CALLBACK_PORT), OAuthCallbackHandler)
+                srv.timeout = 180
+                srv.handle_request()
+                srv.server_close()
+            except Exception as exc:
+                logger.debug(f"Servidor de callback local finalizado: {exc}")
+
+        t = threading.Thread(target=_escutar_callback, daemon=True)
+        t.start()
 
     return {
         "status": "AGUARDANDO_AUTORIZACAO",
         "auth_url": auth_url,
-        "callback_porta": CALLBACK_PORT,
-        "mensagem": "Navegador iniciado para consentimento OAuth com Logcomex AI. O token será renovado automaticamente."
+        "redirect_uri": redirect_uri,
+        "client_id": client_id,
+        "mensagem": "URL de autorização gerada com sucesso. Conclua o consentimento na Logcomex."
     }
 
 
@@ -306,7 +434,7 @@ def iniciar_autenticacao_agente_api() -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 try:
-    from fastapi import FastAPI
+    from fastapi import FastAPI, Request
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import HTMLResponse, JSONResponse
 
@@ -327,6 +455,22 @@ try:
         if HTML_FILE.exists():
             return HTML_FILE.read_text(encoding="utf-8")
         return "<h1>Datawave Engine API</h1>"
+
+    @app.get("/oauth/callback", response_class=HTMLResponse)
+    def oauth_callback_endpoint(
+        request: Request,
+        code: Optional[str] = None,
+        state: Optional[str] = None,
+        error: Optional[str] = None
+    ):
+        base_url = str(request.base_url).rstrip("/")
+        status_code, html_content = processar_oauth_callback(
+            code=code,
+            state=state,
+            error=error,
+            base_url=base_url
+        )
+        return HTMLResponse(content=html_content, status_code=status_code)
 
     @app.get("/api/cenarios")
     def api_cenarios():
@@ -357,12 +501,18 @@ try:
 
     @app.get("/api/agente/autenticar")
     @app.post("/api/agente/autenticar")
-    def api_agente_autenticar():
-        return iniciar_autenticacao_agente_api()
+    def api_agente_autenticar(request: Request):
+        orig = request.query_params.get("origin") or request.headers.get("origin")
+        host_header = request.headers.get("host")
+        return iniciar_autenticacao_agente_api(origin=orig, host_header=host_header)
 
     @app.post("/api/agente/chat")
     def api_agente_chat(payload: Dict[str, Any]):
         return responder_chat_agente(payload)
+
+    @app.post("/api/agente/configurar-token")
+    def _fastapi_configurar_token(payload: Dict[str, Any]):
+        return api_configurar_token(payload)
 
     @app.post("/api/despachante/processar-planilha")
     def api_despachante_processar(payload: Dict[str, Any]):
@@ -371,6 +521,16 @@ try:
 except ImportError:
     # Fallback transparente quando FastAPI não estiver no ambiente
     app = None
+
+
+def api_configurar_token(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Cadastra token de acesso nas credenciais locais."""
+    token = payload.get("access_token") or payload.get("token")
+    if not token or not str(token).strip():
+        return {"status": "ERRO", "mensagem": "Token não fornecido."}
+    from datawave.auth_manager import salvar_tokens_renovados
+    salvar_tokens_renovados(access_token=str(token).strip(), expires_in=86400 * 365)
+    return {"status": "ok", "mensagem": "Token registrado com sucesso."}
 
 
 def obter_status_agente_logcomex() -> Dict[str, Any]:
@@ -495,6 +655,25 @@ def run_fallback_server(host: str = "127.0.0.1", port: int = 8000):
                 cenarios_raw = carregar_cenarios_mock()
                 calculados = [calcular_cenario_dinamico(c) for c in cenarios_raw]
                 self.wfile.write(json.dumps(calculados, ensure_ascii=False).encode("utf-8"))
+            elif self.path.startswith("/oauth/callback"):
+                import urllib.parse
+                parsed_url = urllib.parse.urlparse(self.path)
+                params = urllib.parse.parse_qs(parsed_url.query)
+                code = params.get("code", [None])[0]
+                state = params.get("state", [None])[0]
+                error = params.get("error", [None])[0]
+                host_header = self.headers.get("Host")
+                base_url = resolver_base_url(host_header=host_header)
+                status_code, html_content = processar_oauth_callback(
+                    code=code,
+                    state=state,
+                    error=error,
+                    base_url=base_url
+                )
+                self.send_response(status_code)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(html_content.encode("utf-8"))
             elif self.path.startswith("/api/agente/status"):
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -502,10 +681,15 @@ def run_fallback_server(host: str = "127.0.0.1", port: int = 8000):
                 st = obter_status_agente_logcomex()
                 self.wfile.write(json.dumps(st, ensure_ascii=False).encode("utf-8"))
             elif self.path.startswith("/api/agente/autenticar"):
+                import urllib.parse
+                parsed_url = urllib.parse.urlparse(self.path)
+                params = urllib.parse.parse_qs(parsed_url.query)
+                orig = params.get("origin", [None])[0]
+                host_header = self.headers.get("Host")
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.end_headers()
-                res = iniciar_autenticacao_agente_api()
+                res = iniciar_autenticacao_agente_api(origin=orig, host_header=host_header)
                 self.wfile.write(json.dumps(res, ensure_ascii=False).encode("utf-8"))
             else:
                 super().do_GET()
@@ -536,7 +720,9 @@ def run_fallback_server(host: str = "127.0.0.1", port: int = 8000):
                 self.end_headers()
                 self.wfile.write(json.dumps(resp, ensure_ascii=False).encode("utf-8"))
             elif self.path.startswith("/api/agente/autenticar"):
-                res = iniciar_autenticacao_agente_api()
+                orig = payload.get("origin")
+                host_header = self.headers.get("Host")
+                res = iniciar_autenticacao_agente_api(origin=orig, host_header=host_header)
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.end_headers()
@@ -556,6 +742,18 @@ def run_fallback_server(host: str = "127.0.0.1", port: int = 8000):
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.end_headers()
                 self.wfile.write(json.dumps(resultado, ensure_ascii=False).encode("utf-8"))
+            elif self.path.startswith("/api/agente/configurar-token"):
+                token = payload.get("access_token") or payload.get("token")
+                if token:
+                    from datawave.auth_manager import salvar_tokens_renovados
+                    salvar_tokens_renovados(access_token=str(token).strip(), expires_in=86400 * 365)
+                    res = {"status": "ok", "mensagem": "Token registrado com sucesso."}
+                else:
+                    res = {"status": "ERRO", "mensagem": "Token não fornecido."}
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps(res, ensure_ascii=False).encode("utf-8"))
             else:
                 self.send_response(404)
                 self.end_headers()
@@ -569,17 +767,15 @@ def run_fallback_server(host: str = "127.0.0.1", port: int = 8000):
 
 
 if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    host = os.environ.get("HOST", "0.0.0.0")
     if app is not None:
         try:
             import uvicorn
-            import os
-            port = int(os.environ.get("PORT", 8000))
-            uvicorn.run(
-                app,
-                host="0.0.0.0",
-                port=port
-            )
+            uvicorn.run(app, host=host, port=port)
         except ImportError:
-            run_fallback_server()
+            run_fallback_server(host=host, port=port)
     else:
-        run_fallback_server()
+        run_fallback_server(host=host, port=port)
+

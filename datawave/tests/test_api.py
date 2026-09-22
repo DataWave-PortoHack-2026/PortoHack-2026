@@ -186,6 +186,39 @@ class TestDatawaveAPI(unittest.TestCase):
         if httpd:
             httpd.shutdown()
 
+    def test_iniciar_autenticacao_com_render_origin(self):
+        """Valida se o endpoint de autenticacao utiliza o dominio publico do Render para redirect_uri."""
+        from datawave.main import iniciar_autenticacao_agente_api
+        res = iniciar_autenticacao_agente_api(origin="https://portohack-2026-datawave.onrender.com")
+        self.assertEqual(res["status"], "AGUARDANDO_AUTORIZACAO")
+        self.assertEqual(res["redirect_uri"], "https://portohack-2026-datawave.onrender.com/oauth/callback")
+        self.assertEqual(res["client_id"], "mcp_s7dB7UnpSPSDtIVZjIXB_g")
+        self.assertIn("https://mcp.logcomex.ai/authorize", res["auth_url"])
+        self.assertIn("redirect_uri=https%3A%2F%2Fportohack-2026-datawave.onrender.com%2Foauth%2Fcallback", res["auth_url"])
+
+    def test_processamento_oauth_callback_erros(self):
+        """Valida rejeicao de erros e estados invalidos na rota de callback."""
+        from datawave.main import processar_oauth_callback
+        status, html = processar_oauth_callback(code=None, state=None, error="access_denied")
+        self.assertEqual(status, 400)
+        self.assertIn("Erro na Autenticação", html)
+
+        status_invalido, html_invalido = processar_oauth_callback(code="code123", state="estado_inexistente")
+        self.assertEqual(status_invalido, 400)
+        self.assertIn("Sessão Expirada", html_invalido)
+
+    def test_configurar_token_api(self):
+        """Valida endpoint de configuracao de token sem poluir o arquivo real."""
+        from datawave.auth_manager import ARQUIVO_PROJETO_TOKENS
+        conteudo_original = ARQUIVO_PROJETO_TOKENS.read_text(encoding="utf-8") if ARQUIVO_PROJETO_TOKENS.exists() else None
+        try:
+            from datawave.main import api_configurar_token
+            res = api_configurar_token({"access_token": "token_teste_12345"})
+            self.assertEqual(res["status"], "ok")
+        finally:
+            if conteudo_original is not None:
+                ARQUIVO_PROJETO_TOKENS.write_text(conteudo_original, encoding="utf-8")
+
 
 if __name__ == "__main__":
     unittest.main()
