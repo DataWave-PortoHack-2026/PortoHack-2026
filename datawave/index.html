@@ -1650,23 +1650,6 @@
     }
   }
 
-  async function dispararAuditoriaPlanilha(csvTexto, nomeArquivo){
-    const btn = document.getElementById('btnExecutarPipeline');
-    if(btn){
-      btn.disabled = true;
-      btn.textContent = 'Auditando com Agente Logcomex (MCP)...';
-    }
-
-    iniciarProgressoGlobal(15, 'Etapa 1/6 · Ingestão e Normalização Documental da Planilha');
-
-    globalProgressoTimers.push(setTimeout(function(){
-      atualizarProgressoGlobal(35, 'Agente Logcomex MCP', 'Etapa 2/6 · Análise Documental Aduaneira (Skill 1)');
-    }, 2500));
-
-    globalProgressoTimers.push(setTimeout(function(){
-      atualizarProgressoGlobal(55, 'Agente Logcomex MCP', 'Etapa 3/6 · Predição de Canais & Consulta Comexstat Santos (Skills 2 e 5)');
-    }, 5500));
-
   async function executarCicloProgressoEtapas(textoInicial){
     iniciarProgressoGlobal(15, textoInicial || 'Etapa 1/6 · Ingestão e Normalização Documental');
     await new Promise(r => setTimeout(r, 700));
