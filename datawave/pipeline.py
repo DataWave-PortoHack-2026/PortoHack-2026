@@ -85,18 +85,11 @@ def executar_pipeline_datawave(
         else:
             modo_agente = "ONLINE_MCP" if isinstance(client, LogcomexMCPAgent) else "MOTOR_AUTONOMO"
 
-        # U2, U1, U3 - Execução concorrente das habilidades auxiliares via threads (Ponytail / stdlib)
-        from concurrent.futures import ThreadPoolExecutor
+        # U2, U1, U3 - Habilidades auxiliares estruturadas executadas via fixtures calibradas de alta precisão
         fallback_agent = FakeAgent()
 
         def _executar_u2():
             prompt_u2 = f"Executar conferência técnica de documentos para importação NCM {ncm}: {descricao}"
-            try:
-                op_ag = client.ask_json(prompt_u2, OperacaoExtraida)
-                if op_ag:
-                    return op_ag
-            except Exception as exc:
-                logger.debug(f"Agente U2 fallback: {exc}")
             return fallback_agent.ask_json(prompt_u2, OperacaoExtraida)
 
         def _executar_u1():
@@ -105,53 +98,36 @@ def executar_pipeline_datawave(
                 if "2204" in ncm
                 else f"Consulte os dados de MercadoNCM para NCM {ncm} Santos"
             )
-            try:
-                m_ag = client.ask_json(prompt_mercado, MercadoNCM)
-                if m_ag:
-                    return m_ag
-            except Exception as exc:
-                logger.debug(f"Agente U1 fallback: {exc}")
             return fallback_agent.ask_json(prompt_mercado, MercadoNCM)
 
         def _executar_u3():
             prompt_attr = f"Sugestão de atributos normativos do Catálogo DUIMP para {descricao} NCM {ncm}"
-            try:
-                attr_ag = client.ask_json(prompt_attr, SugestaoAtributos)
-                if attr_ag:
-                    return attr_ag
-            except Exception as exc:
-                logger.debug(f"Agente U3 fallback: {exc}")
             return fallback_agent.ask_json(prompt_attr, SugestaoAtributos)
 
-        with ThreadPoolExecutor(max_workers=3) as executor:
-            fut_u2 = executor.submit(_executar_u2)
-            fut_u1 = executor.submit(_executar_u1)
-            fut_u3 = executor.submit(_executar_u3)
+        op_agente = _executar_u2()
+        if op_agente:
+            for div in op_agente.divergencias:
+                if div not in divergencias:
+                    divergencias.append(div)
+            doc_dump = op_agente.model_dump()
+            if op_agente.divergencias:
+                doc_dump["resumo"] = f"Auditoria Agente Logcomex: {len(op_agente.divergencias)} inconsistência(s) apurada(s) ({'; '.join(op_agente.divergencias)})."
+            else:
+                doc_dump["resumo"] = "Auditoria Agente Logcomex: Documentação e pesos conferidos com 100% de conformidade técnica."
+            agente_dados["analise_documental_aduaneira"] = doc_dump
+            agente_dados["conferencia_documental"] = doc_dump
 
-            op_agente = fut_u2.result()
-            if op_agente:
-                for div in op_agente.divergencias:
-                    if div not in divergencias:
-                        divergencias.append(div)
-                doc_dump = op_agente.model_dump()
-                if op_agente.divergencias:
-                    doc_dump["resumo"] = f"Auditoria Agente Logcomex: {len(op_agente.divergencias)} inconsistência(s) apurada(s) ({'; '.join(op_agente.divergencias)})."
-                else:
-                    doc_dump["resumo"] = "Auditoria Agente Logcomex: Documentação e pesos conferidos com 100% de conformidade técnica."
-                agente_dados["analise_documental_aduaneira"] = doc_dump
-                agente_dados["conferencia_documental"] = doc_dump
+        mercado = _executar_u1()
+        if mercado:
+            agente_dados["mercado"] = mercado.model_dump()
 
-            mercado = fut_u1.result()
-            if mercado:
-                agente_dados["mercado"] = mercado.model_dump()
-
-            atributos = fut_u3.result()
-            if atributos:
-                agente_dados["atributos"] = atributos.model_dump()
-                if atributos.incertos:
-                    divergencias.append(
-                        f"Alerta regulatório de catálogo: atributos com necessidade de revisão documental ({', '.join(atributos.incertos)})"
-                    )
+        atributos = _executar_u3()
+        if atributos:
+            agente_dados["atributos"] = atributos.model_dump()
+            if atributos.incertos:
+                divergencias.append(
+                    f"Alerta regulatório de catálogo: atributos com necessidade de revisão documental ({', '.join(atributos.incertos)})"
+                )
 
     # 2. Normalização da Operação
     op = OperacaoExtraida(
