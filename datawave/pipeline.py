@@ -39,7 +39,7 @@ def executar_pipeline_datawave(
 ) -> Dict[str, Any]:
     """Executa o pipeline completo de decisão aduaneira e salva a auditoria em log."""
     if payload is None:
-        payload = {}
+        payload = kwargs.get("dados_input") or {}
     t_start = time.perf_counter()
     trace_id = f"DW-{uuid.uuid4().hex[:8].upper()}"
     timestamp_iso = datetime.now(timezone.utc).isoformat()
@@ -142,8 +142,13 @@ def executar_pipeline_datawave(
                 for div in op_agente.divergencias:
                     if div not in divergencias:
                         divergencias.append(div)
-                agente_dados["analise_documental_aduaneira"] = op_agente.model_dump()
-                agente_dados["conferencia_documental"] = op_agente.model_dump()
+                doc_dump = op_agente.model_dump()
+                if op_agente.divergencias:
+                    doc_dump["resumo"] = f"Auditoria Agente Logcomex: {len(op_agente.divergencias)} inconsistência(s) apurada(s) ({'; '.join(op_agente.divergencias)})."
+                else:
+                    doc_dump["resumo"] = "Auditoria Agente Logcomex: Documentação e pesos conferidos com 100% de conformidade técnica."
+                agente_dados["analise_documental_aduaneira"] = doc_dump
+                agente_dados["conferencia_documental"] = doc_dump
 
             mercado = fut_u1.result()
             if mercado:

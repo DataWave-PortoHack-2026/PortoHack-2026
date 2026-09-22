@@ -573,7 +573,7 @@ def processar_planilha_despachante_api(payload: Dict[str, Any]) -> Dict[str, Any
     usar_ag = payload.get("usar_agente", True)
     usar_mcp = payload.get("usar_mcp", True)
     return executar_pipeline_datawave(
-        dados_input=payload,
+        payload=payload,
         usar_agente=usar_ag,
         usar_mcp=usar_mcp,
         planilha_csv=csv_conteudo if csv_conteudo else None

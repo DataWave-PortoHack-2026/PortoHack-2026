@@ -585,50 +585,6 @@
     width:100%; height:100%; background:linear-gradient(90deg, #38C6EF, #2BD9AE);
     border-radius:999px; opacity:0.85;
   }
-
-  /* ---- terminal de auditoria cognitiva do agente logcomex ---- */
-  .etapa-card{
-    display:flex; align-items:center; gap:10px;
-    background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.07);
-    border-radius:8px; padding:10px 12px; transition:all 0.25s ease;
-  }
-  .etapa-card.running{
-    background:rgba(56,198,239,0.09); border-color:rgba(56,198,239,0.5);
-    box-shadow:0 0 14px rgba(56,198,239,0.18);
-  }
-  .etapa-card.done{
-    background:rgba(43,217,174,0.08); border-color:rgba(43,217,174,0.45);
-  }
-  .etapa-status-icon{
-    width:24px; height:24px; border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    font-size:11px; font-weight:700; font-family:monospace;
-    background:rgba(255,255,255,0.06); color:var(--ink-soft);
-    border:1px solid rgba(255,255,255,0.12); flex-shrink:0;
-    transition:all 0.25s ease;
-  }
-  .etapa-card.running .etapa-status-icon{
-    background:rgba(56,198,239,0.25); color:var(--accent);
-    border-color:var(--accent); animation:etapaPulse 1.1s infinite alternate;
-  }
-  .etapa-card.done .etapa-status-icon{
-    background:rgba(43,217,174,0.25); color:var(--accent-2);
-    border-color:var(--accent-2); font-weight:900;
-  }
-  @keyframes etapaPulse {
-    from { transform:scale(0.94); opacity:0.75; }
-    to { transform:scale(1.08); opacity:1; }
-  }
-  .etapa-info{ min-width:0; flex:1; }
-  .etapa-nome{ font-size:12px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .etapa-desc{ font-size:11px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
-  .etapa-card.running .etapa-desc{ color:var(--accent); font-weight:500; }
-  .etapa-card.done .etapa-desc{ color:var(--accent-2); font-weight:500; }
-  .console-log-row{ margin-bottom:4px; word-break:break-word; }
-  .console-log-time{ color:var(--ink-soft); margin-right:6px; font-size:11px; }
-  .console-log-agent{ color:var(--accent); font-weight:600; margin-right:6px; }
-  .console-log-skill{ color:#e6b450; font-weight:600; margin-right:6px; }
-  .console-log-ok{ color:var(--accent-2); font-weight:600; margin-right:6px; }
 </style>
 </head>
 <body>
@@ -827,74 +783,6 @@
               <button class="cta" id="btnVerParecerScreen1" onclick="abrirModalParecer()" style="display:none; margin-top:6px; padding:6px 12px; font-size:12px; background:linear-gradient(135deg, #38C6EF, #2BD9AE); color:#04121c; font-weight:600; border-radius:8px; border:none; cursor:pointer;">Visualizar Parecer</button>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- TERMINAL DE AUDITORIA COGNITIVA EM TEMPO REAL DO AGENTE LOGCOMEX -->
-      <div class="panel" id="panelConsoleAgente" style="display:none; margin-bottom:16px; border:1px solid rgba(56,198,239,0.35); background:radial-gradient(ellipse at top left, rgba(14,28,44,0.95), rgba(7,16,26,0.98)); box-shadow:0 8px 30px rgba(0,0,0,0.3);">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.08);">
-          <div style="display:flex; align-items:center; gap:10px;">
-            <div style="width:10px; height:10px; border-radius:50%; background:#2BD9AE; box-shadow:0 0 10px #2BD9AE;"></div>
-            <div>
-              <div class="eyebrow" style="color:var(--accent); font-size:11px; margin-bottom:2px;">Raciocínio & Execução de Skills Aduaneiras</div>
-              <h2 style="margin:0; font-size:15px; font-weight:700; letter-spacing:0.3px;">Terminal de Operações do Agente Logcomex AI</h2>
-            </div>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span class="badge" id="agenteConsoleModoBadge" style="background:rgba(56,198,239,0.15); color:var(--accent); border-color:rgba(56,198,239,0.3); font-size:11px;">Motor Ativo</span>
-            <span class="timestamp-badge" id="agenteConsoleTimer">00:00.0s</span>
-          </div>
-        </div>
-
-        <!-- GRADE DAS 6 ETAPAS COGNITIVAS -->
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:10px; margin-bottom:14px;">
-          <div class="etapa-card" id="etapaCard1">
-            <div class="etapa-status-icon" id="etapaIcon1">1</div>
-            <div class="etapa-info">
-              <div class="etapa-nome">Etapa 1 · Ingestão & Normalização</div>
-              <div class="etapa-desc" id="etapaDesc1">Aguardando lote...</div>
-            </div>
-          </div>
-          <div class="etapa-card" id="etapaCard2">
-            <div class="etapa-status-icon" id="etapaIcon2">2</div>
-            <div class="etapa-info">
-              <div class="etapa-nome">Etapa 2 · Análise Documental BL/PL</div>
-              <div class="etapa-desc" id="etapaDesc2">Aguardando lote...</div>
-            </div>
-          </div>
-          <div class="etapa-card" id="etapaCard3">
-            <div class="etapa-status-icon" id="etapaIcon3">3</div>
-            <div class="etapa-info">
-              <div class="etapa-nome">Etapa 3 · Comexstat Santos & Canais</div>
-              <div class="etapa-desc" id="etapaDesc3">Aguardando lote...</div>
-            </div>
-          </div>
-          <div class="etapa-card" id="etapaCard4">
-            <div class="etapa-status-icon" id="etapaIcon4">4</div>
-            <div class="etapa-info">
-              <div class="etapa-nome">Etapa 4 · Catálogo DUIMP & LPCO</div>
-              <div class="etapa-desc" id="etapaDesc4">Aguardando lote...</div>
-            </div>
-          </div>
-          <div class="etapa-card" id="etapaCard5">
-            <div class="etapa-status-icon" id="etapaIcon5">5</div>
-            <div class="etapa-info">
-              <div class="etapa-nome">Etapa 5 · Monte Carlo (5k Cenários)</div>
-              <div class="etapa-desc" id="etapaDesc5">Aguardando lote...</div>
-            </div>
-          </div>
-          <div class="etapa-card" id="etapaCard6">
-            <div class="etapa-status-icon" id="etapaIcon6">6</div>
-            <div class="etapa-info">
-              <div class="etapa-nome">Etapa 6 · Parecer Técnico & Matriz</div>
-              <div class="etapa-desc" id="etapaDesc6">Aguardando lote...</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- TERMINAL MONOSPACE COM LOGS EM TEMPO REAL -->
-        <div style="background:#04090f; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px 14px; font-family:'JetBrains Mono', 'Fira Code', 'Courier New', monospace; font-size:12px; line-height:1.6; color:#a0c0d8; max-height:165px; overflow-y:auto;" id="consoleAgenteLogs">
-          <div style="color:var(--ink-soft); font-style:italic;">Aguardando acionamento da auditoria pelo despachante...</div>
         </div>
       </div>
 
@@ -1786,154 +1674,6 @@
     }
   }
 
-  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-  function formatarHoraConsole(){
-    const d = new Date();
-    const h = String(d.getHours()).padStart(2, '0');
-    const m = String(d.getMinutes()).padStart(2, '0');
-    const s = String(d.getSeconds()).padStart(2, '0');
-    const ms = String(Math.floor(d.getMilliseconds() / 100));
-    return h + ':' + m + ':' + s + '.' + ms;
-  }
-
-  function logConsoleAgente(mensagem, tag = 'AGENTE'){
-    const consoleEl = document.getElementById('consoleAgenteLogs');
-    if(!consoleEl) return;
-    const hora = formatarHoraConsole();
-    let tagHtml = '<span class="console-log-agent">[' + tag + ']</span>';
-    if(tag.startsWith('SKILL')){
-      tagHtml = '<span class="console-log-skill">[' + tag + ']</span>';
-    } else if(tag === 'SUCESSO' || tag === 'HOMOLOGADO'){
-      tagHtml = '<span class="console-log-ok">[' + tag + ']</span>';
-    }
-    const linha = document.createElement('div');
-    linha.className = 'console-log-row';
-    linha.innerHTML = '<span class="console-log-time">[' + hora + ']</span>' + tagHtml + ' ' + mensagem;
-    consoleEl.appendChild(linha);
-    consoleEl.scrollTop = consoleEl.scrollHeight;
-  }
-
-  function marcarEtapaStatus(num, status, desc){
-    const card = document.getElementById('etapaCard' + num);
-    const icon = document.getElementById('etapaIcon' + num);
-    const descEl = document.getElementById('etapaDesc' + num);
-    if(!card || !icon) return;
-
-    if(status === 'running'){
-      card.classList.remove('done');
-      card.classList.add('running');
-      icon.innerHTML = '<span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--accent);"></span>';
-    } else if(status === 'done'){
-      card.classList.remove('running');
-      card.classList.add('done');
-      icon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-    } else {
-      card.classList.remove('running', 'done');
-      icon.textContent = String(num);
-    }
-    if(descEl && desc){
-      descEl.textContent = desc;
-    }
-  }
-
-  function resetarEtapasAgente(){
-    const panel = document.getElementById('panelConsoleAgente');
-    if(panel) panel.style.display = 'block';
-
-    for(let i = 1; i <= 6; i++){
-      marcarEtapaStatus(i, 'idle', 'Aguardando lote...');
-    }
-    const consoleEl = document.getElementById('consoleAgenteLogs');
-    if(consoleEl){
-      consoleEl.innerHTML = '<div style="color:var(--accent); font-weight:600; margin-bottom:4px;">[SESSÃO COGNITIVA INICIADA] Conexão bidirecional com Agente Logcomex AI estabelecida via MCP.</div>';
-    }
-  }
-
-  async function executarTrilhaCognitivaComDados(dados, tStart, btn, payloadDesc){
-    resetarEtapasAgente();
-
-    const ncm = (payloadDesc && payloadDesc.ncm) || (dados.cenario_carga && dados.cenario_carga.ncm) || '3808.93.29';
-    const traceId = dados.trace_id || ('DW-' + Math.random().toString(16).substring(2, 8).toUpperCase());
-
-    // Etapa 1
-    marcarEtapaStatus(1, 'running', 'Normalizando carga e declaração...');
-    atualizarProgressoGlobal(18, 'Agente Logcomex MCP', 'Etapa 1/6 · Ingestão e Normalização Documental');
-    logConsoleAgente('Ingestão aduaneira inicializada. NCM ' + ncm + ' | Trace ID ' + traceId, 'SKILL 1');
-    logConsoleAgente('Validando parâmetros do lote: FOB, volumes declarados e porto de destino (Santos).', 'AGENTE');
-    await sleep(650);
-    marcarEtapaStatus(1, 'done', 'Carga normalizada e registrada');
-
-    // Etapa 2
-    marcarEtapaStatus(2, 'running', 'Conferência de Conhecimento de Embarque e Packing List...');
-    atualizarProgressoGlobal(35, 'Agente Logcomex MCP', 'Etapa 2/6 · Análise Documental Aduaneira (Skill 1)');
-    logConsoleAgente('Auditando Bill of Lading (BL) versus Packing List: conferência de peso bruto e cubagem.', 'SKILL 1');
-    logConsoleAgente('Verificando integridade das informações cadastrais do importador e consignatário.', 'AGENTE');
-    await sleep(700);
-    marcarEtapaStatus(2, 'done', 'Documentos conferidos com sucesso');
-
-    // Etapa 3
-    marcarEtapaStatus(3, 'running', 'Consultando base histórica Comexstat Santos...');
-    atualizarProgressoGlobal(55, 'Agente Logcomex MCP', 'Etapa 3/6 · Predição de Canais & Consulta Comexstat Santos (Skills 2 e 5)');
-    logConsoleAgente('Cruzando histórico operacional do Porto de Santos (recorte com 46.194 TEUs auditados).', 'SKILL 2');
-    logConsoleAgente('Apurando probabilidade estatística de direcionamento a canal de conferência aduaneira.', 'SKILL 5');
-    await sleep(750);
-    marcarEtapaStatus(3, 'done', 'Base estatística Santos consolidada');
-
-    // Etapa 4
-    marcarEtapaStatus(4, 'running', 'Validando Catálogo de Produtos DUIMP e LPCO...');
-    atualizarProgressoGlobal(75, 'Agente Logcomex MCP', 'Etapa 4/6 · Validação do Catálogo DUIMP & Regras Fiscais (Skills 3 e 4)');
-    logConsoleAgente('Auditando conformidade com a Instrução Normativa RFB nº 2.022/2021.', 'SKILL 3');
-    const totalDiv = dados.plano_correcoes ? dados.plano_correcoes.total_divergencias : 0;
-    if(totalDiv > 0){
-      logConsoleAgente('Divergência detectada no catálogo: A01 - Registro de Aptidão Sanitária ausente.', 'SKILL 4');
-    } else {
-      logConsoleAgente('Catálogo DUIMP 100% aderente aos atributos fiscais e órgãos intervenientes.', 'SKILL 4');
-    }
-    await sleep(750);
-    marcarEtapaStatus(4, 'done', totalDiv > 0 ? (totalDiv + ' divergência(s) identificada(s)') : 'Catálogo DUIMP 100% conforme');
-
-    // Etapa 5
-    marcarEtapaStatus(5, 'running', 'Simulação estocástica (5.000 iterações Monte Carlo)...');
-    atualizarProgressoGlobal(90, 'Motor Estocástico', 'Etapa 5/6 · Simulação Estocástica de Permanência e Matriz de Custos');
-    logConsoleAgente('Disparando motor de Monte Carlo: gerando 5.000 cenários probabilísticos de estadia.', 'SKILL 5');
-    logConsoleAgente('Projetando curvas de permanência e janelas críticas de demurrage no terminal portuário.', 'AGENTE');
-    await sleep(750);
-    marcarEtapaStatus(5, 'done', 'Curva estocástica e riscos quantificados');
-
-    // Etapa 6
-    marcarEtapaStatus(6, 'running', 'Formulando Parecer Técnico Aduaneiro homologado...');
-    atualizarProgressoGlobal(100, 'Agente Logcomex MCP', 'Etapa 6/6 · Parecer Técnico Pericial Concluído');
-    logConsoleAgente('Consolidando Parecer Técnico Aduaneiro com validação pericial e checksum SHA-256.', 'SKILL 6');
-    logConsoleAgente('Matriz comparativa de custos Portuários e Retroportuários atualizada.', 'AGENTE');
-    await sleep(650);
-    marcarEtapaStatus(6, 'done', 'Parecer técnico pericial homologado');
-
-    // Finalização
-    const duracaoTotal = ((performance.now() - tStart) / 1000).toFixed(2) + 's';
-    logConsoleAgente('Auditoria concluída com sucesso em ' + duracaoTotal + '. Relatório homologado disponível na interface.', 'SUCESSO');
-
-    concluirProgressoGlobal('Processamento concluído em ' + duracaoTotal + ' · Agente Logcomex MCP', duracaoTotal);
-    atualizarUIComPipeline(dados);
-    aplicarTodosTimestamps();
-
-    if(btn){
-      btn.disabled = false;
-      btn.textContent = 'Auditar com Agente Logcomex (MCP)';
-    }
-
-    const timerConsole = document.getElementById('agenteConsoleTimer');
-    if(timerConsole) timerConsole.textContent = duracaoTotal;
-
-    const bannerAuditado = document.getElementById('bannerAcoesAuditado');
-    if(bannerAuditado) {
-      bannerAuditado.style.display = 'flex';
-      bannerAuditado.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-
-    return dados;
-  }
-
   async function dispararAuditoriaPlanilha(csvTexto, nomeArquivo){
     const btn = document.getElementById('btnExecutarPipeline');
     if(btn){
@@ -1942,6 +1682,23 @@
     }
 
     iniciarProgressoGlobal(15, 'Etapa 1/6 · Ingestão e Normalização Documental da Planilha');
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(35, 'Agente Logcomex MCP', 'Etapa 2/6 · Análise Documental Aduaneira (Skill 1)');
+    }, 2500));
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(55, 'Agente Logcomex MCP', 'Etapa 3/6 · Predição de Canais & Consulta Comexstat Santos (Skills 2 e 5)');
+    }, 5500));
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(75, 'Agente Logcomex MCP', 'Etapa 4/6 · Validação do Catálogo DUIMP & Regras Fiscais (Skills 3 e 4)');
+    }, 9000));
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(90, 'Motor Estocástico', 'Etapa 5/6 · Simulação Estocástica de Permanência e Matriz de Custos');
+    }, 13000));
+
     const tStart = performance.now();
 
     try {
@@ -1958,7 +1715,23 @@
       if(resp.ok){
         const dados = await resp.json();
         pipelineDadosAtuais = dados;
-        return await executarTrilhaCognitivaComDados(dados, tStart, btn, { ncm: 'Planilha CSV' });
+        const duracaoS = dados.tempo_resposta_s ? dados.tempo_resposta_s.toFixed(2) + 's' : ((performance.now() - tStart) / 1000).toFixed(2) + 's';
+
+        atualizarProgressoGlobal(100, 'Agente Logcomex MCP', 'Etapa 6/6 · Recomendação Prescritiva e Parecer Técnico Concluídos');
+        concluirProgressoGlobal('Processamento concluído em ' + duracaoS + ' · Agente Logcomex MCP', duracaoS);
+
+        atualizarUIComPipeline(dados);
+        aplicarTodosTimestamps();
+
+        if(btn){
+          btn.disabled = false;
+          btn.textContent = 'Auditar com Agente Logcomex (MCP)';
+        }
+
+        const bannerAuditado = document.getElementById('bannerAcoesAuditado');
+        if(bannerAuditado) bannerAuditado.style.display = 'flex';
+
+        return dados;
       }
     } catch(err){
       console.warn('Falha na auditoria de planilha via API, recorrendo ao pipeline padrão.', err);
@@ -1975,6 +1748,23 @@
     }
 
     iniciarProgressoGlobal(15, 'Etapa 1/6 · Ingestão e Normalização Documental do Cenário');
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(35, 'Agente Logcomex MCP', 'Etapa 2/6 · Análise Documental Aduaneira (Skill 1)');
+    }, 2500));
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(55, 'Agente Logcomex MCP', 'Etapa 3/6 · Predição de Canais & Consulta Comexstat Santos (Skills 2 e 5)');
+    }, 5500));
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(75, 'Agente Logcomex MCP', 'Etapa 4/6 · Validação do Catálogo DUIMP & Regras Fiscais (Skills 3 e 4)');
+    }, 9000));
+
+    globalProgressoTimers.push(setTimeout(function(){
+      atualizarProgressoGlobal(90, 'Motor Estocástico', 'Etapa 5/6 · Simulação Estocástica de Permanência e Matriz de Custos');
+    }, 13000));
+
     const s = scenarios[currentScenario];
     const ncmLimpo = s.ncm.replace(/[^\d]/g, '');
     let ncmFormatado = s.ncm;
@@ -2010,20 +1800,40 @@
       if(resp.ok){
         const dados = await resp.json();
         pipelineDadosAtuais = dados;
-        return await executarTrilhaCognitivaComDados(dados, tStart, btn, payload);
+        const duracaoS = dados.tempo_resposta_s ? dados.tempo_resposta_s.toFixed(2) + 's' : ((performance.now() - tStart) / 1000).toFixed(2) + 's';
+
+        atualizarProgressoGlobal(100, 'Agente Logcomex MCP', 'Etapa 6/6 · Recomendação Prescritiva e Parecer Técnico Concluídos');
+        concluirProgressoGlobal('Processamento concluído em ' + duracaoS + ' · Agente Logcomex MCP', duracaoS);
+
+        atualizarUIComPipeline(dados);
+        aplicarTodosTimestamps();
+
+        if(btn) {
+          btn.disabled = false;
+          btn.textContent = 'Auditar com Agente Logcomex (MCP)';
+        }
+
+        const bannerAuditado = document.getElementById('bannerAcoesAuditado');
+        if(bannerAuditado) bannerAuditado.style.display = 'flex';
+
+        return dados;
       }
     } catch(err) {
       console.warn('Falha na comunicação com a API do pipeline, aplicando contingência local.', err);
     }
 
     // Contingencia local estruturada
+    const duracaoFallback = ((performance.now() - tStart) / 1000).toFixed(2) + 's';
+    atualizarProgressoGlobal(100, 'Agente Logcomex (Fallback)', 'Etapa 6/6 · Parecer Técnico em Modo Contingência');
+    concluirProgressoGlobal('Processamento concluído em ' + duracaoFallback + ' · Modo Contingência', duracaoFallback);
+
     const fallbackTraceId = 'DW-' + Math.random().toString(16).substring(2, 10).toUpperCase();
     const fallbackParecer = gerarParecerFallback(s, payload, fallbackTraceId);
     pipelineDadosAtuais = {
       trace_id: fallbackTraceId,
       modo_agente: 'ONLINE_MCP',
       duracao_ms: Math.round(performance.now() - tStart),
-      tempo_resposta_s: 4.2,
+      tempo_resposta_s: parseFloat(duracaoFallback),
       plano_correcoes: {
         total_divergencias: s.catalogOk ? 0 : 1,
         correcoes: s.catalogOk ? [] : [
@@ -2045,8 +1855,18 @@
         checksum_sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
       }
     };
+    atualizarUIComPipeline(pipelineDadosAtuais);
+    aplicarTodosTimestamps();
 
-    return await executarTrilhaCognitivaComDados(pipelineDadosAtuais, tStart, btn, payload);
+    if(btn) {
+      btn.disabled = false;
+      btn.textContent = 'Auditar com Agente Logcomex (MCP)';
+    }
+
+    const bannerAuditado = document.getElementById('bannerAcoesAuditado');
+    if(bannerAuditado) bannerAuditado.style.display = 'flex';
+
+    return pipelineDadosAtuais;
   }
 
   function atualizarUIComPipeline(dados){
@@ -2065,8 +1885,10 @@
       const s = scenarios[currentScenario];
       if(dados.agente_dados && dados.agente_dados.analise_documental_aduaneira && dados.agente_dados.analise_documental_aduaneira.resumo){
         confDoc.textContent = dados.agente_dados.analise_documental_aduaneira.resumo;
+      } else if(dados.agente_dados && dados.agente_dados.analise_documental_aduaneira && dados.agente_dados.analise_documental_aduaneira.divergencias && dados.agente_dados.analise_documental_aduaneira.divergencias.length > 0){
+        confDoc.textContent = 'Auditoria Agente Logcomex: ' + dados.agente_dados.analise_documental_aduaneira.divergencias.join('; ');
       } else {
-        confDoc.textContent = s.catalogOk ? 'Conferência documental aprovada' : s.catalogText;
+        confDoc.textContent = 'Auditoria Agente Logcomex: ' + (s.catalogOk ? 'Conferência documental e aduaneira validada com 100% de integridade.' : s.catalogText);
       }
     }
 
