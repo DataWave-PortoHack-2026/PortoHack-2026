@@ -106,14 +106,16 @@ def executar_pipeline_datawave(
 
         op_agente = _executar_u2()
         if op_agente:
-            for div in op_agente.divergencias:
-                if div not in divergencias:
-                    divergencias.append(div)
+            # Força os dados reais (do CSV) sobreporem os do mock (fixture)
+            op_agente.ncm = ncm
+            op_agente.descricao = descricao
+            op_agente.divergencias = divergencias.copy()
+
             doc_dump = op_agente.model_dump()
             if op_agente.divergencias:
                 doc_dump["resumo"] = f"Auditoria Agente Logcomex: {len(op_agente.divergencias)} inconsistência(s) apurada(s) ({'; '.join(op_agente.divergencias)})."
             else:
-                doc_dump["resumo"] = "Auditoria Agente Logcomex: Documentação e pesos conferidos com 100% de conformidade técnica."
+                doc_dump["resumo"] = "Auditoria Agente Logcomex: Documentação e pesos conferidos com 100% de conformidade."
             agente_dados["analise_documental_aduaneira"] = doc_dump
             agente_dados["conferencia_documental"] = doc_dump
 

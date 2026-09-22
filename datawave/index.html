@@ -2139,15 +2139,16 @@
 
       const elRoute = document.getElementById('v-route');
       if(elRoute){
-        const desc = dados.operacao.descricao ? (' · ' + dados.operacao.descricao) : '';
+        const origem = dados.operacao.origem || 'Exterior';
+        const descarga = dados.operacao.porto_descarga || 'Santos/SP';
         const qtd = dados.operacao.qtd_conteineres || 1;
         const tipo = dados.operacao.tipo_conteiner || "40' HC";
-        elRoute.innerHTML = (dados.operacao.porto_descarga || 'Santos/SP') + desc + ' <small>' + qtd + 'x' + tipo + ' auditado</small>';
+        elRoute.innerHTML = origem + ' &rarr; ' + descarga + ' <small>' + qtd + 'x' + tipo + ' auditado</small>';
       }
 
       const elSupp = document.getElementById('v-suppliers');
       if(elSupp){
-        elSupp.innerHTML = (dados.operacao.descricao || 'Lote Operacional') + ' <small>· Exportador Mapeado</small>';
+        elSupp.innerHTML = '1 Fornecedor Identificado <small>&middot; Exportador Mapeado</small>';
       }
 
       const elImp = document.getElementById('v-importer');
