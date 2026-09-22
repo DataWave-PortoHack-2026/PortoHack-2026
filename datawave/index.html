@@ -778,32 +778,8 @@
           </div>
           <div class="kv">
             <div class="k">Parecer Técnico Aduaneiro (MCP)</div>
-            <div class="v" id="pipeParecerStatus">
-              <span class="badge" id="pipeParecerBadge">Pendente</span>
-              <button class="cta" id="btnVerParecerScreen1" onclick="abrirModalParecer()" style="display:none; margin-top:6px; padding:6px 12px; font-size:12px; background:linear-gradient(135deg, #38C6EF, #2BD9AE); color:#04121c; font-weight:600; border-radius:8px; border:none; cursor:pointer;">Visualizar Parecer</button>
-            </div>
+            <div class="v" id="pipeParecerStatus"><span class="badge" id="pipeParecerBadge">Pendente</span></div>
           </div>
-        </div>
-      </div>
-
-      <!-- BANNER DE CONCLUSÃO DA AUDITORIA & ACESSO AO PARECER -->
-      <div id="bannerAcoesAuditado" style="display:none; background:var(--bg-panel); border:1px solid rgba(56,198,239,0.4); border-radius:var(--radius); padding:16px 20px; margin-bottom:16px; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 4px 20px rgba(0,0,0,0.15);">
-        <div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span class="badge" style="background:var(--ok-bg); color:var(--ok-ink); border-color:var(--ok-line); font-size:11.5px; font-weight:700;">Auditoria Concluída</span>
-            <span style="font-size:12px; color:var(--ink-soft);">Parecer pericial homologado</span>
-          </div>
-          <div style="font-size:14px; font-weight:600; color:var(--ink); margin-top:3px;">
-            O Parecer Técnico Aduaneiro foi formulado pelo Agente Logcomex com 100% de integridade matemática.
-          </div>
-        </div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button class="cta" onclick="abrirModalParecer()" style="background:linear-gradient(135deg, #38C6EF, #2BD9AE); color:#04121c; font-weight:600; padding:9px 18px; font-size:13px; cursor:pointer;">
-            Visualizar Parecer Técnico
-          </button>
-          <button class="cta-secondary" onclick="showScreen(3)" style="padding:9px 16px; font-size:13px; cursor:pointer;">
-            Ver Recomendação Prescritiva (Tela 3)
-          </button>
         </div>
       </div>
 
@@ -1691,35 +1667,48 @@
       atualizarProgressoGlobal(55, 'Agente Logcomex MCP', 'Etapa 3/6 · Predição de Canais & Consulta Comexstat Santos (Skills 2 e 5)');
     }, 5500));
 
-    globalProgressoTimers.push(setTimeout(function(){
-      atualizarProgressoGlobal(75, 'Agente Logcomex MCP', 'Etapa 4/6 · Validação do Catálogo DUIMP & Regras Fiscais (Skills 3 e 4)');
-    }, 9000));
+  async function executarCicloProgressoEtapas(textoInicial){
+    iniciarProgressoGlobal(15, textoInicial || 'Etapa 1/6 · Ingestão e Normalização Documental');
+    await new Promise(r => setTimeout(r, 700));
+    atualizarProgressoGlobal(35, 'Agente Logcomex MCP', 'Etapa 2/6 · Análise Documental Aduaneira (Skill 1)');
+    await new Promise(r => setTimeout(r, 750));
+    atualizarProgressoGlobal(55, 'Agente Logcomex MCP', 'Etapa 3/6 · Predição de Canais & Consulta Comexstat Santos (Skills 2 e 5)');
+    await new Promise(r => setTimeout(r, 750));
+    atualizarProgressoGlobal(75, 'Agente Logcomex MCP', 'Etapa 4/6 · Validação do Catálogo DUIMP & Regras Fiscais (Skills 3 e 4)');
+    await new Promise(r => setTimeout(r, 750));
+    atualizarProgressoGlobal(90, 'Motor Estocástico', 'Etapa 5/6 · Simulação Estocástica de Permanência e Matriz de Custos');
+    await new Promise(r => setTimeout(r, 800));
+    atualizarProgressoGlobal(100, 'Agente Logcomex MCP', 'Etapa 6/6 · Recomendação Prescritiva e Parecer Técnico Concluídos');
+  }
 
-    globalProgressoTimers.push(setTimeout(function(){
-      atualizarProgressoGlobal(90, 'Motor Estocástico', 'Etapa 5/6 · Simulação Estocástica de Permanência e Matriz de Custos');
-    }, 13000));
+  async function dispararAuditoriaPlanilha(csvTexto, nomeArquivo){
+    const btn = document.getElementById('btnExecutarPipeline');
+    if(btn){
+      btn.disabled = true;
+      btn.textContent = 'Auditando com Agente Logcomex (MCP)...';
+    }
 
     const tStart = performance.now();
+    const animacaoPromise = executarCicloProgressoEtapas('Etapa 1/6 · Ingestão e Normalização Documental da Planilha');
+    const fetchPromise = fetch('/api/despachante/processar-planilha', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conteudo_csv: csvTexto,
+        nome_arquivo: nomeArquivo || 'planilha_operacional.csv',
+        usar_agente: true,
+        usar_mcp: true
+      })
+    });
 
     try {
-      const resp = await fetch('/api/despachante/processar-planilha', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conteudo_csv: csvTexto,
-          nome_arquivo: nomeArquivo || 'planilha_operacional.csv',
-          usar_agente: true,
-          usar_mcp: true
-        })
-      });
+      const [_, resp] = await Promise.all([animacaoPromise, fetchPromise]);
       if(resp.ok){
         const dados = await resp.json();
         pipelineDadosAtuais = dados;
-        const duracaoS = dados.tempo_resposta_s ? dados.tempo_resposta_s.toFixed(2) + 's' : ((performance.now() - tStart) / 1000).toFixed(2) + 's';
+        const duracaoS = ((performance.now() - tStart) / 1000).toFixed(2) + 's';
 
-        atualizarProgressoGlobal(100, 'Agente Logcomex MCP', 'Etapa 6/6 · Recomendação Prescritiva e Parecer Técnico Concluídos');
         concluirProgressoGlobal('Processamento concluído em ' + duracaoS + ' · Agente Logcomex MCP', duracaoS);
-
         atualizarUIComPipeline(dados);
         aplicarTodosTimestamps();
 
@@ -1727,9 +1716,6 @@
           btn.disabled = false;
           btn.textContent = 'Auditar com Agente Logcomex (MCP)';
         }
-
-        const bannerAuditado = document.getElementById('bannerAcoesAuditado');
-        if(bannerAuditado) bannerAuditado.style.display = 'flex';
 
         return dados;
       }
@@ -1746,24 +1732,6 @@
       btn.disabled = true;
       btn.textContent = 'Auditando com Agente Logcomex (MCP)...';
     }
-
-    iniciarProgressoGlobal(15, 'Etapa 1/6 · Ingestão e Normalização Documental do Cenário');
-
-    globalProgressoTimers.push(setTimeout(function(){
-      atualizarProgressoGlobal(35, 'Agente Logcomex MCP', 'Etapa 2/6 · Análise Documental Aduaneira (Skill 1)');
-    }, 2500));
-
-    globalProgressoTimers.push(setTimeout(function(){
-      atualizarProgressoGlobal(55, 'Agente Logcomex MCP', 'Etapa 3/6 · Predição de Canais & Consulta Comexstat Santos (Skills 2 e 5)');
-    }, 5500));
-
-    globalProgressoTimers.push(setTimeout(function(){
-      atualizarProgressoGlobal(75, 'Agente Logcomex MCP', 'Etapa 4/6 · Validação do Catálogo DUIMP & Regras Fiscais (Skills 3 e 4)');
-    }, 9000));
-
-    globalProgressoTimers.push(setTimeout(function(){
-      atualizarProgressoGlobal(90, 'Motor Estocástico', 'Etapa 5/6 · Simulação Estocástica de Permanência e Matriz de Custos');
-    }, 13000));
 
     const s = scenarios[currentScenario];
     const ncmLimpo = s.ncm.replace(/[^\d]/g, '');
@@ -1790,21 +1758,22 @@
     };
 
     const tStart = performance.now();
+    const animacaoPromise = executarCicloProgressoEtapas('Etapa 1/6 · Ingestão e Normalização Documental do Cenário');
+    const fetchPromise = fetch('/api/pipeline', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
+    let dados = null;
     try {
-      const resp = await fetch('/api/pipeline', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const [_, resp] = await Promise.all([animacaoPromise, fetchPromise]);
       if(resp.ok){
-        const dados = await resp.json();
+        dados = await resp.json();
         pipelineDadosAtuais = dados;
-        const duracaoS = dados.tempo_resposta_s ? dados.tempo_resposta_s.toFixed(2) + 's' : ((performance.now() - tStart) / 1000).toFixed(2) + 's';
+        const duracaoS = ((performance.now() - tStart) / 1000).toFixed(2) + 's';
 
-        atualizarProgressoGlobal(100, 'Agente Logcomex MCP', 'Etapa 6/6 · Recomendação Prescritiva e Parecer Técnico Concluídos');
         concluirProgressoGlobal('Processamento concluído em ' + duracaoS + ' · Agente Logcomex MCP', duracaoS);
-
         atualizarUIComPipeline(dados);
         aplicarTodosTimestamps();
 
@@ -1813,9 +1782,6 @@
           btn.textContent = 'Auditar com Agente Logcomex (MCP)';
         }
 
-        const bannerAuditado = document.getElementById('bannerAcoesAuditado');
-        if(bannerAuditado) bannerAuditado.style.display = 'flex';
-
         return dados;
       }
     } catch(err) {
@@ -1823,8 +1789,8 @@
     }
 
     // Contingencia local estruturada
+    await animacaoPromise;
     const duracaoFallback = ((performance.now() - tStart) / 1000).toFixed(2) + 's';
-    atualizarProgressoGlobal(100, 'Agente Logcomex (Fallback)', 'Etapa 6/6 · Parecer Técnico em Modo Contingência');
     concluirProgressoGlobal('Processamento concluído em ' + duracaoFallback + ' · Modo Contingência', duracaoFallback);
 
     const fallbackTraceId = 'DW-' + Math.random().toString(16).substring(2, 10).toUpperCase();
@@ -1863,9 +1829,6 @@
       btn.textContent = 'Auditar com Agente Logcomex (MCP)';
     }
 
-    const bannerAuditado = document.getElementById('bannerAcoesAuditado');
-    if(bannerAuditado) bannerAuditado.style.display = 'flex';
-
     return pipelineDadosAtuais;
   }
 
@@ -1900,12 +1863,6 @@
       parecerBadge.style.color = ok ? 'var(--ok-ink)' : 'var(--warn-ink)';
       parecerBadge.style.borderColor = ok ? 'var(--ok-line)' : 'var(--warn-line)';
     }
-
-    const btnScreen1 = document.getElementById('btnVerParecerScreen1');
-    if(btnScreen1) btnScreen1.style.display = 'inline-flex';
-
-    const bannerAuditado = document.getElementById('bannerAcoesAuditado');
-    if(bannerAuditado) bannerAuditado.style.display = 'flex';
 
     // Modal Parecer
     const modalTitle = document.getElementById('modalParecerTitle');
