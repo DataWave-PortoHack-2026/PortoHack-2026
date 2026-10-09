@@ -4,6 +4,8 @@
 > Solução integrada para mitigação de riscos regulatórios no Catálogo de Produtos da DUIMP e otimização de custos de permanência portuária (Cais vs. Retroporto).
 
 ---
+*versão em inglês:* [here](https://github.com/giuliagranado/PortoHack-2026/blob/main/readme_english.md)
+
 
 ## 1. Visão Geral e Problema Enfrentado
 
